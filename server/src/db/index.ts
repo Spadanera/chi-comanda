@@ -1,0 +1,92 @@
+import mysql, { ResultSetHeader, RowDataPacket } from 'mysql2';
+import { DbUtils } from '../models';
+
+const CONNECTION_PARAMS = {
+    host: process.env.MYSQL_HOST,
+    user: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASSWORD,
+    database: process.env.MYSQL_DATABASE
+}
+
+export default class MySqlUtils implements DbUtils {
+    Connection?: mysql.Connection
+    Pool?: mysql.Pool
+
+    constructor() {
+    }
+
+    connect() {
+        this.Connection = mysql.createConnection(CONNECTION_PARAMS)
+    }
+
+    poolConnect() {
+        this.Pool = mysql.createPool(CONNECTION_PARAMS)
+    }
+
+    async query<T extends RowDataPacket>(query: string, values: any): Promise<T[]> {
+        this.connect()
+        return new Promise((resolve, reject) => {
+            this.Connection?.query<T[]>(query, values, (_err, res) => {
+                if (_err) {
+                    reject(_err)
+                }
+                else {
+                    resolve(res)
+                }
+            })
+        })
+    }
+
+    async execute(query: string, values: any, pool: boolean = false): Promise<number> {
+        return new Promise((resolve, reject) => {
+            if (pool) {
+                this.Pool?.query<ResultSetHeader>(query, values, (_err, res) => {
+                    if (_err) {
+                        reject(_err)
+                    }
+                    else {
+                        resolve(res.insertId || res.affectedRows)
+                    }
+                })
+            }
+            else {
+                this.connect()
+                this.Connection?.query<ResultSetHeader>(query, values, (_err, res) => {
+                    if (_err) {
+                        reject(_err)
+                    }
+                    else {
+                        resolve(res.insertId || res.affectedRows)
+                    }
+                })
+            }
+        })
+    }
+
+    async executeTransaction(execution: () => Promise<number>): Promise<number> {
+        return new Promise((resolve, reject) => {
+            this.poolConnect()
+            this.Pool?.getConnection((_err, connection) => {
+                this.Connection = connection
+                this.Connection?.beginTransaction(async (_err) => {
+                    if (_err) {
+                        reject(_err)
+                    }
+                    else {
+                        const result = await execution()
+                        this.Connection?.commit((_err) => {
+                            if (_err) {
+                                this.Connection?.rollback(() => {
+                                    reject(_err)
+                                })
+                            }
+                            else {
+                                resolve(result)
+                            }
+                        })
+                    }
+                })
+            })
+        })
+    }
+}
