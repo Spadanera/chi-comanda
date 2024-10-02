@@ -21,8 +21,18 @@ export interface Table extends RowDataPacket {
   id?: number
   event_id?: number
   master_table_id?: number[]
-  name: string
+  name?: string
+  paid?: boolean
   status?: string
+}
+
+export interface AvailableTable extends RowDataPacket {
+  table_id?: number
+  table_name?: string
+  master_table_id?: number
+  master_table_name?: string
+  default_seats: number
+  event_id: number
 }
 
 export interface Order extends RowDataPacket {
@@ -33,13 +43,13 @@ export interface Order extends RowDataPacket {
   master_table_id?: number[]
   worker_id?: number
   done?: boolean
-  paid?: boolean
   items?: Item[]
   worker?: Worker
 }
 
 export interface Item extends RowDataPacket {
   id?: number
+  table_id?: number
   order_id?: number
   master_item_id?: number
   note?: string
@@ -50,6 +60,7 @@ export interface Item extends RowDataPacket {
 export interface MasterTable extends RowDataPacket {
   id?: number
   name?: string
+  default_deats?: number
 }
 
 export interface Worker extends RowDataPacket {
@@ -60,7 +71,8 @@ export interface Worker extends RowDataPacket {
 
 export interface User extends RowDataPacket {
   id?: number
-  name?: string
+  username?: string
+  email?: string
   password?: string
 }
 
@@ -73,8 +85,10 @@ export interface MasterItem extends RowDataPacket {
   id?: number
   name?: string
   type?: string
+  sub_type?: string
   price?: number
   destination_id?: number
+  available?: boolean
 }
 
 export interface Destination extends RowDataPacket {

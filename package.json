@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "grunt",
-    "init": "grunt init",
-    "stop": "grunt stop",
+    "start": "docker-compose up -d",
+    "recreate": "docker-compose up -d --force-recreate",
+    "stop": "docker-compose stop",
     "docker-build": "docker-compose build",
     "build-server": "cd server && npm run build",
     "build-client": "cd client && npm run build",
@@ -22,10 +22,5 @@
   "bugs": {
     "url": "https://github.com/Spadanera/gig-addicted/issues"
   },
-  "homepage": "https://github.com/Spadanera/gig-addicted#readme",
-  "devDependencies": {
-    "grunt": "^1.6.1",
-    "grunt-contrib-watch": "^1.1.0",
-    "grunt-exec": "^3.0.0"
-  }
+  "homepage": "https://github.com/Spadanera/gig-addicted#readme"
 }

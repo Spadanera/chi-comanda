@@ -1,6 +1,7 @@
 CREATE TABLE `users` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
-  `name` varchar(255),
+  `username` varchar(255),
+  `email` varchar(255),
   `password` varchar(255)
 );
 
@@ -31,11 +32,12 @@ CREATE TABLE `tables` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `event_id` integer,
   `name` varchar(255),
+  `paid` bool,
   `status` varchar(255)
 );
 
 CREATE TABLE `table_master_table` (
-  `id` integer,
+  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `table_id` integer,
   `master_table_id` integer
 );
@@ -57,8 +59,7 @@ CREATE TABLE `orders` (
   `event_id` integer,
   `table_id` integer,
   `worker_id` integer,
-  `done` bool,
-  `paid` bool
+  `done` bool
 );
 
 CREATE TABLE `destinations` (
@@ -73,11 +74,13 @@ CREATE TABLE `master_items` (
   `type` varchar(255),
   `sub_type` varchar(255),
   `price` double,
-  `destination_id` integer
+  `destination_id` integer,
+  `available` bool
 );
 
 CREATE TABLE `items` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
+  `table_id` integer,
   `order_id` integer,
   `master_item_id` integer,
   `note` varchar(255),
@@ -112,3 +115,5 @@ ALTER TABLE `master_items` ADD FOREIGN KEY (`destination_id`) REFERENCES `destin
 ALTER TABLE `items` ADD FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`);
 
 ALTER TABLE `orders` ADD FOREIGN KEY (`worker_id`) REFERENCES `workers` (`id`);
+
+ALTER TABLE `items` ADD FOREIGN KEY (`table_id`) REFERENCES `events` (`id`);

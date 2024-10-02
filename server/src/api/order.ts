@@ -19,7 +19,7 @@ export default class OrderAPI {
     async create(order: Order): Promise<number> {
         return await this.database.executeTransaction(async () => {
             if (!order.table_id && order.master_table_id) {
-                order.table_id = await this.database.execute('INSERT INTO tables (status) VALUES (?)', ['ACTIVE'], true)
+                order.table_id = await this.database.execute('INSERT INTO tables (name, event_id, status) VALUES (?, ?, ?)', [order.table_name, order.event_id, 'ACTIVE'], true)
                 for (let i = 0; i < order.master_table_id.length; i++) {
                     await this.database.execute('INSERT INTO table_master_table (table_id, master_table_id) VALUES (?, ?)', [order.table_id, order.master_table_id[i]], true)
                 }
@@ -37,14 +37,17 @@ export default class OrderAPI {
     }
 
     async updateItems(item: Item, id: number): Promise<number> {
-        return await this.database.execute('UPDATE items SET done = ?, paid = ? WHERE order_id = ?', [item.done, item.paid, id])
+        return await this.database.execute('UPDATE items SET done = ? WHERE order_id = ?', [item.done, id])
     }
 
     async delete(id: number): Promise<number> {
-        return await this.database.execute('DELETE FROM ORDERS WHERE id = ?', [id])
+        return await this.database.executeTransaction(async () => {
+            await this.database.execute('DELETE FROM items WHERE order_id = ?', [id])
+            return await this.database.execute('DELETE FROM orders WHERE id = ?', [id])
+        })
     }
 
-    async update(event: Order, id: number): Promise<number> {
-        return await this.database.execute('UPDATE ORDERS SET DONE = ?, PAID = ? WHERE id = ?', [event.done, event.paid, id])
+    async update(order: Order, id: number): Promise<number> {
+        return await this.database.execute('UPDATE orders SET done = ? WHERE id = ?', [order.done, id])
     }
 }
