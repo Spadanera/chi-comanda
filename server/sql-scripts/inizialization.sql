@@ -1,0 +1,70 @@
+INSERT INTO users (name, password) VALUES ('Dan', 'password');
+INSERT INTO users (name, password) VALUES ('Nic', 'password');
+INSERT INTO users (name, password) VALUES ('Vi', 'password');
+INSERT INTO users (name, password) VALUES ('Elena', 'password');
+INSERT INTO users (name, password) VALUES ('Led', 'password');
+INSERT INTO users (name, password) VALUES ('Zio Fagiolo', 'password');
+INSERT INTO users (name, password) VALUES ('Titta', 'password');
+INSERT INTO users (name, password) VALUES ('Dani', 'password');
+
+INSERT INTO roles (name) VALUES ('admin');
+INSERT INTO roles (name) VALUES ('worker');
+
+INSERT INTO user_role (user_id, role_id) VALUES (1, 1);
+INSERT INTO user_role (user_id, role_id) VALUES (1, 2);
+INSERT INTO user_role (user_id, role_id) VALUES (2, 1);
+INSERT INTO user_role (user_id, role_id) VALUES (2, 1);
+INSERT INTO user_role (user_id, role_id) VALUES (3, 1);
+INSERT INTO user_role (user_id, role_id) VALUES (4, 1);
+INSERT INTO user_role (user_id, role_id) VALUES (5, 1);
+INSERT INTO user_role (user_id, role_id) VALUES (6, 1);
+INSERT INTO user_role (user_id, role_id) VALUES (7, 1);
+INSERT INTO user_role (user_id, role_id) VALUES (8, 1);
+
+INSERT INTO workers (user_id, role) VALUES (1, 'CHECKOUT');
+INSERT INTO workers (user_id, role) VALUES (2, 'WAITER');
+INSERT INTO workers (user_id, role) VALUES (3, 'WAITER');
+INSERT INTO workers (user_id, role) VALUES (4, 'WAITER');
+INSERT INTO workers (user_id, role) VALUES (5, 'BARTENDER');
+INSERT INTO workers (user_id, role) VALUES (6, 'WAITER');
+INSERT INTO workers (user_id, role) VALUES (7, 'WAITER');
+INSERT INTO workers (user_id, role) VALUES (8, 'BARTENDER');
+
+INSERT INTO master_tables (name, default_seats) VALUES ('1', 6);
+INSERT INTO master_tables (name, default_seats) VALUES ('2', 6);
+INSERT INTO master_tables (name, default_seats) VALUES ('3', 6);
+INSERT INTO master_tables (name, default_seats) VALUES ('4', 10);
+INSERT INTO master_tables (name, default_seats) VALUES ('5', 4);
+INSERT INTO master_tables (name, default_seats) VALUES ('6', 4);
+INSERT INTO master_tables (name, default_seats) VALUES ('7', 4);
+INSERT INTO master_tables (name, default_seats) VALUES ('8', 10);
+INSERT INTO master_tables (name, default_seats) VALUES ('9', 6);
+INSERT INTO master_tables (name, default_seats) VALUES ('10', 6);
+INSERT INTO master_tables (name, default_seats) VALUES ('11', 8);
+INSERT INTO master_tables (name, default_seats) VALUES ('12', 8);
+
+INSERT INTO destinations (name, location) VALUES ('LUDO-BAR', 'DOWN');
+INSERT INTO destinations (name, location) VALUES ('LUDO-KITCHEN', 'DOWN');
+INSERT INTO destinations (name, location) VALUES ('LIBRA-KITCHEN', 'UP');
+
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Coca Cola', 'BEVERAGE', 'SOFT-DRINK', 3, 1);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Fanta', 'BEVERAGE', 'SOFT-DRINK', 3, 1);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Sprite', 'BEVERAGE', 'SOFT-DRINK', 3, 1);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Acqua', 'BEVERAGE', 'SOFT-DRINK', 2, 1);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Cuba Libre', 'BEVERAGE', 'COCKTAIL', 6, 1);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Git Tonic', 'BEVERAGE', 'COCKTAIL', 6, 1);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Margarita', 'BEVERAGE', 'COCKTAIL', 6, 1);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Long Island', 'BEVERAGE', 'COCKTAIL', 6, 1);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Bionda', 'BEVERAGE', 'BEER', 5, 1);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Rossa', 'BEVERAGE', 'BEER', 5, 1);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Scura', 'BEVERAGE', 'BEER', 5, 1);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Rhum', 'BEVERAGE', 'SPIRIT', 8, 1);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Whisky', 'BEVERAGE', 'SPIRIT', 8, 1);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Gin', 'BEVERAGE', 'SPIRIT', 8, 1);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Nachos', 'FOOD', 'EXTRA', 5, 2);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Pippo', 'FOOD', 'PANINO', 8, 3);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Pluto', 'FOOD', 'PANINO', 8, 3);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Paperino', 'FOOD', 'PANINO', 8, 3);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Minni', 'FOOD', 'PIADINA', 8, 3);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Topolino', 'FOOD', 'PIADINA', 8, 3);
+INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Zio Paperone', 'FOOD', 'PIADINA', 8, 3);

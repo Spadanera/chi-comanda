@@ -1,0 +1,15 @@
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE orders;
+DROP TABLE items;
+DROP TABLE master_items;
+DROP TABLE destinations;
+DROP TABLE event_workers;
+DROP TABLE events;
+DROP TABLE table_master_table;
+DROP TABLE tables;
+DROP TABLE master_tables;
+DROP TABLE workers;
+DROP TABLE user_role;
+DROP TABLE roles;
+DROP TABLE users;
+SET FOREIGN_KEY_CHECKS = 1;

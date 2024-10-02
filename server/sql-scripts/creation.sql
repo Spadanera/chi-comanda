@@ -23,7 +23,8 @@ CREATE TABLE `workers` (
 
 CREATE TABLE `master_tables` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
-  `name` varchar(255)
+  `name` varchar(255),
+  `default_seats` integer
 );
 
 CREATE TABLE `tables` (
@@ -70,6 +71,7 @@ CREATE TABLE `master_items` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `name` varchar(255),
   `type` varchar(255),
+  `sub_type` varchar(255),
   `price` double,
   `destination_id` integer
 );
