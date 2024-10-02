@@ -1,4 +1,4 @@
-# Priolo Inventory - Web App
+# Ludo Project - Web App
 
 tbd
 
@@ -25,6 +25,6 @@ http://localhost
 There are 4 services defined in docker compose:
 
 1. client: node20 image that hosts the client of the application based on VUE.js
-2. server: python:3.9-slim-buster image that hosts the API 
+2. server: node:20-alpine image that hosts the API 
 3. server-database: MySql image
 4. proxy: nginx image that works as proxy between client and server
