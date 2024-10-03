@@ -8,7 +8,13 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/models": ["../models/src/index"]
     }
-  }
+  },
+  "references": [
+    {
+      "path": "../models"
+    }
+  ]
 }

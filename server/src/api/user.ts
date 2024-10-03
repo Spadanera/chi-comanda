@@ -1,5 +1,5 @@
 import DB from "../db/index"
-import { User } from "../models/index"
+import { User } from "../../../models/src"
 
 export default class UserApi {
     database: DB

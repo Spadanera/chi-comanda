@@ -1,7 +1,5 @@
 import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance } from 'axios'
 
-
-
 export default class Client {
     client: AxiosInstance
     config: AxiosRequestConfig = {
@@ -14,10 +12,6 @@ export default class Client {
         this.client = axios.create({
             baseURL: '/api',
         })
-    }
-
-    private get(url: string) {
-
     }
 }
 

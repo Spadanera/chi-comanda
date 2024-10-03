@@ -4,10 +4,10 @@ import path from "path"
 import passport from "passport"
 import * as passportStrategy from "passport-local"
 import UserApi from "./api/user"
-import { User } from "./models"
 import apiRouter from "./routes"
 import { createServer } from 'http'
 import { SocketIOService } from "./socket"
+import { User } from "../../models/src" 
 
 const MySQLStore = require('express-mysql-session')(session);
 const options = {
