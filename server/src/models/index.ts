@@ -8,6 +8,12 @@ export interface DbUtils {
   executeTransaction(execution: () => Promise<number>): Promise<number>
 }
 
+export interface Message {
+  room: string
+  event: string
+  body: any
+}
+
 export interface Event extends RowDataPacket {
   id?: number
   name?: string

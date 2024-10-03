@@ -29,6 +29,7 @@ services:
       MYSQL_DATABASE: 'LudoProject'
       MYSQL_USER: 'user'
       MYSQL_PASSWORD: 'password'
+      SECRET: 'pippopluto'
     networks:
       - proxy_net
     command: npm run dev

@@ -37,6 +37,16 @@ export default class MySqlUtils implements DbUtils {
         })
     }
 
+    async queryOne<T extends RowDataPacket>(query: string, values: any): Promise<T> {
+        var result = await this.query<T>(query, values)
+        if (result && result.length) {
+            return result[0]
+        }
+        else {
+            throw new Error("Record not found")
+        }
+    }
+
     async execute(query: string, values: any, pool: boolean = false): Promise<number> {
         return new Promise((resolve, reject) => {
             if (pool) {
