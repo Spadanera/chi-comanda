@@ -1,5 +1,5 @@
-import DB from "../db/index"
-import { Item, Order } from "../../../models/src"
+import DB from "@/db/index"
+import { Item, Order } from "@models"
 
 export default class OrderAPI {
     database: DB

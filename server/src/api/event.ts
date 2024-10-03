@@ -1,5 +1,5 @@
-import DB from "../db/index"
-import { Event } from "../../../models/src"
+import DB from "@/db/index"
+import { Event } from "@models"
 
 export default class EventAPI {
     database: DB

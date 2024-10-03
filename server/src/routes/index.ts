@@ -1,10 +1,10 @@
 import router, { Router, Request, Response } from "express"
-import EventAPI from "../api/event"
-import OrderAPI from "../api/order"
-import TableApi from "../api/table"
-import ItemApi from "../api/item"
-import MasterItemsApi from "../api/master-item"
-import MasterTableApi from "../api/master-table"
+import EventAPI from "@/api/event"
+import OrderAPI from "@/api/order"
+import TableApi from "@/api/table"
+import ItemApi from "@/api/item"
+import MasterItemsApi from "@/api/master-item"
+import MasterTableApi from "@/api/master-table"
 
 
 const apiRouter: Router = router()

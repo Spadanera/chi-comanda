@@ -1,5 +1,5 @@
-import DB from "../db/index"
-import { AvailableTable, MasterTable, Table } from "../../../models/src"
+import DB from "@/db/index"
+import { AvailableTable, MasterTable, Table } from "@models"
 
 export default class TableApi {
     database: DB

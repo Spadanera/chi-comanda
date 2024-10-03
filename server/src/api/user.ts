@@ -1,5 +1,5 @@
-import DB from "../db/index"
-import { User } from "../../../models/src"
+import DB from "@/db/index"
+import { User } from "@models"
 
 export default class UserApi {
     database: DB
