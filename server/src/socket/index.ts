@@ -1,6 +1,6 @@
 import {Server, ServerOptions} from "socket.io"
 import {Server as HttpServer} from "http"
-import { Message } from "@models"
+import { Message } from "../../../models/src"
 
 export class SocketIOService {
   private static _instance: SocketIOService | undefined;

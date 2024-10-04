@@ -1,5 +1,5 @@
 import mysql, { ResultSetHeader, RowDataPacket } from 'mysql2';
-import { DbUtils } from "@/models"
+import { DbUtils } from "../models"
 
 const CONNECTION_PARAMS = {
     host: process.env.MYSQL_HOST,
