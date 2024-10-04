@@ -8,6 +8,8 @@ import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import Client from '@/services/client'
+import '@mdi/font/css/materialdesignicons.css'
+import 'vuetify/styles'
 
 const vuetify = createVuetify({
     components,

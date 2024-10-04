@@ -15,7 +15,9 @@ export default class Client {
             baseURL: '/api',
         })
 
-        this.client.interceptors.request.use((response) => response, error => {
+        this.client.interceptors.response.use((response) => {
+            return response
+        }, error => {
             if (error.response) {
                 if (error.response.status === 401) {
                   // Redirect to login page

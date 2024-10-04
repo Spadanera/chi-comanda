@@ -4,6 +4,6 @@
 
 <template>
   <main>
-    
+    <v-card text="..."></v-card>
   </main>
 </template>
