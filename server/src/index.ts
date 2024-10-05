@@ -45,7 +45,6 @@ passport.use(new passportStrategy.Strategy(
             if (!email) { done(null, false) }
             const api = new UserApi()
             const user = await api.getByEmailAndPassword(email, password)
-            console.log("a", user)
             done(null, user)
         } catch (e) {
             done(e);
@@ -53,19 +52,17 @@ passport.use(new passportStrategy.Strategy(
     }));
 
 passport.serializeUser((user, done) => {
-    console.log("s", user)
     done(null, user)
 });
 
 
 passport.deserializeUser((user: User, done) => {
     const api = new UserApi()
-    console.log("d", user)
     done(null, user);
 });
 
 app.post("/api/login", passport.authenticate('local'), async (req: Request, res: Response) => {
-    res.json(1)
+    res.json(req.user)
 })
 
 app.post("/api/logout", async (req: Request, res: Response) => {

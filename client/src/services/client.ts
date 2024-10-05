@@ -1,8 +1,8 @@
 import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 import { type Repository, type User, type Event } from "../../../models/src"
 import router from '@/router'
-import { UserStore, SnackbarStore } from '@/stores'
-import type { Store, StoreDefinition } from 'pinia'
+import { UserStore, SnackbarStore, type IUser } from '@/stores'
+import type { StoreDefinition } from 'pinia'
 
 export default class Axios {
     client: AxiosInstance
@@ -28,7 +28,8 @@ export default class Axios {
                   router.push('/login')
                 } else {
                   // Show a generic error message
-                  alert('An error occurred. Please try again later.')
+                  const snackbar = SnackbarStore()
+                  snackbar.showSnackBar("Si è verificare un errore")
                 }
               }
               return Promise.reject(error)
@@ -57,13 +58,12 @@ export default class Axios {
         return await this.post("/events", event)
     }
 
-    async Login(email: string, password: string, returnUrl: string = "/"): Promise<void> {
-        await this.client.post<number>("/login", {
+    async Login(email: string, password: string): Promise<void> {
+        const user = (await this.client.post<User>("/login", {
             email: email,
             password: password
-        })
-        this.userStoreDef().login()
-        router.push(returnUrl)
+        })).data
+        this.userStoreDef().login(user)
     }
 
     async Logout() {
@@ -73,8 +73,8 @@ export default class Axios {
         this.snackbarStoreDef().showSnackBar("Logout effettuato con successo")
     }
 
-    async CheckAuthentication(): Promise<User> {
-        return (await this.client.get<User>('/checkauthentication')).data
+    async CheckAuthentication(): Promise<IUser> {
+        return (await this.client.get<IUser>('/checkauthentication')).data
     }
 }
 

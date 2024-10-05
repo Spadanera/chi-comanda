@@ -1,19 +1,21 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
 import Axios from './services/client'
-import { onBeforeMount, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import router from '@/router'
-import { UserStore, SnackbarStore } from '@/stores'
+import { UserStore, SnackbarStore, IUser } from '@/stores'
 
 const axios: Axios = new Axios()
 const userStore = UserStore()
 const snackbarStore = SnackbarStore()
+const user = ref({})
 
-onBeforeMount(async () => {
-  userStore.isLoggedIn = await axios?.CheckAuthentication() || 0
-  if (!userStore.isLoggedIn) {
-    router.push("/login")
-  }
+async function reloadUser() {
+  user.value = await userStore.checkAuthentication()
+}
+
+onMounted(async () => {
+  reloadUser()
 })
 
 </script>
@@ -38,7 +40,7 @@ onBeforeMount(async () => {
 
       <v-main>
         <v-container>
-          <RouterView />
+          <RouterView v-model="user" @reload="reloadUser" />
         </v-container>
       </v-main>
       <v-snackbar v-model="snackbarStore.show" :timeout="snackbarStore.timeout">

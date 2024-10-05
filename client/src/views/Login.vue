@@ -2,9 +2,12 @@
 import { ref } from 'vue'
 import Axios from '@/services/client'
 import { UserStore } from '@/stores'
+import router from '@/router'
 
 const userStore = UserStore()
 const axios: Axios = new Axios()
+
+const emit = defineEmits(['reload'])
 
 const credentials = ref({
   email: '',
@@ -13,6 +16,8 @@ const credentials = ref({
 
 async function login() {
   await axios.Login(credentials.value.email, credentials.value.password)
+  emit('reload')
+  router.push("/")
 }
 </script>
 

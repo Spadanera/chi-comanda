@@ -1,40 +1,59 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
+import { UserStore } from '@/stores'
+import { provide } from 'vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: Home
+      name: 'Home',
+      component: Home,
+      props: true
     },
     {
       path: '/login',
-      name: 'login',
-      component: () => import('../views/Login.vue')
+      name: 'Login',
+      component: () => import('../views/Login.vue'),
+      props: true
     },
     {
       path: '/admin',
-      name: 'admin',
-      component: () => import('../views/Admin.vue')
+      name: 'Admin',
+      component: () => import('../views/Admin.vue'),
+      props: true
     },
     {
       path: '/waiter',
-      name: 'waiter',
-      component: () => import('../views/Waiter.vue')
+      name: 'Waiter',
+      component: () => import('../views/Waiter.vue'),
+      props: true
     },
     {
       path: '/bartender',
-      name: 'bartender',
-      component: () => import('../views/BarTender.vue')
+      name: 'Bartender',
+      component: () => import('../views/BarTender.vue'),
+      props: true
     },
     {
       path: '/checkout',
-      name: 'checkout',
-      component: () => import('../views/Checkout.vue')
+      name: 'Checkout',
+      component: () => import('../views/Checkout.vue'),
+      props: true
     }
   ]
+})
+
+router.beforeEach(async (to, from, next) => {
+  const userStore = UserStore()
+  const user = await userStore.checkAuthentication()
+  if (to.name !== "Login" && !user.isLoggedIn) {
+    next({ name: "Login"})
+  }
+  else {
+    next()
+  }
 })
 
 export default router

@@ -82,7 +82,13 @@ CREATE TABLE `audit` (
   `table_id` integer,
   `action` varchar(255),
   `actionData` JSON,
-  `actionDateTime` DATETIME NULL
+  `actionDateTime` datetime
+);
+
+CREATE TABLE `workers` (
+  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
+  `event_id` integer,
+  `user_id` integer
 );
 
 ALTER TABLE `user_role` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
@@ -98,6 +104,10 @@ ALTER TABLE `table_master_table` ADD FOREIGN KEY (`table_id`) REFERENCES `tables
 ALTER TABLE `orders` ADD FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`);
 
 ALTER TABLE `orders` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
+
+ALTER TABLE `workers` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
+
+ALTER TABLE `workers` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 
 ALTER TABLE `audit` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 

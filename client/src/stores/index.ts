@@ -1,8 +1,12 @@
 import { defineStore, type StateTree, type StoreDefinition } from 'pinia'
 import Axios from "../services/client"
-import { type User } from "../../../models/src"
+import { type Role } from "../../../models/src"
 
-interface IUser extends User {
+export interface IUser {
+    id?: number,
+    username?: string,
+    email?: string,
+    roles: Role[]
     isLoggedIn: boolean
 }
 
@@ -18,23 +22,36 @@ export const UserStore: StoreDefinition = defineStore('user', {
         } as IUser
     },
     actions: {
-        setUser(user: User, isLoggedIn: boolean) {
+        setUser(user: IUser, isLoggedIn: boolean) {
             this.id = user.id
             this.username = user.username
             this.email = user.email
             this.roles = user.roles
             this.isLoggedIn = isLoggedIn
         },
-        login(user: User) {
+        login(user: IUser) {
             this.setUser(user, true)
         },
         logout() {
-            this.setUser({} as User, false)
+            this.setUser({} as IUser, false)
         },
         async checkAuthentication() {
             const axios: Axios = new Axios()
             const user = await axios.CheckAuthentication()
-            this.setUser(user, user.username ? true : false)
+            if (user.username) {
+                this.login(user)
+                return {
+                    id: this.id,
+                    username: this.username,
+                    email: this.email,
+                    roles: this.roles,
+                    isLoggedIn: true
+                }
+            }
+            else {
+                this.logout()
+                return {}
+            }
         }
     },
 })
