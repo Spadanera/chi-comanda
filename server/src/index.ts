@@ -9,6 +9,8 @@ import { createServer } from 'http'
 import { SocketIOService } from "./socket"
 import { User } from "../../models/src" 
 
+const AUTH_COOKIE_NAME: string = 'lp-session'
+
 const MySQLStore = require('express-mysql-session')(session);
 const options = {
     host: process.env.MYSQL_HOST,
@@ -25,7 +27,7 @@ const app: Express = express()
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(session({
-    name: 'lp-session',
+    name: AUTH_COOKIE_NAME,
     store: sessionStore,
     cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 30,
@@ -60,7 +62,21 @@ passport.deserializeUser((user: User, done) => {
 });
 
 app.post("/api/login", passport.authenticate('local'), async (req: Request, res: Response) => {
-    res.json("You loggedin!!!")
+    res.json(1)
+})
+
+app.post("/api/logout", async (req: Request, res: Response) => {
+    res.clearCookie(AUTH_COOKIE_NAME)
+    res.json(1)
+})
+
+app.get("/api/checkauthentication", async (req: Request, res: Response) => {
+    if (req.isAuthenticated()) {
+        res.json(1)
+    }
+    else {
+        res.json(0) 
+    }
 })
 
 app.use('/api', (req: Request, res: Response, next: any) => {
