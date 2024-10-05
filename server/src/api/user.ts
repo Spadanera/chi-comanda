@@ -13,7 +13,9 @@ export default class UserApi {
     }
 
     async getByEmailAndPassword(email: string, password: string): Promise<User> {
-        return await this.database.queryOne<User>('SELECT id, email, username FROM users WHERE email = ? AND password = ?', [email, password])
+        return await this.database.queryOne<User>(`SELECT id, email, username, (select json_arrayagg(name) FROM roles
+            INNER JOIN user_role on roles.id = user_role.role_id) as roles
+            FROM users WHERE email = ? AND password = ?`, [email, password])
     }
 
     async getByEmail(email: string): Promise<User> {

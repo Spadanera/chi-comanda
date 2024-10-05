@@ -1,5 +1,13 @@
 import { RowDataPacket } from "mysql2"
 
+export enum Roles {
+  Admin,
+  Checkout,
+  Waiter,
+  Bertender,
+  Cook
+}
+
 export interface Message {
   room: string
   event: string
@@ -78,11 +86,12 @@ export interface User extends Repository {
   username?: string
   email?: string
   password?: string
+  roles?: Roles[]
 }
 
 export interface Role extends Repository {
   id?: number
-  name?: string
+  name?: Roles
 }
 
 export interface MasterItem extends Repository {

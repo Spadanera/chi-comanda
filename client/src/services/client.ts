@@ -1,5 +1,5 @@
 import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
-import { type Repository } from "../../../models/src"
+import { type Repository, type User, type Event } from "../../../models/src"
 import router from '@/router'
 import { UserStore, SnackbarStore } from '@/stores'
 import type { Store, StoreDefinition } from 'pinia'
@@ -49,7 +49,8 @@ export default class Axios {
     }
 
     async GetAllEvents(): Promise<Event[]> {
-        return await this.get<Event[]>("/events")
+        const response: AxiosResponse<Event[]> = await this.client.get<Event[]>("/events", this.config)
+        return response.data
     }
 
     async CreateEvent(event: Event): Promise<Number> {
@@ -72,8 +73,8 @@ export default class Axios {
         this.snackbarStoreDef().showSnackBar("Logout effettuato con successo")
     }
 
-    async CheckAuthentication(): Promise<number> {
-        return (await this.client.get<number>('/checkauthentication')).data
+    async CheckAuthentication(): Promise<User> {
+        return (await this.client.get<User>('/checkauthentication')).data
     }
 }
 
