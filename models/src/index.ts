@@ -10,12 +10,22 @@ export interface Repository extends RowDataPacket {
 
 }
 
+export interface Audit extends Repository {
+  id?: number,
+  user_id?: number,
+  event_id?: number,
+  table_id?: number,
+  action?: string,
+  actionData?: any
+  actionDateTime?: Date
+}
+
 export interface Event extends Repository {
   id?: number
   name?: string
   date?: Date
   tables?: Table[]
-  workers?: Worker[]
+  workers?: User[]
   orders?: Order[]
 }
 
@@ -43,10 +53,8 @@ export interface Order extends Repository {
   table_id?: number
   table_name?: string
   master_table_id?: number[]
-  worker_id?: number
   done?: boolean
   items?: Item[]
-  worker?: Worker
 }
 
 export interface Item extends Repository {
@@ -63,12 +71,6 @@ export interface MasterTable extends Repository {
   id?: number
   name?: string
   default_deats?: number
-}
-
-export interface Worker extends Repository {
-  id?: number
-  user_id?: number
-  role?: string
 }
 
 export interface User extends Repository {
