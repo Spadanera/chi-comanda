@@ -16,12 +16,6 @@ CREATE TABLE `user_role` (
   `role_id` integer
 );
 
-CREATE TABLE `workers` (
-  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
-  `user_id` integer,
-  `role` varchar(255)
-);
-
 CREATE TABLE `master_tables` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `name` varchar(255),
@@ -48,17 +42,10 @@ CREATE TABLE `events` (
   `date` date
 );
 
-CREATE TABLE `event_workers` (
-  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
-  `event_id` integer,
-  `worker_id` integer
-);
-
 CREATE TABLE `orders` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `event_id` integer,
   `table_id` integer,
-  `worker_id` integer,
   `done` bool
 );
 
@@ -88,11 +75,19 @@ CREATE TABLE `items` (
   `paid` bool
 );
 
+CREATE TABLE `audit` (
+  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
+  `user_id` integer,
+  `event_id` integer,
+  `table_id` integer,
+  `action` varchar(255),
+  `actionData` JSON,
+  `actionDateTime` DATETIME NULL
+);
+
 ALTER TABLE `user_role` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 
 ALTER TABLE `user_role` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`);
-
-ALTER TABLE `workers` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 
 ALTER TABLE `tables` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
 
@@ -100,20 +95,20 @@ ALTER TABLE `table_master_table` ADD FOREIGN KEY (`master_table_id`) REFERENCES 
 
 ALTER TABLE `table_master_table` ADD FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`);
 
-ALTER TABLE `event_workers` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
-
-ALTER TABLE `event_workers` ADD FOREIGN KEY (`worker_id`) REFERENCES `workers` (`id`);
-
 ALTER TABLE `orders` ADD FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`);
 
 ALTER TABLE `orders` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
+
+ALTER TABLE `audit` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
+
+ALTER TABLE `audit` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
+
+ALTER TABLE `audit` ADD FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`);
 
 ALTER TABLE `items` ADD FOREIGN KEY (`master_item_id`) REFERENCES `master_items` (`id`);
 
 ALTER TABLE `master_items` ADD FOREIGN KEY (`destination_id`) REFERENCES `destinations` (`id`);
 
 ALTER TABLE `items` ADD FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`);
-
-ALTER TABLE `orders` ADD FOREIGN KEY (`worker_id`) REFERENCES `workers` (`id`);
 
 ALTER TABLE `items` ADD FOREIGN KEY (`table_id`) REFERENCES `events` (`id`);

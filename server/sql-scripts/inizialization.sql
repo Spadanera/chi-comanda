@@ -1,34 +1,35 @@
-INSERT INTO users (name, password) VALUES ('Dan', 'password');
-INSERT INTO users (name, password) VALUES ('Nic', 'password');
-INSERT INTO users (name, password) VALUES ('Vi', 'password');
-INSERT INTO users (name, password) VALUES ('Elena', 'password');
-INSERT INTO users (name, password) VALUES ('Led', 'password');
-INSERT INTO users (name, password) VALUES ('Zio Fagiolo', 'password');
-INSERT INTO users (name, password) VALUES ('Titta', 'password');
-INSERT INTO users (name, password) VALUES ('Dani', 'password');
+INSERT INTO users (email, username, password) VALUES ('ziro84@gmail.com', 'Dan', 'password');
+INSERT INTO users (email, username, password) VALUES ('ziro84@gmail.com', 'Nic', 'password');
+INSERT INTO users (email, username, password) VALUES ('ziro84@gmail.com', 'Vi', 'password');
+INSERT INTO users (email, username, password) VALUES ('ziro84@gmail.com', 'Elena', 'password');
+INSERT INTO users (email, username, password) VALUES ('ziro84@gmail.com', 'Led', 'password');
+INSERT INTO users (email, username, password) VALUES ('ziro84@gmail.com', 'Zio Fagiolo', 'password');
+INSERT INTO users (email, username, password) VALUES ('ziro84@gmail.com', 'Titta', 'password');
+INSERT INTO users (email, username, password) VALUES ('ziro84@gmail.com', 'Dani', 'password');
 
 INSERT INTO roles (name) VALUES ('admin');
-INSERT INTO roles (name) VALUES ('worker');
+INSERT INTO roles (name) VALUES ('checkout');
+INSERT INTO roles (name) VALUES ('waiter');
+INSERT INTO roles (name) VALUES ('bartender');
+INSERT INTO roles (name) VALUES ('cook');
 
 INSERT INTO user_role (user_id, role_id) VALUES (1, 1);
 INSERT INTO user_role (user_id, role_id) VALUES (1, 2);
+INSERT INTO user_role (user_id, role_id) VALUES (1, 3);
+INSERT INTO user_role (user_id, role_id) VALUES (1, 4);
+INSERT INTO user_role (user_id, role_id) VALUES (1, 5);
 INSERT INTO user_role (user_id, role_id) VALUES (2, 1);
-INSERT INTO user_role (user_id, role_id) VALUES (2, 1);
+INSERT INTO user_role (user_id, role_id) VALUES (2, 2);
 INSERT INTO user_role (user_id, role_id) VALUES (3, 1);
+INSERT INTO user_role (user_id, role_id) VALUES (3, 2);
 INSERT INTO user_role (user_id, role_id) VALUES (4, 1);
-INSERT INTO user_role (user_id, role_id) VALUES (5, 1);
-INSERT INTO user_role (user_id, role_id) VALUES (6, 1);
-INSERT INTO user_role (user_id, role_id) VALUES (7, 1);
-INSERT INTO user_role (user_id, role_id) VALUES (8, 1);
-
-INSERT INTO workers (user_id, role) VALUES (1, 'CHECKOUT');
-INSERT INTO workers (user_id, role) VALUES (2, 'WAITER');
-INSERT INTO workers (user_id, role) VALUES (3, 'WAITER');
-INSERT INTO workers (user_id, role) VALUES (4, 'WAITER');
-INSERT INTO workers (user_id, role) VALUES (5, 'BARTENDER');
-INSERT INTO workers (user_id, role) VALUES (6, 'WAITER');
-INSERT INTO workers (user_id, role) VALUES (7, 'WAITER');
-INSERT INTO workers (user_id, role) VALUES (8, 'BARTENDER');
+INSERT INTO user_role (user_id, role_id) VALUES (4, 2);
+INSERT INTO user_role (user_id, role_id) VALUES (4, 3);
+INSERT INTO user_role (user_id, role_id) VALUES (5, 4);
+INSERT INTO user_role (user_id, role_id) VALUES (5, 5);
+INSERT INTO user_role (user_id, role_id) VALUES (6, 3);
+INSERT INTO user_role (user_id, role_id) VALUES (7, 3);
+INSERT INTO user_role (user_id, role_id) VALUES (8, 4);
 
 INSERT INTO master_tables (name, default_seats) VALUES ('1', 6);
 INSERT INTO master_tables (name, default_seats) VALUES ('2', 6);
