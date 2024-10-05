@@ -39,7 +39,8 @@ CREATE TABLE `table_master_table` (
 CREATE TABLE `events` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `name` varchar(255),
-  `date` date
+  `date` date,
+  `status` VARCHAR(255) NULL
 );
 
 CREATE TABLE `orders` (
