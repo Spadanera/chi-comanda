@@ -21,7 +21,10 @@ onBeforeMount(async () => {
 <template>
   <v-responsive class="border rounded" max-height="100%">
     <v-app>
-      <v-app-bar title="LOMP">
+      <v-app-bar>
+        <v-app-bar-title>
+          <RouterLink to="/">LOMP</RouterLink>
+        </v-app-bar-title>
         <v-spacer></v-spacer>
         <v-btn @click="axios.Logout()" v-if="userStore.isLoggedIn">
           LOG OUT

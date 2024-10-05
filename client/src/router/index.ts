@@ -25,8 +25,8 @@ const router = createRouter({
       component: () => import('../views/Waiter.vue')
     },
     {
-      path: '/bar-tender',
-      name: 'bar-tender',
+      path: '/bartender',
+      name: 'bartender',
       component: () => import('../views/BarTender.vue')
     },
     {
