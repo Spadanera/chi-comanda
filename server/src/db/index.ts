@@ -1,5 +1,6 @@
-import mysql, { ResultSetHeader, RowDataPacket } from 'mysql2';
+import mysql, { ResultSetHeader, RowDataPacket } from 'mysql2'
 import { DbUtils } from "../models"
+import { Audit } from "../../../models/src"
 
 const CONNECTION_PARAMS = {
     host: process.env.MYSQL_HOST,
@@ -98,5 +99,10 @@ export default class MySqlUtils implements DbUtils {
                 })
             })
         })
+    }
+
+    async trackAudit(audit: Audit): Promise<void> {
+        await this.execute("INSERT INTO audit (user_id, event_id, table_id, action, actionData, actionDateTime) VALUES (?, ?, ?, ?, ?, ?)"
+            , [audit.user_id, audit.event_id, audit.table_id, audit.action, audit.actionData, audit.actionDateTime])
     }
 }
