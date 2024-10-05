@@ -1,6 +1,6 @@
 # Ludo Project - Web App
 
-tbd
+App for handling order in a bar
 
 ## Run the application
 
