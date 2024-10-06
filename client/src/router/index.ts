@@ -15,33 +15,39 @@ const router = createRouter({
     {
       path: '/login',
       name: 'Login',
-      component: () => import('../views/Login.vue'),
+      component: () => import('@/views/Login.vue'),
       props: true
     },
     {
       path: '/admin',
       name: 'Admin',
-      component: () => import('../views/Admin.vue'),
+      component: () => import('@/views/Admin.vue'),
       props: true
     },
     {
       path: '/waiter',
       name: 'Waiter',
-      component: () => import('../views/Waiter.vue'),
+      component: () => import('@/views/Waiter.vue'),
       props: true
     },
     {
       path: '/bartender',
       name: 'Bartender',
-      component: () => import('../views/BarTender.vue'),
+      component: () => import('@/views/BarTender.vue'),
       props: true
     },
     {
       path: '/checkout',
       name: 'Checkout',
-      component: () => import('../views/Checkout.vue'),
+      component: () => import('@/views/Checkout.vue'),
       props: true
-    }
+    },
+    {
+      path: '/event/:event_id/order/:master_table_id/table/:table_id',
+      name: 'Waiter Order',
+      component: () => import('@/views/WaiterOrder.vue'),
+      props: true
+    },
   ]
 })
 

@@ -57,12 +57,13 @@ export const UserStore: StoreDefinition = defineStore('user', {
 })
 
 export const SnackbarStore: StoreDefinition = defineStore('snackbar', {
-    state: () => ({ show: false, text: '', timeout: 3000 }),
+    state: () => ({ enable: false, text: '', timeout: 3000, location: 'top' }),
     actions: {
-        showSnackBar(text: string, timeout: number = 3000) {
-            this.show = true
+        show(text: string, timeout: number = 3000, location: string = 'top') {
+            this.enable = true
             this.text = text
             this.timeout = timeout
+            this.location = location
         }
     },
 })

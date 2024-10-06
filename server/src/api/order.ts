@@ -24,11 +24,12 @@ export default class OrderAPI {
                     await this.database.execute('INSERT INTO table_master_table (table_id, master_table_id) VALUES (?, ?)', [order.table_id, order.master_table_id[i]], true)
                 }
             }
-            const order_id = await this.database.execute('INSERT INTO orders (event_id, table_id, worker_id) VALUES (?,?,?)', [order.event_id, order.table_id, order.worker_id], true)
+            const order_id = await this.database.execute('INSERT INTO orders (event_id, table_id) VALUES (?,?)', [order.event_id, order.table_id], true)
             if (order.items) {
                 for (let i = 0; i < order.items.length; i++) {
                     let item = order.items[i]
-                    await this.database.execute('INSERT INTO items (order_id, master_item_id, note) VALUES (?,?,?)', [order_id, item.master_item_id, item.note], true)
+                    await this.database.execute('INSERT INTO items (order_id, table_id, master_item_id, note) VALUES (?,?,?,?)'
+                        , [order_id, item.table_id, item.master_item_id, item.note], true)
                     console.log(7, i)
                 }
             }

@@ -9,7 +9,7 @@ export default class TableApi {
     }
 
     async getAvailableTable(eventId: number): Promise<MasterTable[]> {
-        return await this.database.query('SELECT * FROM AvailableTables WHERE event_id = ? OR event_id IS NULL ORDER BY event_id, master_table_name', [eventId])
+        return await this.database.query('SELECT * FROM AvailableTables WHERE event_id = ? OR event_id IS NULL ORDER BY table_name DESC, master_table_name', [eventId])
     }
 
     async getAll(): Promise<Table[]> {

@@ -1,3 +1,10 @@
 a {
     text-decoration: none;
 }
+
+.waiter-foooter {
+    position: fixed;
+    background-color: red;
+    bottom: 0;
+    width: 100%;
+}

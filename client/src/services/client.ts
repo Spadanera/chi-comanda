@@ -1,5 +1,5 @@
-import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
-import { type Repository, type User, type Event } from "../../../models/src"
+import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance } from 'axios'
+import { type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable } from "../../../models/src"
 import router from '@/router'
 import { UserStore, SnackbarStore, type IUser } from '@/stores'
 import type { StoreDefinition } from 'pinia'
@@ -29,7 +29,7 @@ export default class Axios {
                 } else {
                   // Show a generic error message
                   const snackbar = SnackbarStore()
-                  snackbar.showSnackBar("Si è verificare un errore")
+                  snackbar.show("Si è verificare un errore")
                 }
               }
               return Promise.reject(error)
@@ -39,7 +39,12 @@ export default class Axios {
         this.snackbarStoreDef = SnackbarStore
     }
 
-    private async get<T extends Repository>(path: string): Promise<T> {
+    private async get<T extends Repository>(path: string): Promise<T[]> {
+        const response: AxiosResponse<T[]> = await this.client.get<T[]>(path, this.config)
+        return response.data
+    }
+
+    private async getSingle<T extends Repository>(path: string): Promise<T> {
         const response: AxiosResponse<T> = await this.client.get<T>(path, this.config)
         return response.data
     }
@@ -50,12 +55,31 @@ export default class Axios {
     }
 
     async GetAllEvents(): Promise<Event[]> {
-        const response: AxiosResponse<Event[]> = await this.client.get<Event[]>("/events", this.config)
-        return response.data
+        return await this.get<Event>("/events")
+    }
+
+    async GetAvailableTables(event_id: number): Promise<Table[]> {
+        return await this.get<Table>(`/events/${event_id}/tables`)
+    }
+
+    async GetMasterTable(master_id: string): Promise<MasterTable> {
+        return await this.getSingle<MasterTable>(`/master-tables/${master_id}`)
+    }
+
+    async GetOnGoingEvent(): Promise<Event> {
+        return await this.getSingle<Event>("/events/ongoing")
+    }
+
+    async GetAllMasterItems(): Promise<MasterItem[]> {
+        return await this.get<MasterItem>("/master-items")
     }
 
     async CreateEvent(event: Event): Promise<Number> {
         return await this.post("/events", event)
+    }
+
+    async CreateOrder(order: Order) : Promise<Number> {
+        return await this.post("/orders", order)
     }
 
     async Login(email: string, password: string): Promise<void> {
@@ -70,7 +94,7 @@ export default class Axios {
         await this.client.post('/logout')
         this.userStoreDef().logout()
         router.push("/login")
-        this.snackbarStoreDef().showSnackBar("Logout effettuato con successo")
+        this.snackbarStoreDef().show("Logout effettuato con successo")
     }
 
     async CheckAuthentication(): Promise<IUser> {

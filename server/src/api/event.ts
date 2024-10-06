@@ -16,9 +16,17 @@ export default class EventAPI {
         return await this.database.query('SELECT * FROM events WHERE ID = ?', [id])
     }
 
+    async getOnGoing(): Promise<Event> {
+        try {
+            return await this.database.queryOne<Event>('SELECT * FROM events WHERE STATUS = ?', ["ONGOING"])
+        } catch (error) {
+            return {} as Event
+        }
+    }
+
     async create(event: Event): Promise<number> {
         return await this.database.executeTransaction(async () => {
-            const event_id = await this.database.execute('INSERT INTO events (name, date) VALUES (?,?)', [event.name, event.date])
+            const event_id = await this.database.execute('INSERT INTO events (name, date, status) VALUES (?,?,?)', [event.name, event.date, 'PLANNED'])
 
             if (event.workers) {
                 for (let i = 0; i < event.workers.length; i++) {

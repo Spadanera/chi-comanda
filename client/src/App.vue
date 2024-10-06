@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
-import Axios from './services/client'
+import Axios from '@/services/client'
 import { onMounted, ref } from 'vue'
 import router from '@/router'
 import { UserStore, SnackbarStore, IUser } from '@/stores'
@@ -21,7 +21,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <v-responsive class="border rounded" max-height="100%">
+  <v-responsive class="" max-height="100%">
     <v-app>
       <v-app-bar>
         <v-app-bar-title>
@@ -39,14 +39,12 @@ onMounted(async () => {
       </v-navigation-drawer> -->
 
       <v-main>
-        <v-container>
           <RouterView v-model="user" @reload="reloadUser" />
-        </v-container>
       </v-main>
-      <v-snackbar v-model="snackbarStore.show" :timeout="snackbarStore.timeout">
+      <v-snackbar v-model="snackbarStore.enable" :timeout="snackbarStore.timeout" :location="snackbarStore.location">
         {{ snackbarStore.text }}
         <template v-slot:actions>
-          <v-btn variant="text" @click="snackbarStore.show = false">
+          <v-btn variant="text" @click="snackbarStore.enable = false">
             Chiudi
           </v-btn>
         </template>

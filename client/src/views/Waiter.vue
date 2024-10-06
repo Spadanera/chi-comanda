@@ -1,9 +1,68 @@
 <script setup lang="ts">
+import { AvailableTable, Event } from "@models"
+import { ref, onMounted } from "vue"
+import Axios from '@/services/client'
 
+const tables = ref<AvailableTable[]>([])
+const availableTable = ref<AvailableTable[]>([])
+const activeTable = ref<AvailableTable[]>([])
+const event = ref<Event>({})
+const axios = new Axios()
+const loading = ref<boolean>(true)
+
+onMounted(async () => {
+  event.value = await axios.GetOnGoingEvent()
+  if (event.value.id) {
+    tables.value = await axios.GetAvailableTables(event.value.id)
+    availableTable.value = tables.value.filter(t => !t.event_id)
+    activeTable.value = tables.value.filter(t => t.event_id)
+    loading.value = false
+  } else {
+    loading.value = false
+  }
+})
 </script>
 
 <template>
   <main>
-    
+    <v-skeleton-loader v-if="loading" :loading="loading" type="card"></v-skeleton-loader>
+    <p v-if="!event.id && !loading">Nessun evento attivo</p>
+    <v-container v-else>
+      <v-row>
+        <v-col>
+          <h2>Tavoli attivi</h2>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col v-for="table in activeTable" cols="4">
+          <RouterLink :to="`/event/${event.id}/order/${table.master_table_id}/table/${table.table_id}`">
+            <v-card height="80px">
+              {{ table.master_table_name }}
+            </v-card>
+          </RouterLink>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col>
+          <h2>Tavoli Disponibili</h2>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col v-for="table in availableTable" cols="4">
+          <RouterLink :to="`/event/${event.id}/order/${table.master_table_id}/table/0`">
+            <v-card height="80px">
+              {{ table.master_table_name }}
+            </v-card>
+          </RouterLink>
+        </v-col>
+      </v-row>
+    </v-container>
   </main>
 </template>
+
+<style scoped>
+.v-card {
+  text-align: center;
+  font-size: xxx-large;
+}
+</style>

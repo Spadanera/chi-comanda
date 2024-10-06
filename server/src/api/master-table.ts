@@ -9,7 +9,7 @@ export default class MasterTableApi {
     }
 
     async getAll(): Promise<MasterTable[]> {
-        return await this.database.query('SELECT * FROM master_tables', [])
+        return await this.database.query('SELECT * FROM master_tables ORDER BY type, sub_type', [])
     }
 
     async getAllAvailable(): Promise<MasterTable[]> {

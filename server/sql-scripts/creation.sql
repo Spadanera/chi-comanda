@@ -122,4 +122,4 @@ ALTER TABLE `master_items` ADD FOREIGN KEY (`destination_id`) REFERENCES `destin
 
 ALTER TABLE `items` ADD FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`);
 
-ALTER TABLE `items` ADD FOREIGN KEY (`table_id`) REFERENCES `events` (`id`);
+ALTER TABLE `items` ADD FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`);

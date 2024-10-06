@@ -21,6 +21,17 @@ apiRouter.get("/events", async (req: Request, res: Response) => {
     }
 })
 
+apiRouter.get("/events/ongoing", async (req: Request, res: Response) => {
+    try {
+        const api = new EventAPI()
+        const result = await api.getOnGoing()
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
 apiRouter.get("/events/:id", async (req: Request, res: Response) => {
     try {
         const api = new EventAPI()
@@ -264,7 +275,7 @@ apiRouter.get("/master-items", async (req: Request, res: Response) => {
     try {
         const api = new MasterItemsApi()
         const result = await api.getAll()
-        res.status(200).json(result[0])
+        res.status(200).json(result)
     } catch (error) {
         console.log(error)
         res.status(500).json(error)
