@@ -94,10 +94,16 @@ app.use(express.static(path.join(__dirname, 'static')))
 
 const server = createServer(app)
 
-SocketIOService.instance().initialize(server)
+SocketIOService.instance().initialize(server, {
+    path: "/socket"
+})
 
 SocketIOService.instance().getServer().on('connection', function(socket) {
-    socket.on('room', function(room) {
+    socket.on('end', function(room) {
+        socket.disconnect()
+    });
+
+    socket.on('join', function(room) {
         socket.join(room);
     });
 });

@@ -22,7 +22,7 @@ export function sortItem(a: Item, b: Item): number {
     return 0
 }
 
-export function groupItemsInOrder(orderItems: Item[]): Item[] {
+export function groupItems(orderItems: Item[]): Item[] {
     if (orderItems) {
         return orderItems.reduce((a: Item[], i: Item) => {
             let found = a.find(_i => (i.master_item_id === _i.master_item_id && i.note === _i.note))

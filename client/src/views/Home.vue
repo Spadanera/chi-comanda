@@ -28,7 +28,7 @@ const roles = [
   },
   {
     title: 'Cucina',
-    route: "/bartender",
+    route: "/kitchen",
     text: "Preparazione piade e panini",
     role: "Cook"
   },

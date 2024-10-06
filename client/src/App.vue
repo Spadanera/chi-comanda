@@ -15,7 +15,8 @@ async function reloadUser() {
 }
 
 onMounted(async () => {
-  reloadUser()
+  await reloadUser()
+  router.push("/")
 })
 
 </script>
@@ -39,7 +40,7 @@ onMounted(async () => {
       </v-navigation-drawer> -->
 
       <v-main>
-          <RouterView v-model="user" @reload="reloadUser" />
+        <RouterView v-model="user" @reload="reloadUser" />
       </v-main>
       <v-snackbar v-model="snackbarStore.enable" :timeout="snackbarStore.timeout" :location="snackbarStore.location">
         {{ snackbarStore.text }}

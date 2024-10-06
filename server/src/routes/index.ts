@@ -81,16 +81,22 @@ apiRouter.delete("/events/:id", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.get("/events/:id/tables", async (req: Request, res: Response) => {
+apiRouter.get("/events/:id/tables/available", async (req: Request, res: Response) => {
     try {
         const api = new TableApi()
         const result = await api.getAvailableTable(+req.params.id)
-        if (result.length) {
-            res.status(200).json(result)
-        }
-        else {
-            res.status(400).json('Resource not found')
-        }
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.get("/events/:id/tables", async (req: Request, res: Response) => {
+    try {
+        const api = new TableApi()
+        const result = await api.getActiveTable(+req.params.id)
+        res.status(200).json(result)
     } catch (error) {
         console.log(error)
         res.status(500).json(error)
@@ -240,7 +246,7 @@ apiRouter.get("/orders/:id/items", async (req: Request, res: Response) => {
 apiRouter.put("/orders/:id/complete", async (req: Request, res: Response) => {
     try {
         const api = new OrderAPI()
-        const result = await api.completeOrder(+req.params.id)
+        const result = await api.completeOrder(+req.params.id, req.body as number[])
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -252,6 +258,17 @@ apiRouter.get("/tables/:id/items", async (req: Request, res: Response) => {
     try {
         const api = new ItemApi()
         const result = await api.getByTableId(+req.params.id)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.put("/tables/:id/complete", async (req: Request, res: Response) => {
+    try {
+        const api = new TableApi()
+        const result = await api.closeTable(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)

@@ -17,7 +17,6 @@ const credentials = ref({
 async function login() {
   await axios.Login(credentials.value.email, credentials.value.password)
   emit('reload')
-  router.push("/")
 }
 </script>
 

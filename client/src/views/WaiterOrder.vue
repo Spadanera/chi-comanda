@@ -4,7 +4,7 @@ import { ref, onMounted, computed } from "vue"
 import router from '@/router'
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
-import { groupItemsInOrder, copy } from "@/services/utils"
+import { groupItems, copy } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
 
 const axios = new Axios()
@@ -29,7 +29,7 @@ const foodTotal = computed(() => orderItems.value.filter(i => i.type === 'FOOD')
 const beverageTotal = computed(() => orderItems.value.filter(i => i.type === 'BEVERAGE').length)
 const computedItems = computed(() => master_items.value.filter(i => (filter.value === '' || filter.value === null || i.name.toLowerCase().indexOf(filter.value.toLowerCase()) > - 1)))
 const groupedOrderItems = computed(() => {
-  return groupItemsInOrder(orderItems.value)
+  return groupItems(orderItems.value)
 })
 
 function filterItems(sub_type) {
@@ -76,7 +76,8 @@ async function sendOrder() {
     event_id: parseInt(props.event_id),
     master_table_id: parseInt(props.master_table_id),
     table_id: parseInt(props.table_id),
-    items: orderItems.value
+    items: orderItems.value,
+    table_name: table_name.value
   })
   snackbarStore.show("Ordine inviato con successo")
   router.push('/waiter')
@@ -151,26 +152,28 @@ onMounted(async () => {
     </v-card>
   </v-dialog>
   <v-bottom-navigation :name="'outer-button-nav-bar'" elevation="24">
-    <v-btn value="cibo">
+    <RouterLink to="/waiter">
+      <v-btn density="compact" style="text-decoration: none">
+        <v-icon>mdi-arrow-left</v-icon>
+      </v-btn>
+    </RouterLink>
+    <v-btn density="compact" readonly>
       <v-icon>mdi-hamburger</v-icon>
-
       <span>{{ foodTotal }}</span>
     </v-btn>
-
-    <v-btn value="bevande">
+    <v-btn density="compact" readonly>
       <v-icon>mdi-beer</v-icon>
-
       <span>{{ beverageTotal }}</span>
     </v-btn>
-
-    <v-btn value="totale">
+    <v-btn density="compact" readonly>
       <v-icon>mdi-currency-eur</v-icon>
-
       <span>{{ orderTotal }}</span>
     </v-btn>
     <v-spacer></v-spacer>
-    <v-btn v-if="orderTotal > 0" style="font-size: x-large;" text="Rivedi" variant="plain"
-      @click="sheet = !sheet"></v-btn>
+    <v-btn v-show="orderTotal > 0"
+      @click="sheet = !sheet">
+      <v-icon>mdi-list-box</v-icon>
+    </v-btn>
   </v-bottom-navigation>
 </template>
 

@@ -10,6 +10,7 @@ import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import '@mdi/font/css/materialdesignicons.css'
 import 'vuetify/styles'
+import Confirm from './components/Confirm.vue'
 
 const vuetify = createVuetify({
     components,
@@ -25,5 +26,6 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 app.use(vuetify)
+app.component("Confirm", Confirm)
 
 app.mount('#app')

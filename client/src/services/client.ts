@@ -64,7 +64,7 @@ export default class Axios {
     }
 
     async GetAvailableTables(event_id: number): Promise<Table[]> {
-        return await this.get<Table>(`/events/${event_id}/tables`)
+        return await this.get<Table>(`/events/${event_id}/tables/available`)
     }
 
     async GetMasterTable(master_id: string): Promise<MasterTable> {
@@ -83,6 +83,10 @@ export default class Axios {
         return await this.get<Order>(`/orders/${event_id}/${destinations_ids}`)
     }
 
+    async GetTablesInEvent(event_id: number, destinations_ids: string): Promise<Order[]> {
+        return await this.get<Order>(`/events/${event_id}/tables`)
+    }
+
     async CreateEvent(event: Event): Promise<Number> {
         return await this.post("/events", event)
     }
@@ -95,8 +99,13 @@ export default class Axios {
         return await this.put("/items", item)
     }
 
-    async CompleteOrder(order_id: number): Promise<Number> {
-        const response: AxiosResponse<number> = await this.client.put(`/orders/${order_id}/complete`, {}, this.config)
+    async CompleteOrder(order_id: number, item_ids: number[]): Promise<Number> {
+        const response: AxiosResponse<number> = await this.client.put(`/orders/${order_id}/complete`, item_ids, this.config)
+        return response.data
+    }
+
+    async CompleteTable(table_id: number): Promise<Number> {
+        const response: AxiosResponse<number> = await this.client.put(`/tables/${table_id}/complete`, {}, this.config)
         return response.data
     }
 

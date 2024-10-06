@@ -43,7 +43,7 @@ const router = createRouter({
       name: 'Kitchen',
       component: () => import('@/views/BarTender.vue'),
       props: {
-        destinations: [3] 
+        destinations: '[3]'
       }
     },
     {

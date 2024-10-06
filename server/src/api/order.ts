@@ -1,5 +1,6 @@
 import DB from "../db"
-import { Order } from "../../../models/src"
+import { Item, Order } from "../../../models/src"
+import { SocketIOService } from "../socket"
 
 export default class OrderAPI {
     database: DB
@@ -38,7 +39,8 @@ export default class OrderAPI {
             INNER JOIN tables ON orders.table_id = tables.id
             INNER JOIN table_master_table ON table_master_table.table_id = tables.id
             INNER JOIN master_tables ON table_master_table.master_table_id = master_tables.id
-            WHERE orders.event_id = ?`, [destination_ids, event_id])
+            WHERE orders.event_id = ? AND IFNULL(done, false) = false
+            ORDER BY orders.id`, [destination_ids, event_id])
     }
 
     async get(id: number): Promise<Order[]> {
@@ -55,18 +57,29 @@ export default class OrderAPI {
             if (order.items) {
                 for (let i = 0; i < order.items.length; i++) {
                     let item = order.items[i]
-                    await this.database.execute('INSERT INTO items (order_id, table_id, master_item_id, note) VALUES (?,?,?,?)'
-                        , [order_id, item.table_id, item.master_item_id, item.note], true)
+                    order.items[i].id = await this.database.execute('INSERT INTO items (order_id, table_id, master_item_id, note) VALUES (?,?,?,?)'
+                        , [order_id, order.table_id, item.master_item_id, item.note], true)
                 }
             }
+            order.id = order_id
+            SocketIOService.instance().sendMessage({
+                room: "bar",
+                event: "new-order",
+                body: order
+            })
             return order_id
         })
     }
 
-    async completeOrder(order_id: number): Promise<number> {
+    async completeOrder(order_id: number, item_ids: number[]): Promise<number> {
         return await this.database.executeTransaction(async () => {
-            await this.database.execute('UPDATE items SET done = TRUE WHERE order_id = ?', [order_id], true)
-            return await this.database.execute('UPDATE orders SET done = TRUE WHERE id = ?', [order_id], true)
+            const result = await this.database.execute('UPDATE items SET done = TRUE WHERE order_id = ? AND id in (?)', [order_id, item_ids], true)
+            const items = await this.database.query<Item>("SELECT id FROM items WHERE order_id = ? AND IFNULL(done, false) = FALSE", order_id)
+            if (items.length === 0) {
+                await this.database.execute("UPDATE orders SET done = TRUE WHERE id = ?", [order_id], true)
+            }
+
+            return result
         })
     }
 
