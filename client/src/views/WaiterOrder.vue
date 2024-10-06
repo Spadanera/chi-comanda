@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Order, MasterItem, Item } from "@models"
+import { Order, MasterItem, Item, ItemTypes as types } from "../../../models/src"
 import { ref, onMounted, computed } from "vue"
 import router from '@/router'
 import Axios from '@/services/client'
@@ -18,14 +18,6 @@ const dialog = ref<boolean>(false)
 const dialogItem = ref<Item>({})
 const master_items = ref<MasterItem>([])
 const sheet = ref(false)
-const types = ref([
-  "SOFT-DRINK",
-  "COCKTAIL",
-  "BEER",
-  "SPIRIT",
-  "PIADINA",
-  "EXTRA"
-])
 const orderItems = ref<Item>([])
 const filter = ref<string>('')
 const table_name = ref<string>('')
@@ -49,6 +41,12 @@ const groupedOrderItems = computed(() => {
         return -1
       }
       if (a.type > b.type) {
+        return 1
+      }
+      if (a.sub_type < b.sub_type) {
+        return -1
+      }
+      if (a.sub_type > b.sub_type) {
         return 1
       }
       if (a.name < b.name) {
@@ -77,7 +75,7 @@ function addItemWithNote() {
   dialogItem.value.master_item_id = dialogItem.value.id
   orderItems.value.push(JSON.parse(JSON.stringify(dialogItem.value)))
   dialog.value = false
-  snackbarStore.show(`${dialogItem.value.name} aggiunto`, 2000, 'top')
+  snackbarStore.show(`${dialogItem.value.name} aggiunto`)
 }
 
 function changeItemQuantity(item, quantity) {
@@ -102,9 +100,9 @@ function openNoteDialog(item: Item) {
 
 async function sendOrder() {
   await axios.CreateOrder({
-    event_id: props.event_id,
-    master_table_id: props.master_table_id,
-    table_id: props.table_id,
+    event_id: parseInt(props.event_id),
+    master_table_id: parseInt(props.master_table_id),
+    table_id: parseInt(props.table_id),
     items: orderItems.value
   })
   snackbarStore.show("Ordine inviato con successo")
@@ -137,11 +135,11 @@ onMounted(async () => {
       </template>
     </v-list>
     <v-bottom-sheet v-model="sheet">
-      <v-card title="Ordine" style="padding-bottom: 50px">
+      <v-card :title="`Ordine Tavolo ${table_name}`" style="padding-bottom: 50px">
         <v-list>
-          <v-list-item :lines="item.note ? 'two' : 'one'" v-for="item in groupedOrderItems" :title="item.name">
+          <v-list-item :lines="item.note ? 'three' : 'one'" v-for="item in groupedOrderItems" :title="item.name">
             <v-list-item-subtitle>
-              {{ item.type }}<span v-if="item.note"> - {{ item.note }}</span>
+              {{ item.type }} - {{ item.sub_type }}<span v-if="item.note"> - {{ item.note }}</span>
             </v-list-item-subtitle>
             <template v-slot:append>
               <v-btn variant="plain" icon="mdi-minus" @click="changeItemQuantity(item, -1)"></v-btn>

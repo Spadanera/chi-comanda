@@ -20,9 +20,7 @@ export default class OrderAPI {
         return await this.database.executeTransaction(async () => {
             if (!order.table_id && order.master_table_id) {
                 order.table_id = await this.database.execute('INSERT INTO tables (name, event_id, status) VALUES (?, ?, ?)', [order.table_name, order.event_id, 'ACTIVE'], true)
-                for (let i = 0; i < order.master_table_id.length; i++) {
-                    await this.database.execute('INSERT INTO table_master_table (table_id, master_table_id) VALUES (?, ?)', [order.table_id, order.master_table_id[i]], true)
-                }
+                await this.database.execute('INSERT INTO table_master_table (table_id, master_table_id) VALUES (?, ?)', [order.table_id, order.master_table_id], true)
             }
             const order_id = await this.database.execute('INSERT INTO orders (event_id, table_id) VALUES (?,?)', [order.event_id, order.table_id], true)
             if (order.items) {
@@ -30,7 +28,6 @@ export default class OrderAPI {
                     let item = order.items[i]
                     await this.database.execute('INSERT INTO items (order_id, table_id, master_item_id, note) VALUES (?,?,?,?)'
                         , [order_id, item.table_id, item.master_item_id, item.note], true)
-                    console.log(7, i)
                 }
             }
             return order_id

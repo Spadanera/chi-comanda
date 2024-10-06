@@ -1,5 +1,15 @@
 import { RowDataPacket } from "mysql2"
 
+export const ItemTypes = [
+  "SOFT-DRINK",
+  "COCKTAIL",
+  "BEER",
+  "SPIRIT",
+  "PIADINA",
+  "EXTRA"
+]
+
+
 export enum Roles {
   Admin,
   Checkout,

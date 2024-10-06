@@ -29,7 +29,7 @@ export default class Axios {
                 } else {
                   // Show a generic error message
                   const snackbar = SnackbarStore()
-                  snackbar.show("Si è verificare un errore")
+                  snackbar.show("Si è verificare un errore", 3000, 'top')
                 }
               }
               return Promise.reject(error)
