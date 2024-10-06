@@ -1,5 +1,5 @@
 import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance } from 'axios'
-import { type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable } from "../../../models/src"
+import { type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item } from "../../../models/src"
 import router from '@/router'
 import { UserStore, SnackbarStore, type IUser } from '@/stores'
 import type { StoreDefinition } from 'pinia'
@@ -54,6 +54,11 @@ export default class Axios {
         return response.data
     }
 
+    private async put<T extends Repository>(path: string, body: T): Promise<number> {
+        const response: AxiosResponse<number> = await this.client.put(path, body, this.config)
+        return response.data
+    }
+
     async GetAllEvents(): Promise<Event[]> {
         return await this.get<Event>("/events")
     }
@@ -74,12 +79,25 @@ export default class Axios {
         return await this.get<MasterItem>("/master-items")
     }
 
+    async GetOrdersInEvent(event_id: number, destinations_ids: string): Promise<Order[]> {
+        return await this.get<Order>(`/orders/${event_id}/${destinations_ids}`)
+    }
+
     async CreateEvent(event: Event): Promise<Number> {
         return await this.post("/events", event)
     }
 
     async CreateOrder(order: Order) : Promise<Number> {
         return await this.post("/orders", order)
+    }
+
+    async UpdateItem(item: Item) : Promise<Number> {
+        return await this.put("/items", item)
+    }
+
+    async CompleteOrder(order_id: number): Promise<Number> {
+        const response: AxiosResponse<number> = await this.client.put(`/orders/${order_id}/complete`, {}, this.config)
+        return response.data
     }
 
     async Login(email: string, password: string): Promise<void> {

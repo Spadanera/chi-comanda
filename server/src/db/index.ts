@@ -64,9 +64,11 @@ export default class MySqlUtils implements DbUtils {
                 this.connect()
                 this.Connection?.query<ResultSetHeader>(query, values, (_err, res) => {
                     if (_err) {
+                        this.Connection?.destroy()
                         reject(_err)
                     }
                     else {
+                        this.Connection?.destroy()
                         resolve(res.insertId || res.affectedRows)
                     }
                 })
@@ -88,10 +90,12 @@ export default class MySqlUtils implements DbUtils {
                         this.Connection?.commit((_err) => {
                             if (_err) {
                                 this.Connection?.rollback(() => {
+                                    this.Connection?.destroy()
                                     reject(_err)
                                 })
                             }
                             else {
+                                this.Connection?.destroy()
                                 resolve(result)
                             }
                         })

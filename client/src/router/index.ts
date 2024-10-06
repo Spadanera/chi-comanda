@@ -34,7 +34,17 @@ const router = createRouter({
       path: '/bartender',
       name: 'Bartender',
       component: () => import('@/views/BarTender.vue'),
-      props: true
+      props: {
+        destinations: '[1, 2]'
+      }
+    },
+    {
+      path: '/kitchen',
+      name: 'Kitchen',
+      component: () => import('@/views/BarTender.vue'),
+      props: {
+        destinations: [3] 
+      }
     },
     {
       path: '/checkout',

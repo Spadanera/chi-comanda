@@ -6,6 +6,7 @@ export const ItemTypes = [
   "BEER",
   "SPIRIT",
   "PIADINA",
+  "PANINO",
   "EXTRA"
 ]
 

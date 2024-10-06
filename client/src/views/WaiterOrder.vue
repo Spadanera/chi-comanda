@@ -4,6 +4,8 @@ import { ref, onMounted, computed } from "vue"
 import router from '@/router'
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
+import { groupItemsInOrder, copy } from "@/services/utils"
+import ItemList from "@/components/ItemList.vue"
 
 const axios = new Axios()
 const user = defineModel<IUser>()
@@ -27,36 +29,7 @@ const foodTotal = computed(() => orderItems.value.filter(i => i.type === 'FOOD')
 const beverageTotal = computed(() => orderItems.value.filter(i => i.type === 'BEVERAGE').length)
 const computedItems = computed(() => master_items.value.filter(i => (filter.value === '' || filter.value === null || i.name.toLowerCase().indexOf(filter.value.toLowerCase()) > - 1)))
 const groupedOrderItems = computed(() => {
-  return orderItems.value.reduce((a, i) => {
-    let found = a.find(_i => (i.id === _i.id && i.note === _i.note))
-    if (found) {
-      found.quantity++
-    }
-    else {
-      i.quantity = 1
-      a.push(i)
-    }
-    return a.sort((a, b) => {
-      if (a.type < b.type) {
-        return -1
-      }
-      if (a.type > b.type) {
-        return 1
-      }
-      if (a.sub_type < b.sub_type) {
-        return -1
-      }
-      if (a.sub_type > b.sub_type) {
-        return 1
-      }
-      if (a.name < b.name) {
-        return -1
-      }
-      if (a.name > b.name) {
-        return 1
-      }
-    })
-  }, [])
+  return groupItemsInOrder(orderItems.value)
 })
 
 function filterItems(sub_type) {
@@ -66,14 +39,14 @@ function filterItems(sub_type) {
 function addItemToOrder(item: Item) {
   item.table_id = props.table_id
   item.master_item_id = item.id
-  orderItems.value.push(JSON.parse(JSON.stringify(item)))
+  orderItems.value.push(copy(item))
   snackbarStore.show(`${item.name} aggiunto`, 2000, 'top')
 }
 
 function addItemWithNote() {
   dialogItem.value.table_id = props.table_id
   dialogItem.value.master_item_id = dialogItem.value.id
-  orderItems.value.push(JSON.parse(JSON.stringify(dialogItem.value)))
+  orderItems.value.push(copy(dialogItem.value))
   dialog.value = false
   snackbarStore.show(`${dialogItem.value.name} aggiunto`)
 }
@@ -85,7 +58,7 @@ function changeItemQuantity(item, quantity) {
   }
   if (quantity === -1) {
     for (let i = 0; i < orderItems.value.length; i++) {
-      if (orderItems.value[i].id == item.id && orderItems.value[i].note === item.note) {
+      if (orderItems.value[i].master_item_id == item.master_item_id && orderItems.value[i].note === item.note) {
         orderItems.value.splice(i, 1);
         break;
       }
@@ -94,7 +67,7 @@ function changeItemQuantity(item, quantity) {
 }
 
 function openNoteDialog(item: Item) {
-  dialogItem.value = JSON.parse(JSON.stringify(item))
+  dialogItem.value = copy(item)
   dialog.value = true
 }
 
@@ -136,18 +109,14 @@ onMounted(async () => {
     </v-list>
     <v-bottom-sheet v-model="sheet">
       <v-card :title="`Ordine Tavolo ${table_name}`" style="padding-bottom: 50px">
-        <v-list>
-          <v-list-item :lines="item.note ? 'three' : 'one'" v-for="item in groupedOrderItems" :title="item.name">
-            <v-list-item-subtitle>
-              {{ item.type }} - {{ item.sub_type }}<span v-if="item.note"> - {{ item.note }}</span>
-            </v-list-item-subtitle>
-            <template v-slot:append>
-              <v-btn variant="plain" icon="mdi-minus" @click="changeItemQuantity(item, -1)"></v-btn>
-              <span>{{ item.quantity }}</span>
-              <v-btn variant="plain" icon="mdi-plus" @click="changeItemQuantity(item, 1)"></v-btn>
-            </template>
-          </v-list-item>
-        </v-list>
+        <ItemList :items="groupedOrderItems">
+          <template v-slot:prequantity>
+            <v-btn variant="plain" icon="mdi-minus" @click="changeItemQuantity(item, -1)"></v-btn>
+          </template>
+          <template v-slot:postquantity>
+            <v-btn variant="plain" icon="mdi-plus" @click="changeItemQuantity(item, 1)"></v-btn>
+          </template>
+        </ItemList>
       </v-card>
       <v-bottom-navigation :name="'inner-button-nav-bar'">
         <v-btn style="font-size: x-large;" text="Annulla" variant="plain" @click="sheet = !sheet"></v-btn>
@@ -200,7 +169,8 @@ onMounted(async () => {
       <span>{{ orderTotal }}</span>
     </v-btn>
     <v-spacer></v-spacer>
-    <v-btn v-if="orderTotal > 0" style="font-size: x-large;" text="Rivedi" variant="plain" @click="sheet = !sheet"></v-btn>
+    <v-btn v-if="orderTotal > 0" style="font-size: x-large;" text="Rivedi" variant="plain"
+      @click="sheet = !sheet"></v-btn>
   </v-bottom-navigation>
 </template>
 

@@ -170,10 +170,10 @@ apiRouter.post("/tables/:id/close", async (req: Request, res: Response) => {
 })
 
 // orders API
-apiRouter.get("/orders/:eventid", async (req: Request, res: Response) => {
+apiRouter.get("/orders/:eventid/:destinationsids", async (req: Request, res: Response) => {
     try {
         const api = new OrderAPI()
-        const result = await api.getAll(+req.params.eventid)
+        const result = await api.getAll(+req.params.eventid, JSON.parse(req.params.destinationsids))
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -237,6 +237,17 @@ apiRouter.get("/orders/:id/items", async (req: Request, res: Response) => {
     }
 })
 
+apiRouter.put("/orders/:id/complete", async (req: Request, res: Response) => {
+    try {
+        const api = new OrderAPI()
+        const result = await api.completeOrder(+req.params.id)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
 apiRouter.get("/tables/:id/items", async (req: Request, res: Response) => {
     try {
         const api = new ItemApi()
@@ -259,7 +270,7 @@ apiRouter.delete("/orders/:id/items/:itemid", async (req: Request, res: Response
     }
 })
 
-apiRouter.put("/items/:id", async (req: Request, res: Response) => {
+apiRouter.put("/items", async (req: Request, res: Response) => {
     try {
         const api = new ItemApi()
         const result = await api.update(req.body)

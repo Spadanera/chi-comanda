@@ -1,5 +1,5 @@
 import DB from "../db"
-import { Item, Order } from "../../../models/src"
+import { Order } from "../../../models/src"
 
 export default class OrderAPI {
     database: DB
@@ -8,8 +8,37 @@ export default class OrderAPI {
         this.database = new DB()
     }
 
-    async getAll(id: number): Promise<Order[]> {
-        return await this.database.query('SELECT * FROM orders WHERE event_id = ?', [id])
+    async getAll(event_id: number, destination_ids: number[]): Promise<Order[]> {
+        return await this.database.query(`
+            SELECT 
+                orders.id, 
+                orders.event_id,
+                orders.table_id, 
+                master_tables.name table_name,
+                master_tables.id master_table_id,
+                orders.done, 
+                (
+                    SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                        'id', items.id, 
+                        'master_item_id', master_items.id, 
+                        'note', items.note, 
+                        'name', master_items.name, 
+                        'type', master_items.type, 
+                        'sub_type', master_items.sub_type, 
+                        'price', master_items.price,
+                        'destination_id', master_items.destination_id,
+                        'done', items.done,
+                        'paid', items.paid
+                    )) 
+                    FROM items 
+                    INNER JOIN master_items ON master_items.id = items.master_item_id
+                    WHERE order_id = orders.id AND master_items.destination_id IN (?)
+                ) items
+            FROM orders 
+            INNER JOIN tables ON orders.table_id = tables.id
+            INNER JOIN table_master_table ON table_master_table.table_id = tables.id
+            INNER JOIN master_tables ON table_master_table.master_table_id = master_tables.id
+            WHERE orders.event_id = ?`, [destination_ids, event_id])
     }
 
     async get(id: number): Promise<Order[]> {
@@ -34,14 +63,17 @@ export default class OrderAPI {
         })
     }
 
-    async updateItems(item: Item, id: number): Promise<number> {
-        return await this.database.execute('UPDATE items SET done = ? WHERE order_id = ?', [item.done, id])
+    async completeOrder(order_id: number): Promise<number> {
+        return await this.database.executeTransaction(async () => {
+            await this.database.execute('UPDATE items SET done = TRUE WHERE order_id = ?', [order_id], true)
+            return await this.database.execute('UPDATE orders SET done = TRUE WHERE id = ?', [order_id], true)
+        })
     }
 
     async delete(id: number): Promise<number> {
         return await this.database.executeTransaction(async () => {
-            await this.database.execute('DELETE FROM items WHERE order_id = ?', [id])
-            return await this.database.execute('DELETE FROM orders WHERE id = ?', [id])
+            await this.database.execute('DELETE FROM items WHERE order_id = ?', [id], true)
+            return await this.database.execute('DELETE FROM orders WHERE id = ?', [id], true)
         })
     }
 
