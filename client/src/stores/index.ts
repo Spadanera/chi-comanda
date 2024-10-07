@@ -42,7 +42,6 @@ export const UserStore: StoreDefinition = defineStore('user', {
             this.isLoggedIn = isLoggedIn
         },
         login(user: IUser) {
-            console.log("stores", "login")
             this.setUser(user, true)
         },
         logout() {

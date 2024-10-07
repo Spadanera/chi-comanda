@@ -114,7 +114,7 @@ onMounted(async () => {
 
   is.on('connect', () => {
     console.log('a user connected')
-    is.emit('join', 'bar')
+    is.emit('join', 'cassa')
   })
 
   is.on('disconnect', () => {
@@ -125,9 +125,19 @@ onMounted(async () => {
     console.log('connect_error', err.message)
   })
 
-  is.on('new-item', (data) => {
-    tables.value.push(data)
-    snackbarStore.show("Nuovo ordine")
+  is.on('new-order', (data) => {
+    const table = tables.value.find(t => t.id === data.id)
+    if (table) {
+      data.items.forEach(item => {
+        if (!table.items.find(i => i.id === item.id)) {
+          table.items.push(item)
+        }
+      });
+    }
+    else {
+      tables.value.push(data)
+      snackbarStore.show("Nuovo tavolo")
+    }
   })
 })
 

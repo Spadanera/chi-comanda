@@ -12,7 +12,7 @@ export default class TableApi {
         return await this.database.query('SELECT * FROM AvailableTables WHERE event_id = ? OR event_id IS NULL ORDER BY table_name DESC, master_table_name', [eventId])
     }
 
-    async getActiveTable(eventId: number): Promise<MasterTable[]> {
+    async getActiveTable(eventId: number): Promise<Table[]> {
         return await this.database.query(`
             SELECT tables.id, master_tables.name, tables.paid, tables.status, master_tables.id master_table_id,
             (

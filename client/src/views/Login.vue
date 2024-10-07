@@ -15,7 +15,6 @@ const credentials = ref({
 })
 
 async function login() {
-  console.log("Login.vue", "login")
   await axios.Login(credentials.value.email, credentials.value.password)
   emit("login")
 }

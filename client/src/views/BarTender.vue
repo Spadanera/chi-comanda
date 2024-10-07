@@ -71,7 +71,11 @@ async function rollbackItem(item: Item) {
 }
 
 async function completeOrder() {
-  await axios.CompleteOrder(selectedOrder.value[0].id, selectedOrder.value[0].items.map(i => i.id))
+  await axios.CompleteOrder(selectedOrder.value[0].id, {
+    event_id: event.value.id,
+    table_id: selectedOrder.value[0].table_id,
+    item_ids: selectedOrder.value[0].items.map(i => i.id)
+  })
   confirm.value = false
   await getOrders()
   if (ordersToDo.value.length) {

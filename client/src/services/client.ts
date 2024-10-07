@@ -1,5 +1,5 @@
 import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance } from 'axios'
-import { type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item } from "../../../models/src"
+import { type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput } from "../../../models/src"
 import router from '@/router'
 import { UserStore, SnackbarStore, type IUser } from '@/stores'
 import type { StoreDefinition } from 'pinia'
@@ -99,8 +99,8 @@ export default class Axios {
         return await this.put("/items", item)
     }
 
-    async CompleteOrder(order_id: number, item_ids: number[]): Promise<Number> {
-        const response: AxiosResponse<number> = await this.client.put(`/orders/${order_id}/complete`, item_ids, this.config)
+    async CompleteOrder(order_id: number, input: CompleteOrderInput): Promise<Number> {
+        const response: AxiosResponse<number> = await this.client.put(`/orders/${order_id}/complete`, input, this.config)
         return response.data
     }
 
@@ -110,7 +110,6 @@ export default class Axios {
     }
 
     async Login(email: string, password: string): Promise<void> {
-        console.log("client", "login")
         const user = (await this.client.post<User>("/login", {
             email: email,
             password: password

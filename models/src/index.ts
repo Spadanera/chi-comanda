@@ -10,6 +10,12 @@ export const ItemTypes = [
   "EXTRA"
 ]
 
+export interface CompleteOrderInput {
+  event_id: number,
+  table_id: number,
+  item_ids: number
+}
+
 
 export enum Roles {
   Admin,

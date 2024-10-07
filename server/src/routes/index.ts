@@ -5,7 +5,7 @@ import TableApi from "../api/table"
 import ItemApi from "../api/item"
 import MasterItemsApi from "../api/master-item"
 import MasterTableApi from "../api/master-table"
-
+import { CompleteOrderInput } from "../../../models/src"
 
 const apiRouter: Router = router()
 
@@ -243,10 +243,10 @@ apiRouter.get("/orders/:id/items", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.put("/orders/:id/complete", async (req: Request, res: Response) => {
+apiRouter.put("/orders/:order_id/complete", async (req: Request, res: Response) => {
     try {
         const api = new OrderAPI()
-        const result = await api.completeOrder(+req.params.id, req.body as number[])
+        const result = await api.completeOrder(+req.params.order_id, req.body as CompleteOrderInput)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)

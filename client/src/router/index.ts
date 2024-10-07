@@ -62,7 +62,6 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
-  console.log("router", "beforeEach")
   const userStore = UserStore()
   const user = await userStore.checkAuthentication()
   next()
