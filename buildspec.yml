@@ -1,0 +1,17 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: latest
+    commands:
+      - npm run build
+
+  build:
+    commands:
+      - npm run build  # Build your application (if needed)
+
+artifacts:
+  base-directory: server/dist  # Specify the subfolder as the artifact root
+  files:
+    - '**/*'
