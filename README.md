@@ -29,4 +29,3 @@ There are 4 services defined in docker compose:
 3. server-database: MySql image
 4. proxy: nginx image that works as proxy between client and server
 
-test
