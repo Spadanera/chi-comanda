@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { Order, MasterItem, Item, ItemTypes as types } from "../../../models/src"
+import { type Order, type MasterItem, type Item, ItemTypes as types } from "../../../models/src"
 import { ref, onMounted, computed } from "vue"
 import router from '@/router'
 import Axios from '@/services/client'
-import { SnackbarStore } from '@/stores'
+import { SnackbarStore, type IUser } from '@/stores'
 import { groupItems, copy } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
 
 const axios = new Axios()
 const user = defineModel<IUser>()
-const snackbarStore = new SnackbarStore()
+const snackbarStore = SnackbarStore()
 
 const emit = defineEmits(['reload'])
 
@@ -17,29 +17,29 @@ const props = defineProps(['event_id', 'table_id', 'master_table_id'])
 
 const loading = ref<boolean>(true)
 const dialog = ref<boolean>(false)
-const dialogItem = ref<Item>({})
-const master_items = ref<MasterItem>([])
+const dialogItem = ref<Item>()
+const master_items = ref<MasterItem[]>([])
 const sheet = ref(false)
-const orderItems = ref<Item>([])
+const orderItems = ref<Item[]>([])
 const filter = ref<string>('')
 const table_name = ref<string>('')
 
-const orderTotal = computed(() => orderItems.value.reduce((a, v) => a += v.price, 0))
-const foodTotal = computed(() => orderItems.value.filter(i => i.type === 'FOOD').length)
-const beverageTotal = computed(() => orderItems.value.filter(i => i.type === 'BEVERAGE').length)
-const computedItems = computed(() => master_items.value.filter(i => (filter.value === '' || filter.value === null || i.name.toLowerCase().indexOf(filter.value.toLowerCase()) > - 1)))
+const orderTotal = computed(() => orderItems.value.reduce((a:number, i:Item) => a += i.price, 0))
+const foodTotal = computed(() => orderItems.value.filter((i:Item) => i.type === 'FOOD').length)
+const beverageTotal = computed(() => orderItems.value.filter((i:Item) => i.type === 'BEVERAGE').length)
+const computedItems = computed(() => master_items.value.filter((i:Item) => (filter.value === '' || filter.value === null || i.name.toLowerCase().indexOf(filter.value.toLowerCase()) > - 1)))
 const groupedOrderItems = computed(() => {
   return groupItems(orderItems.value)
 })
 
-function filterItems(sub_type) {
-  return computedItems.value.filter(i => i.sub_type === sub_type)
+function filterItems(sub_type: string) {
+  return computedItems.value.filter((i:Item) => i.sub_type === sub_type)
 }
 
 function addItemToOrder(item: Item) {
   item.table_id = props.table_id
   item.master_item_id = item.id
-  orderItems.value.push(copy(item))
+  orderItems.value.push(copy<Item>(item))
   snackbarStore.show(`${item.name} aggiunto`, 2000, 'top')
 }
 
@@ -51,7 +51,7 @@ function addItemWithNote() {
   snackbarStore.show(`${dialogItem.value.name} aggiunto`)
 }
 
-function changeItemQuantity(item, quantity) {
+function changeItemQuantity(item: Item, quantity: number) {
   if (quantity === 1) {
     delete item.quantity
     orderItems.value.push(item)
@@ -67,7 +67,7 @@ function changeItemQuantity(item, quantity) {
 }
 
 function openNoteDialog(item: Item) {
-  dialogItem.value = copy(item)
+  dialogItem.value = copy<Item>(item)
   dialog.value = true
 }
 
@@ -78,7 +78,7 @@ async function sendOrder() {
     table_id: parseInt(props.table_id),
     items: orderItems.value,
     table_name: table_name.value
-  })
+  } as Order)
   snackbarStore.show("Ordine inviato con successo")
   router.push('/waiter')
 }
@@ -114,11 +114,11 @@ onMounted(async () => {
     <v-bottom-sheet v-model="sheet">
       <v-card :title="`Ordine Tavolo ${table_name}`" style="padding-bottom: 50px">
         <ItemList :items="groupedOrderItems">
-          <template v-slot:prequantity>
-            <v-btn variant="plain" icon="mdi-minus" @click="changeItemQuantity(item, -1)"></v-btn>
+          <template v-slot:prequantity="slotProps">
+            <v-btn variant="plain" icon="mdi-minus" @click="changeItemQuantity(slotProps.item, -1)"></v-btn>
           </template>
-          <template v-slot:postquantity>
-            <v-btn variant="plain" icon="mdi-plus" @click="changeItemQuantity(item, 1)"></v-btn>
+          <template v-slot:postquantity="slotProps">
+            <v-btn variant="plain" icon="mdi-plus" @click="changeItemQuantity(slotProps.item, 1)"></v-btn>
           </template>
         </ItemList>
       </v-card>

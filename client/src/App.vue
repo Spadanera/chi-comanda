@@ -3,7 +3,7 @@ import { RouterLink, RouterView } from 'vue-router'
 import Axios from '@/services/client'
 import { onMounted, ref, onBeforeMount } from 'vue'
 import router from '@/router'
-import { UserStore, SnackbarStore, IUser } from '@/stores'
+import { UserStore, SnackbarStore, type IUser } from '@/stores'
 
 const axios: Axios = new Axios()
 const userStore = UserStore()

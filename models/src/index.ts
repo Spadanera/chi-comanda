@@ -13,7 +13,7 @@ export const ItemTypes = [
 export interface CompleteOrderInput {
   event_id: number,
   table_id: number,
-  item_ids: number
+  item_ids: number[]
 }
 
 
@@ -68,8 +68,8 @@ export interface AvailableTable extends Repository {
   table_name?: string
   master_table_id?: number
   master_table_name?: string
-  default_seats: number
-  event_id: number
+  default_seats?: number
+  event_id?: number
 }
 
 export interface Order extends Repository {
@@ -77,9 +77,11 @@ export interface Order extends Repository {
   event_id?: number
   table_id?: number
   table_name?: string
-  master_table_id?: number[]
+  master_table_id?: number
   done?: boolean
   items?: Item[]
+  itemsToDo?: Item[]
+  itemsDone?: Item[]
 }
 
 export interface Item extends Repository {

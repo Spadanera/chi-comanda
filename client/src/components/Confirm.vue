@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const dialog = defineModel()
+const dialog = defineModel({ default: false })
 </script>
 
 <template>

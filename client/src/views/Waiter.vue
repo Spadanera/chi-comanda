@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { AvailableTable, Event } from "@models"
+import { type AvailableTable, type Event } from "../../../models/src"
 import { ref, onMounted } from "vue"
 import Axios from '@/services/client'
 
 const tables = ref<AvailableTable[]>([])
 const availableTable = ref<AvailableTable[]>([])
 const activeTable = ref<AvailableTable[]>([])
-const event = ref<Event>({})
+const event = ref<Event>()
 const axios = new Axios()
 const loading = ref<boolean>(true)
 
@@ -26,7 +26,7 @@ onMounted(async () => {
 <template>
   <main>
     <v-skeleton-loader v-if="loading" :loading="loading" type="card"></v-skeleton-loader>
-    <p v-if="!event.id && !loading">Nessun evento attivo</p>
+    <p v-if="!event?.id && !loading">Nessun evento attivo</p>
     <v-container v-else>
       <v-row>
         <v-col>
@@ -35,7 +35,7 @@ onMounted(async () => {
       </v-row>
       <v-row>
         <v-col v-for="table in activeTable" cols="4">
-          <RouterLink :to="`/event/${event.id}/order/${table.master_table_id}/table/${table.table_id}`">
+          <RouterLink :to="`/event/${event?.id}/order/${table?.master_table_id}/table/${table.table_id}`">
             <v-card height="80px">
               {{ table.master_table_name }}
             </v-card>
@@ -49,7 +49,7 @@ onMounted(async () => {
       </v-row>
       <v-row>
         <v-col v-for="table in availableTable" cols="4">
-          <RouterLink :to="`/event/${event.id}/order/${table.master_table_id}/table/0`">
+          <RouterLink :to="`/event/${event?.id}/order/${table?.master_table_id}/table/0`">
             <v-card height="80px">
               {{ table.master_table_name }}
             </v-card>

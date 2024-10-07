@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { Event, Order, MasterItem, Item, ItemTypes as types } from "../../../models/src"
+import { type Event, type Order, type MasterItem, type Item, ItemTypes as types } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import router from '@/router'
 import Axios from '@/services/client'
-import { SnackbarStore } from '@/stores'
+import { SnackbarStore, type IUser } from '@/stores'
 import { sortItem, groupItems, copy, getIcon } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
 import { io } from 'socket.io-client'
 
 const axios = new Axios()
-var is
+var is: any
 const user = defineModel<IUser>()
-const snackbarStore = new SnackbarStore()
+const snackbarStore = SnackbarStore()
 
 const emit = defineEmits(['reload'])
 
@@ -19,7 +19,7 @@ const props = defineProps(['destinations'])
 
 const loading = ref<boolean>(true)
 const sheet = ref(false)
-const event = ref<Event>({})
+const event = ref<Event>()
 const orders = ref<Order[]>([])
 const selectedOrder = ref<Order[]>([])
 const confirm = ref<boolean>(false)
@@ -27,20 +27,20 @@ const drawer = ref<boolean>()
 
 const ordersToDo = computed(() => orders.value.filter(o => !o.done && o.items && o.items.length))
 const computedSelectedOrder = computed(() => {
-  let result = copy(selectedOrder.value.length ? selectedOrder.value[0] : { items: [] })
+  let result = copy<Order>((selectedOrder.value.length ? selectedOrder.value[0] : { items: [] }) as Order)
   if (!result.items) {
     result.items = []
   }
-  result.itemsToDo = groupItems(result.items.filter(i => !i.done))
-  result.itemsDone = groupItems(result.items.filter(i => i.done))
+  result.itemsToDo = groupItems(result.items.filter((i:Item) => !i.done))
+  result.itemsDone = groupItems(result.items.filter((i:Item) => i.done))
   return result
 })
 const subTypesCount = computed(() => {
-  let result = []
-  types.forEach(type => {
-    let count = getSubTypeCount(selectedOrder.value[0], type)
+  let result:any = []
+  types.forEach(t => {
+    let count = getSubTypeCount(selectedOrder.value[0], [t])
     if (count > 0) result.push({
-      type,
+      t,
       count
     })
   })
@@ -49,7 +49,7 @@ const subTypesCount = computed(() => {
 
 function getSubTypeCount(order: Order, subtype: string[]) {
   if (order && order.items) {
-    return order.items.reduce((a, i) => a += subtype.includes(i.sub_type) ? 1 : 0, 0)
+    return order.items.reduce((a: number, i:Item) => a += subtype.includes(i.sub_type) ? 1 : 0, 0)
   }
   return 0
 }
@@ -57,7 +57,7 @@ function getSubTypeCount(order: Order, subtype: string[]) {
 async function doneItem(item: Item) {
   item.done = true
   await axios.UpdateItem(item)
-  selectedOrder.value[0].items.find(i => i.master_item_id === item.master_item_id && i.note === item.note && !i.done).done = true
+  selectedOrder.value[0].items.find((i:Item) => i.master_item_id === item.master_item_id && i.note === item.note && !i.done).done = true
 
   if (computedSelectedOrder.value.itemsToDo.length === 0) {
     completeOrder()
@@ -67,14 +67,16 @@ async function doneItem(item: Item) {
 async function rollbackItem(item: Item) {
   item.done = false
   await axios.UpdateItem(item)
-  selectedOrder.value[0].items.find(i => i.master_item_id === item.master_item_id && i.note === item.note && i.done).done = false
+  if (selectedOrder && selectedOrder.value && selectedOrder.value.length) {
+    selectedOrder.value[0].items.find((i:Item) => i.master_item_id === item.master_item_id && i.note === item.note && i.done).done = false
+  }
 }
 
 async function completeOrder() {
-  await axios.CompleteOrder(selectedOrder.value[0].id, {
-    event_id: event.value.id,
-    table_id: selectedOrder.value[0].table_id,
-    item_ids: selectedOrder.value[0].items.map(i => i.id)
+  await axios.CompleteOrder(selectedOrder.value[0].id || 0, {
+    event_id: event.value?.id || 0,
+    table_id: selectedOrder.value[0].table_id || 0,
+    item_ids: selectedOrder.value[0].items.map(i => i.id) || []
   })
   confirm.value = false
   await getOrders()
@@ -88,7 +90,7 @@ async function completeOrder() {
 }
 
 async function getOrders() {
-  orders.value = await axios.GetOrdersInEvent(event.value.id, props.destinations)
+  orders.value = await axios.GetOrdersInEvent(event.value?.id || 0, props.destinations)
   if (ordersToDo.value.length) {
     selectedOrder.value = [ordersToDo.value[0]]
   }
@@ -115,11 +117,11 @@ onMounted(async () => {
     console.log('user disconnected')
   })
 
-  is.on('connect_error', (err) => {
+  is.on('connect_error', (err:any) => {
     console.log('connect_error', err.message)
   })
 
-  is.on('new-order', (data) => {
+  is.on('new-order', (data:Order) => {
     orders.value.push(data)
     snackbarStore.show("Nuovo ordine")
   })
@@ -139,8 +141,8 @@ onBeforeUnmount(() => {
           Tavolo {{ order.table_name }}
         </v-list-item-title>
         <template v-for="type in types">
-          <v-btn readonly size="small" density="compact" variant="plain" v-if="getSubTypeCount(order, type) > 0">
-            <v-icon>{{ getIcon(type) }}</v-icon> {{ getSubTypeCount(order, type) }}
+          <v-btn readonly size="small" density="compact" variant="plain" v-if="getSubTypeCount(order, [type]) > 0">
+            <v-icon>{{ getIcon(type) }}</v-icon> {{ getSubTypeCount(order, [type]) }}
           </v-btn>
         </template>
       </v-list-item>

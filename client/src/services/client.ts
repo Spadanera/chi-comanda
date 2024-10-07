@@ -1,5 +1,5 @@
 import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance } from 'axios'
-import { type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput } from "../../../models/src"
+import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput } from "../../../models/src"
 import router from '@/router'
 import { UserStore, SnackbarStore, type IUser } from '@/stores'
 import type { StoreDefinition } from 'pinia'
@@ -63,8 +63,8 @@ export default class Axios {
         return await this.get<Event>("/events")
     }
 
-    async GetAvailableTables(event_id: number): Promise<Table[]> {
-        return await this.get<Table>(`/events/${event_id}/tables/available`)
+    async GetAvailableTables(event_id: number): Promise<AvailableTable[]> {
+        return await this.get<AvailableTable>(`/events/${event_id}/tables/available`)
     }
 
     async GetMasterTable(master_id: string): Promise<MasterTable> {
@@ -83,8 +83,8 @@ export default class Axios {
         return await this.get<Order>(`/orders/${event_id}/${destinations_ids}`)
     }
 
-    async GetTablesInEvent(event_id: number, destinations_ids: string): Promise<Order[]> {
-        return await this.get<Order>(`/events/${event_id}/tables`)
+    async GetTablesInEvent(event_id: number): Promise<Table[]> {
+        return await this.get<Table>(`/events/${event_id}/tables`)
     }
 
     async CreateEvent(event: Event): Promise<Number> {

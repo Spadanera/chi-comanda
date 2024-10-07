@@ -1,44 +1,44 @@
 <script setup lang="ts">
-import { Event, Table, MasterItem, Item, ItemTypes as types } from "../../../models/src"
+import { type Event, type Table, type MasterItem, type Item, ItemTypes as types } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import router from '@/router'
 import Axios from '@/services/client'
-import { SnackbarStore } from '@/stores'
+import { SnackbarStore, type IUser } from '@/stores'
 import { sortItem, groupItems, copy, getIcon } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
 import { io } from 'socket.io-client'
 
 const axios = new Axios()
-var is
+var is:any
 const user = defineModel<IUser>()
-const snackbarStore = new SnackbarStore()
+const snackbarStore = SnackbarStore()
 
 const emit = defineEmits(['reload'])
 
 const loading = ref<boolean>(true)
 const sheet = ref(false)
-const event = ref<Event>({})
+const event = ref<Event>()
 const tables = ref<Table[]>([])
 const selectedTable = ref<Table[]>([])
 const confirm = ref<boolean>(false)
 const confirm2 = ref<boolean>(false)
-const drawer = ref<boolean>()
+const drawer = ref<boolean>(false)
 const itemToBePaid = ref<number[]>([])
 
-const tablesToDo = computed(() => tables.value.filter(o => !o.paid && o.items && o.items.length))
+const tablesToDo = computed(() => tables.value.filter((o:Table) => !o.paid && o.items && o.items.length))
 const computedSelectedTable = computed(() => {
-  let result = copy(selectedTable.value.length ? selectedTable.value[0] : { items: [] })
+  let result = copy<Table>((selectedTable.value.length ? selectedTable.value[0] : { items: [] }) as Table)
   if (!result.items) {
     result.items = []
   }
-  result.itemsToDo = result.items.filter(i => !i.paid)
-  result.itemsDone = result.items.filter(i => i.paid)
+  result.itemsToDo = result.items.filter((i:Item) => !i.paid)
+  result.itemsDone = result.items.filter((i:Item) => i.paid)
   return result
 })
 const subTypesCount = computed(() => {
-  let result = []
+  let result:any[] = []
   types.forEach(type => {
-    let count = getSubTypeCount(selectedTable.value[0], type)
+    let count = getSubTypeCount(selectedTable.value[0], [type])
     if (count > 0) result.push({
       type,
       count
@@ -48,22 +48,22 @@ const subTypesCount = computed(() => {
 })
 const tableTotalOrder = computed(() => {
   if (computedSelectedTable.value.items) {
-    return computedSelectedTable.value.items.reduce((a, i) => a += i.price, 0)
+    return computedSelectedTable.value.items.reduce((a:number, i:Item) => a += i.price, 0)
   }
   else return 0
 })
 const tableTotalOrderPaid = computed(() => {
   if (computedSelectedTable.value.items) {
-    return computedSelectedTable.value.items.reduce((a, i) => a += i.paid ? i.price : 0, 0)
+    return computedSelectedTable.value.items.reduce((a:number, i:Item) => a += i.paid ? i.price : 0, 0)
   }
   else return 0
 })
 
-const itemToBePaidBill = computed(() => selectedTable.value[0].items.filter(i => itemToBePaid.value.includes(i.id)).reduce((a, i) => a += i.price, 0))
+const itemToBePaidBill = computed(() => selectedTable.value[0].items.filter((i:Item) => itemToBePaid.value.includes(i.id || 0)).reduce((a:number, i:Item) => a += i.price, 0))
 
 function getSubTypeCount(table: Table, subtype: string[]) {
   if (table && table.items) {
-    return table.items.reduce((a, i) => a += subtype.includes(i.sub_type) ? 1 : 0, 0)
+    return table.items.reduce((a:number, i:Item) => a += subtype.includes(i.sub_type) ? 1 : 0, 0)
   }
   return 0
 }
@@ -71,9 +71,9 @@ function getSubTypeCount(table: Table, subtype: string[]) {
 async function doneItem(item: Item) {
   item.paid = true
   await axios.UpdateItem(item)
-  selectedTable.value[0].items.find(i => i.master_item_id === item.master_item_id && i.note === item.note && !i.paid).paid = true
+  selectedTable.value[0].items.find((i:Item) => i.master_item_id === item.master_item_id && i.note === item.note && !i.paid).paid = true
 
-  if (computedSelectedTable.value.itemsToDo.length === 0) {
+  if (computedSelectedTable.value.itemsToDo?.length === 0) {
     completeTable()
   }
 }
@@ -81,7 +81,7 @@ async function doneItem(item: Item) {
 async function rollbackItem(item: Item) {
   item.paid = false
   await axios.UpdateItem(item)
-  selectedTable.value[0].items.find(i => i.master_item_id === item.master_item_id && i.note === item.note && i.paid).paid = false
+  selectedTable.value[0].items.find((i:Item) => i.master_item_id === item.master_item_id && i.note === item.note && i.paid).paid = false
 }
 
 async function completeTable() {
@@ -102,7 +102,7 @@ async function paySelectedItem() {
     await axios.PaySelectedItem(selectedTable.value[0].id, itemToBePaid.value)
     console.log(itemToBePaid.value, selectedTable.value[0].items)
     itemToBePaid.value.forEach(i => {
-      selectedTable.value[0].items.find(_i => _i.id === i).paid = true
+      selectedTable.value[0].items.find((_i:Item) => _i.id === i).paid = true
     });
     itemToBePaid.value = []
   }
@@ -113,7 +113,7 @@ async function paySelectedItem() {
 }
 
 async function getTables() {
-  tables.value = await axios.GetTablesInEvent(event.value.id)
+  tables.value = await axios.GetTablesInEvent(event.value?.id || 0)
   if (tablesToDo.value.length) {
     selectedTable.value = [tablesToDo.value[0]]
   }
@@ -140,15 +140,15 @@ onMounted(async () => {
     console.log('user disconnected')
   })
 
-  is.on('connect_error', (err) => {
+  is.on('connect_error', (err:any) => {
     console.log('connect_error', err.message)
   })
 
-  is.on('new-order', (data) => {
-    const table = tables.value.find(t => t.id === data.id)
+  is.on('new-order', (data:Table) => {
+    const table = tables.value.find((t:Table) => t.id === data.id)
     if (table) {
-      data.items.forEach(item => {
-        if (!table.items.find(i => i.id === item.id)) {
+      data.items.forEach((item:Item) => {
+        if (!table.items.find((i:Item) => i.id === item.id)) {
           table.items.push(item)
         }
       });
@@ -174,8 +174,8 @@ onBeforeUnmount(() => {
           Tavolo {{ table.table_name }}
         </v-list-item-title>
         <template v-for="type in types">
-          <v-btn readonly size="small" density="compact" variant="plain" v-if="getSubTypeCount(table, type) > 0">
-            <v-icon>{{ getIcon(type) }}</v-icon> {{ getSubTypeCount(table, type) }}
+          <v-btn readonly size="small" density="compact" variant="plain" v-if="getSubTypeCount(table, [type]) > 0">
+            <v-icon>{{ getIcon(type) }}</v-icon> {{ getSubTypeCount(table, [type]) }}
           </v-btn>
         </template>
       </v-list-item>

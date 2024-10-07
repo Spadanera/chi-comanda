@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, onBeforeMount } from 'vue';
-import { UserStore, IUser } from '@/stores'
-const roles = [
+import { UserStore, type IUser } from '@/stores'
+
+interface Role {
+  title: string
+  route: string
+  text: string
+  role: string
+}
+
+const roles:Role[] = [
   {
     title: 'Amministrazione',
     route: "/admin",
@@ -39,7 +47,7 @@ const emit = defineEmits(['reload'])
 const user = defineModel<IUser>()
 
 const filteredRole = computed(() => {
-  return roles.filter(r => user.value.roles?.includes(r.role))
+  return roles.filter(r => user.value?.roles?.includes(r.role))
 })
 
 onBeforeMount(() =>
