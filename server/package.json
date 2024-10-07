@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev --poll ./src/index.ts",
-    "build": "rimraf ./dist && tsc",
+    "build": "rimraf ./dist && tsc --build",
     "start": "npm run build && node dist/index.js",
     "version": "tsc -v"
   },
