@@ -109,6 +109,10 @@ export default class Axios {
         return response.data
     }
 
+    async PaySelectedItem(table_id: number, item_ids: number[]) {
+        const response: AxiosResponse<number> = await this.client.put(`/tables/${table_id}/payitems`, item_ids, this.config)
+    }
+
     async Login(email: string, password: string): Promise<void> {
         const user = (await this.client.post<User>("/login", {
             email: email,

@@ -78,4 +78,8 @@ export default class TableApi {
             return await this.database.execute('UPDATE tables SET status = "CLOSED", paid = TRUE WHERE id = ?', [table_id], true)
         })
     }
+
+    async paySelectedItem(table_id: number, item_ids: number[]): Promise<number> {
+        return await this.database.execute('UPDATE items SET paid = TRUE WHERE table_id = ? AND id IN (?)', [table_id, item_ids])
+    }
 }

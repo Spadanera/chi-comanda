@@ -153,6 +153,17 @@ apiRouter.put("/tables/:id", async (req: Request, res: Response) => {
     }
 })
 
+apiRouter.put("/tables/:id/payitems", async (req: Request, res: Response) => {
+    try {
+        const api = new TableApi()
+        const result = await api.paySelectedItem(+req.params.id, req.body as number[])
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
 apiRouter.delete("/tables/:id", async (req: Request, res: Response) => {
     try {
         const api = new TableApi()

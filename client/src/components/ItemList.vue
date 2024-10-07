@@ -6,7 +6,7 @@ const props = defineProps(['items', 'subheader', 'done'])
 <template>
     <v-list>
         <v-list-subheader v-if="subheader">{{ subheader }}</v-list-subheader>
-        <v-list-item :lines="item.note ? 'three' : 'one'" v-for="item in items">
+        <v-list-item :lines="item.note ? 'three' : 'one'" v-for="item in items" density="compact">
             <v-item-list-title><span :class="{ done: done }">{{ item.name }}</span></v-item-list-title>
             <v-list-item-subtitle>
                 <span :class="{ done: done }">{{ item.type }} - {{ item.sub_type }}</span><br />

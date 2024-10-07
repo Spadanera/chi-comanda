@@ -21,7 +21,9 @@ const event = ref<Event>({})
 const tables = ref<Table[]>([])
 const selectedTable = ref<Table[]>([])
 const confirm = ref<boolean>(false)
+const confirm2 = ref<boolean>(false)
 const drawer = ref<boolean>()
+const itemToBePaid = ref<number[]>([])
 
 const tablesToDo = computed(() => tables.value.filter(o => !o.paid && o.items && o.items.length))
 const computedSelectedTable = computed(() => {
@@ -29,8 +31,8 @@ const computedSelectedTable = computed(() => {
   if (!result.items) {
     result.items = []
   }
-  result.itemsToDo = groupItems(result.items.filter(i => !i.paid))
-  result.itemsDone = groupItems(result.items.filter(i => i.paid))
+  result.itemsToDo = result.items.filter(i => !i.paid)
+  result.itemsDone = result.items.filter(i => i.paid)
   return result
 })
 const subTypesCount = computed(() => {
@@ -56,6 +58,8 @@ const tableTotalOrderPaid = computed(() => {
   }
   else return 0
 })
+
+const itemToBePaidBill = computed(() => selectedTable.value[0].items.filter(i => itemToBePaid.value.includes(i.id)).reduce((a, i) => a += i.price, 0))
 
 function getSubTypeCount(table: Table, subtype: string[]) {
   if (table && table.items) {
@@ -91,6 +95,21 @@ async function completeTable() {
     selectedTable.value = []
   }
   snackbarStore.show("Tavolo chius")
+}
+
+async function paySelectedItem() {
+  if (itemToBePaid.value.length < computedSelectedTable.value.itemsToDo.length) {
+    await axios.PaySelectedItem(selectedTable.value[0].id, itemToBePaid.value)
+    console.log(itemToBePaid.value, selectedTable.value[0].items)
+    itemToBePaid.value.forEach(i => {
+      selectedTable.value[0].items.find(_i => _i.id === i).paid = true
+    });
+    itemToBePaid.value = []
+  }
+  else {
+    await completeTable()
+  }
+  confirm2.value = false
 }
 
 async function getTables() {
@@ -165,7 +184,8 @@ onBeforeUnmount(() => {
   <div>
     <ItemList subheader="DA PAGERE" :items="computedSelectedTable.itemsToDo">
       <template v-slot:postquantity="slotProps">
-        <v-btn variant="plain" icon="mdi-check" @click="doneItem(slotProps.item)"></v-btn>
+        <!-- <v-btn variant="plain" icon="mdi-check" @click="doneItem(slotProps.item)"></v-btn> -->
+        <v-checkbox v-model="itemToBePaid" :value="slotProps.item.id"></v-checkbox>
       </template>
     </ItemList>
     <ItemList subheader="PAGATI" :items="computedSelectedTable.itemsDone" :done="true">
@@ -178,10 +198,10 @@ onBeforeUnmount(() => {
       <v-btn variant="plain" readonly v-if="selectedTable.length">
         Totale: {{ tableTotalOrder }} €
       </v-btn>
-      <v-btn variant="plain" readonly v-if="selectedTable.length">
-        Totale: {{ tableTotalOrderPaid }} €
-      </v-btn>
       <v-spacer></v-spacer>
+      <v-btn variant="plain" @click="confirm2 = true" v-if="itemToBePaid.length">PAGA SELEZIONATI {{ itemToBePaidBill
+        }}
+        €</v-btn>
       <v-btn variant="plain" @click="confirm = true" v-if="selectedTable.length">
         CHIUDI TAVOLO
       </v-btn>
@@ -189,6 +209,11 @@ onBeforeUnmount(() => {
     <Confirm v-model="confirm">
       <v-slot>
         <v-btn text="Conferma" variant="plain" @click="completeTable"></v-btn>
+      </v-slot>
+    </Confirm>
+    <Confirm v-model="confirm2">
+      <v-slot>
+        <v-btn text="Conferma" variant="plain" @click="paySelectedItem"></v-btn>
       </v-slot>
     </Confirm>
   </div>

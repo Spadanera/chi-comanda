@@ -94,18 +94,21 @@ onMounted(async () => {
   <v-skeleton-loader v-if="loading" :loading="loading" type="list-item-three-line"></v-skeleton-loader>
   <div>
     <v-text-field :clearable="true" v-model="filter" label="Cerca"></v-text-field>
-    <v-list>
+    <v-list style="margin-top: -20px;">
       <template v-for="type in types">
-        <v-list-subheader inset>{{ type }}</v-list-subheader>
-        <v-list-item elevation="4" v-for="item in filterItems(type)">
-          <v-list-item-title>
-            {{ item.name }}
-          </v-list-item-title>
-          <template v-slot:append>
-            <v-btn icon="mdi-pencil" variant="text" @click="openNoteDialog(item)"></v-btn>
-            <v-btn icon="mdi-plus" variant="text" @click="addItemToOrder(item)"></v-btn>
-          </template>
-        </v-list-item>
+        <v-list-subheader style="margin-top: 10px" inset>{{ type }}</v-list-subheader>
+        <template v-for="item in filterItems(type)">
+          <v-list-item>
+            <v-list-item-title>
+              {{ item.name }}
+            </v-list-item-title>
+            <template v-slot:append>
+              <v-btn icon="mdi-pencil" variant="text" @click="openNoteDialog(item)"></v-btn>
+              <v-btn icon="mdi-plus" variant="text" @click="addItemToOrder(item)"></v-btn>
+            </template>
+          </v-list-item>
+          <v-divider></v-divider>
+        </template>
       </template>
     </v-list>
     <v-bottom-sheet v-model="sheet">
