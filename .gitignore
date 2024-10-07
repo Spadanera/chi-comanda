@@ -8,3 +8,4 @@ dist
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+tsconfig.tsbuildinfo
