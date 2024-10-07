@@ -110,6 +110,7 @@ export default class Axios {
     }
 
     async Login(email: string, password: string): Promise<void> {
+        console.log("client", "login")
         const user = (await this.client.post<User>("/login", {
             email: email,
             password: password

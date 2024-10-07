@@ -7,7 +7,7 @@ import router from '@/router'
 const userStore = UserStore()
 const axios: Axios = new Axios()
 
-const emit = defineEmits(['reload'])
+const emit = defineEmits(['login'])
 
 const credentials = ref({
   email: '',
@@ -15,25 +15,32 @@ const credentials = ref({
 })
 
 async function login() {
+  console.log("Login.vue", "login")
   await axios.Login(credentials.value.email, credentials.value.password)
-  emit('reload')
+  emit("login")
 }
 </script>
 
 <template>
   <main>
-    <v-card>
-      <v-card-text>
-        <v-form fast-fail @submit.prevent>
-          <v-text-field type="email" label="Email" v-model="credentials.email"></v-text-field>
-
-          <v-text-field type="password" label="Password" v-model="credentials.password"></v-text-field>
-
-        </v-form>
-      </v-card-text>
-      <v-card-actions>
-        <v-btn class="mt-2" type="submit" @click="login" block>LOG IN</v-btn>
-      </v-card-actions>
-    </v-card>
+    <v-container>
+      <v-row justify="center">
+        <v-col sm="8" xs="12" lg="4">
+          <v-card>
+            <v-card-text>
+              <v-form fast-fail @submit.prevent>
+                <v-text-field type="email" label="Email" v-model="credentials.email"></v-text-field>
+      
+                <v-text-field type="password" label="Password" v-model="credentials.password"></v-text-field>
+      
+              </v-form>
+            </v-card-text>
+            <v-card-actions>
+              <v-btn class="mt-2" type="submit" @click="login" block>LOG IN</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
   </main>
 </template>

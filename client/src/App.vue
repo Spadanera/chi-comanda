@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
 import Axios from '@/services/client'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, onBeforeMount } from 'vue'
 import router from '@/router'
 import { UserStore, SnackbarStore, IUser } from '@/stores'
 
@@ -10,13 +10,17 @@ const userStore = UserStore()
 const snackbarStore = SnackbarStore()
 const user = ref({})
 
-async function reloadUser() {
-  user.value = await userStore.checkAuthentication()
+function login() {
+  user.value = userStore.user
+  router.push("/")
 }
 
-onMounted(async () => {
-  await reloadUser()
-  router.push("/")
+function reload() {
+  user.value = userStore.user
+}
+
+onBeforeMount(async () => {
+  user.value = userStore.user
 })
 
 </script>
@@ -33,14 +37,9 @@ onMounted(async () => {
           LOG OUT
         </v-btn>
       </v-app-bar>
-      <!-- <v-navigation-drawer>
-        <v-list>
-          <v-list-item title="Navigation drawer"></v-list-item>
-        </v-list>
-      </v-navigation-drawer> -->
 
       <v-main>
-        <RouterView v-model="user" @reload="reloadUser" />
+        <RouterView v-model="user" @login="login" @reload="reload" />
       </v-main>
       <v-snackbar v-model="snackbarStore.enable" :timeout="snackbarStore.timeout" :location="snackbarStore.location">
         {{ snackbarStore.text }}

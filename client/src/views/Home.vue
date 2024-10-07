@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onBeforeMount } from 'vue';
 import { UserStore, IUser } from '@/stores'
 const roles = [
   {
@@ -34,11 +34,17 @@ const roles = [
   },
 ]
 
+const emit = defineEmits(['reload'])
+
 const user = defineModel<IUser>()
 
 const filteredRole = computed(() => {
   return roles.filter(r => user.value.roles?.includes(r.role))
 })
+
+onBeforeMount(() =>
+  emit('reload')
+)
 
 </script>
 

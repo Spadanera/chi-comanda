@@ -1,6 +1,7 @@
 import { defineStore, type StateTree, type StoreDefinition } from 'pinia'
 import Axios from "../services/client"
 import { type Role } from "../../../models/src"
+import router from '@/router'
 
 export interface IUser {
     id?: number,
@@ -21,6 +22,17 @@ export const UserStore: StoreDefinition = defineStore('user', {
             isLoggedIn: false
         } as IUser
     },
+    getters: {
+        user: (state: any) => {
+            return {
+                id: state.id,
+                username: state.username,
+                email: state.email,
+                roles: state.roles,
+                isLoggedIn: state.isLoggedIn
+            }
+        },
+    },
     actions: {
         setUser(user: IUser, isLoggedIn: boolean) {
             this.id = user.id
@@ -30,6 +42,7 @@ export const UserStore: StoreDefinition = defineStore('user', {
             this.isLoggedIn = isLoggedIn
         },
         login(user: IUser) {
+            console.log("stores", "login")
             this.setUser(user, true)
         },
         logout() {

@@ -62,14 +62,10 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
+  console.log("router", "beforeEach")
   const userStore = UserStore()
   const user = await userStore.checkAuthentication()
-  if (to.name !== "Login" && !user.isLoggedIn) {
-    next({ name: "Login"})
-  }
-  else {
-    next()
-  }
+  next()
 })
 
 export default router
