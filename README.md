@@ -28,5 +28,3 @@ There are 4 services defined in docker compose:
 2. server: node:20-alpine image that hosts the API 
 3. server-database: MySql image
 4. proxy: nginx image that works as proxy between client and server
-
-test
