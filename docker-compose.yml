@@ -7,7 +7,6 @@ services:
       - 8080:8080
     volumes:
       - ./client:/data
-      - /data/node_modules
       - ./models:/models
     environment:
       - VUE_APP_API=rest
