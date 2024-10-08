@@ -19,5 +19,6 @@ phases:
 
 artifacts:
   files:
-    - server/**/*
+    - server/**
   base-directory: server
+  name: build_output
