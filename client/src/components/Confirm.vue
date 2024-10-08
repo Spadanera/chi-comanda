@@ -14,7 +14,9 @@ const dialog = defineModel({ default: false })
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn text="Annulla" variant="plain" @click="dialog = false"></v-btn>
-                <slot></slot>
+                <template v-slot:action>
+                    <slot></slot>
+                </template>
             </v-card-actions>
         </v-card>
     </v-dialog>

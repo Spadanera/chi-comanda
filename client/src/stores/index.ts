@@ -1,7 +1,5 @@
-import { defineStore, type StateTree, type StoreDefinition } from 'pinia'
+import { defineStore, type StoreDefinition } from 'pinia'
 import Axios from "../services/client"
-import { type Role } from "../../../models/src"
-import router from '@/router'
 
 export interface IUser {
     id?: number,

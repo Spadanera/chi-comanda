@@ -11,7 +11,7 @@ const axios = new Axios()
 const user = defineModel<IUser>()
 const snackbarStore = SnackbarStore()
 
-const emit = defineEmits(['reload'])
+const emit = defineEmits(['login', 'reload'])
 
 const props = defineProps(['event_id', 'table_id', 'master_table_id'])
 

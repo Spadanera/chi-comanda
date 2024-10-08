@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { type Event, type Order, type MasterItem, type Item, ItemTypes as types } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
-import router from '@/router'
 import Axios from '@/services/client'
 import { SnackbarStore, type IUser } from '@/stores'
-import { sortItem, groupItems, copy, getIcon } from "@/services/utils"
+import { groupItems, copy, getIcon } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
 import { io } from 'socket.io-client'
 
@@ -13,7 +12,7 @@ var is: any
 const user = defineModel<IUser>()
 const snackbarStore = SnackbarStore()
 
-const emit = defineEmits(['reload'])
+const emit = defineEmits(['login', 'reload'])
 
 const props = defineProps(['destinations'])
 
@@ -37,10 +36,10 @@ const computedSelectedOrder = computed(() => {
 })
 const subTypesCount = computed(() => {
   let result:any = []
-  types.forEach(t => {
-    let count = getSubTypeCount(selectedOrder.value[0], [t])
+  types.forEach(type => {
+    let count = getSubTypeCount(selectedOrder.value[0], [type])
     if (count > 0) result.push({
-      t,
+      type,
       count
     })
   })
@@ -172,9 +171,9 @@ onBeforeUnmount(() => {
       </v-btn>
     </v-bottom-navigation>
     <Confirm v-model="confirm">
-      <v-slot>
+      <template v-slot:action>
         <v-btn text="Conferma" variant="plain" @click="completeOrder"></v-btn>
-      </v-slot>
+      </template>
     </Confirm>
   </div>
 </template>

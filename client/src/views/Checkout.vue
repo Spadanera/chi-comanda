@@ -13,7 +13,7 @@ var is:any
 const user = defineModel<IUser>()
 const snackbarStore = SnackbarStore()
 
-const emit = defineEmits(['reload'])
+const emit = defineEmits(['login', 'reload'])
 
 const loading = ref<boolean>(true)
 const sheet = ref(false)
@@ -207,14 +207,14 @@ onBeforeUnmount(() => {
       </v-btn>
     </v-bottom-navigation>
     <Confirm v-model="confirm">
-      <v-slot>
+      <template v-slot:action>
         <v-btn text="Conferma" variant="plain" @click="completeTable"></v-btn>
-      </v-slot>
+      </template>
     </Confirm>
     <Confirm v-model="confirm2">
-      <v-slot>
+      <template v-slot:action>
         <v-btn text="Conferma" variant="plain" @click="paySelectedItem"></v-btn>
-      </v-slot>
+      </template>
     </Confirm>
   </div>
 </template>

@@ -3,6 +3,8 @@ import { type AvailableTable, type Event } from "../../../models/src"
 import { ref, onMounted } from "vue"
 import Axios from '@/services/client'
 
+const emit = defineEmits(['login', 'reload'])
+
 const tables = ref<AvailableTable[]>([])
 const availableTable = ref<AvailableTable[]>([])
 const activeTable = ref<AvailableTable[]>([])

@@ -42,7 +42,7 @@ const roles:Role[] = [
   },
 ]
 
-const emit = defineEmits(['reload'])
+const emit = defineEmits(['login', 'reload'])
 
 const user = defineModel<IUser>()
 

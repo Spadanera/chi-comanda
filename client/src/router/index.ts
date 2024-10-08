@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
 import { UserStore } from '@/stores'
-import { provide } from 'vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -63,7 +62,7 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const userStore = UserStore()
-  const user = await userStore.checkAuthentication()
+  await userStore.checkAuthentication()
   next()
 })
 

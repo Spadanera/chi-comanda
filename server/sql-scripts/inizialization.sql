@@ -1,11 +1,11 @@
-INSERT INTO users (email, username, password) VALUES ('ziro84@gmail.com', 'Dan', 'password');
+INSERT INTO users (email, username, password) VALUES ('dan@gmail.com', 'Dan', 'password');
 INSERT INTO users (email, username, password) VALUES ('ziro84@gmail.com', 'Nic', 'password');
-INSERT INTO users (email, username, password) VALUES ('ziro84@gmail.com', 'Vi', 'password');
-INSERT INTO users (email, username, password) VALUES ('ziro84@gmail.com', 'Elena', 'password');
-INSERT INTO users (email, username, password) VALUES ('ziro84@gmail.com', 'Led', 'password');
-INSERT INTO users (email, username, password) VALUES ('ziro84@gmail.com', 'Zio Fagiolo', 'password');
-INSERT INTO users (email, username, password) VALUES ('ziro84@gmail.com', 'Titta', 'password');
-INSERT INTO users (email, username, password) VALUES ('ziro84@gmail.com', 'Dani', 'password');
+INSERT INTO users (email, username, password) VALUES ('vi@gmail.com', 'Vi', 'password');
+INSERT INTO users (email, username, password) VALUES ('elena@gmail.com', 'Elena', 'password');
+INSERT INTO users (email, username, password) VALUES ('led@gmail.com', 'Led', 'password');
+INSERT INTO users (email, username, password) VALUES ('ziofagiolo@gmail.com', 'Zio Fagiolo', 'password');
+INSERT INTO users (email, username, password) VALUES ('titta@gmail.com', 'Titta', 'password');
+INSERT INTO users (email, username, password) VALUES ('dani@gmail.com', 'Dani', 'password');
 
 INSERT INTO roles (name) VALUES ('Admin');
 INSERT INTO roles (name) VALUES ('Checkout');

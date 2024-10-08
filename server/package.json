@@ -1,10 +1,10 @@
 {
   "name": "ludo-project-server",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --poll ./src/index.ts",
-    "build": "rimraf ./dist && tsc --build",
+    "build": "rimraf ./dist && tsc --sourceMap false --removeComments true",
     "start": "node dist/index.js",
     "version": "tsc -v"
   },
