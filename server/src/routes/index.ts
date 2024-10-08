@@ -287,7 +287,7 @@ apiRouter.put("/tables/:id/complete", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.delete("/orders/:id/items/:itemid", async (req: Request, res: Response) => {
+apiRouter.delete("/items/:id", async (req: Request, res: Response) => {
     try {
         const api = new ItemApi()
         const result = await api.delete(+req.params.id)

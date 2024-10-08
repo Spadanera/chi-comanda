@@ -13,6 +13,10 @@ a {
     text-decoration: line-through;
 }
 
+.v-input__details {
+    display: none !important;
+}
+
 @media screen and (max-width: 600px) {
     .show-xs {
         display: none !important;

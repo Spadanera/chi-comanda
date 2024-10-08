@@ -20,8 +20,10 @@ const loading = ref<boolean>(true)
 const sheet = ref(false)
 const event = ref<Event>()
 const orders = ref<Order[]>([])
-const selectedOrder = ref<Order[]>([])
 const confirm = ref<boolean>(false)
+const deleteItemId = ref<number>(0)
+const selectedOrder = ref<Order[]>([])
+const confirm2 = ref<boolean>(false)
 const drawer = ref<boolean>()
 
 const computedSelectedOrder = computed(() => {
@@ -29,12 +31,12 @@ const computedSelectedOrder = computed(() => {
   if (!result.items) {
     result.items = []
   }
-  result.itemsToDo = groupItems(result.items.filter((i:Item) => !i.done))
-  result.itemsDone = groupItems(result.items.filter((i:Item) => i.done))
+  result.itemsToDo = groupItems(result.items.filter((i: Item) => !i.done))
+  result.itemsDone = groupItems(result.items.filter((i: Item) => i.done))
   return result
 })
 const subTypesCount = computed(() => {
-  let result:any = []
+  let result: any = []
   types.forEach(type => {
     let count = getSubTypeCount(selectedOrder.value[0], [type])
     if (count > 0) result.push({
@@ -47,7 +49,7 @@ const subTypesCount = computed(() => {
 
 function getSubTypeCount(order: Order, subtype: string[]) {
   if (order && order.items) {
-    return order.items.reduce((a: number, i:Item) => a += subtype.includes(i.sub_type) ? 1 : 0, 0)
+    return order.items.reduce((a: number, i: Item) => a += subtype.includes(i.sub_type) ? 1 : 0, 0)
   }
   return 0
 }
@@ -55,7 +57,7 @@ function getSubTypeCount(order: Order, subtype: string[]) {
 async function doneItem(item: Item) {
   item.done = true
   await axios.UpdateItem(item)
-  selectedOrder.value[0].items.find((i:Item) => i.master_item_id === item.master_item_id && i.note === item.note && !i.done).done = true
+  selectedOrder.value[0].items.find((i: Item) => i.master_item_id === item.master_item_id && i.note === item.note && !i.done).done = true
 
   if (computedSelectedOrder.value.itemsToDo.length === 0) {
     completeOrder()
@@ -66,15 +68,28 @@ async function rollbackItem(item: Item) {
   item.done = false
   await axios.UpdateItem(item)
   if (selectedOrder && selectedOrder.value && selectedOrder.value.length) {
-    selectedOrder.value[0].items.find((i:Item) => i.master_item_id === item.master_item_id && i.note === item.note && i.done).done = false
+    selectedOrder.value[0].items.find((i: Item) => i.master_item_id === item.master_item_id && i.note === item.note && i.done).done = false
   }
+}
+
+async function deleteItemConfirm(item_id: number) {
+  deleteItemId.value = item_id;
+  confirm2.value = true
+}
+
+async function deleteItem() {
+  await axios.DeleteItem(deleteItemId.value)
+  orders.value.forEach((order: Order) => {
+    order.items = order.items.filter((i: Item) => i.id !== deleteItemId.value)
+  })
+  confirm2.value = false
 }
 
 async function completeOrder() {
   await axios.CompleteOrder(selectedOrder.value[0].id || 0, {
     event_id: event.value?.id || 0,
     table_id: selectedOrder.value[0].table_id || 0,
-    item_ids: selectedOrder.value[0].items.map(i => i.id) || []
+    item_ids: selectedOrder.value[0].items?.map(i => i.id) || []
   })
   confirm.value = false
   await getOrders()
@@ -115,18 +130,17 @@ onMounted(async () => {
     console.log('user disconnected')
   })
 
-  is.on('connect_error', (err:any) => {
+  is.on('connect_error', (err: any) => {
     console.log('connect_error', err.message)
   })
 
-  is.on('new-order', (data:Order) => {
+  is.on('new-order', (data: Order) => {
     orders.value.push(data)
     snackbarStore.show("Nuovo ordine")
   })
 })
 
 onBeforeUnmount(() => {
-  console.log('unmount')
   is.emit('end')
 })
 </script>
@@ -148,13 +162,16 @@ onBeforeUnmount(() => {
   </v-navigation-drawer>
   <div>
     <ItemList subheader="DA FARE" :items="computedSelectedOrder.itemsToDo">
+      <template v-slot:prequantity="slotProps">
+       <v-btn icon="mdi-delete" @click="deleteItemConfirm(slotProps.item.id)" variant="plain"></v-btn>
+      </template>
       <template v-slot:postquantity="slotProps">
         <v-btn variant="plain" icon="mdi-check" @click="doneItem(slotProps.item)"></v-btn>
       </template>
     </ItemList>
     <ItemList subheader="COMPLETATI" :items="computedSelectedOrder.itemsDone" :done="true">
       <template v-slot:postquantity="slotProps">
-        <v-btn variant="plain" icon="mdi-keyboard-backspace" @click="rollbackItem(slotProps.item)"></v-btn>
+        <v-btn variant="plain" icon="mdi-arrow-up-thin" @click="rollbackItem(slotProps.item)"></v-btn>
       </template>
     </ItemList>
     <v-bottom-navigation>
@@ -165,14 +182,20 @@ onBeforeUnmount(() => {
         <v-icon>{{ getIcon(type.type) }}</v-icon> {{ type.count }}
       </v-btn>
       <v-spacer></v-spacer>
-      <v-btn class="show-xs" variant="plain" @click="confirm = true" v-if="selectedOrder.length">
+      <v-btn class="show-xs" variant="plain" @click="confirm = true" v-if="selectedOrder.length && !selectedOrder[0].done">
         COMPLETA ORDINE
       </v-btn>
-      <v-btn class="hide-xs" icon="mdi-check-all" variant="plain" @click="confirm = true" v-if="selectedOrder.length"></v-btn>
+      <v-btn class="hide-xs" icon="mdi-check-all" variant="plain" @click="confirm = true"
+        v-if="selectedOrder.length"></v-btn>
     </v-bottom-navigation>
     <Confirm v-model="confirm">
       <template v-slot:action>
         <v-btn text="Conferma" variant="plain" @click="completeOrder"></v-btn>
+      </template>
+    </Confirm>
+    <Confirm v-model="confirm2">
+      <template v-slot:action>
+        <v-btn text="Conferma" variant="plain" @click="deleteItem"></v-btn>
       </template>
     </Confirm>
   </div>

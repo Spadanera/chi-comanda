@@ -83,12 +83,17 @@ export default class OrderAPI {
 
     async completeOrder(order_id: number, input: CompleteOrderInput): Promise<number> {
         return await this.database.executeTransaction(async () => {
-            const result = await this.database.execute('UPDATE items SET done = TRUE WHERE order_id = ? AND id in (?)', [order_id, input.item_ids], true)
-            const items = await this.database.query<Item>("SELECT id FROM items WHERE order_id = ? AND IFNULL(done, false) = FALSE", order_id)
-            if (items.length === 0) {
-                await this.database.execute("UPDATE orders SET done = TRUE WHERE id = ?", [order_id], true)
+            if (input.item_ids && input.item_ids.length) {
+                const result = await this.database.execute('UPDATE items SET done = TRUE WHERE order_id = ? AND id in (?)', [order_id, input.item_ids], true)
+                const items = await this.database.query<Item>("SELECT id FROM items WHERE order_id = ? AND IFNULL(done, false) = FALSE", order_id)
+                if (items.length === 0) {
+                    await this.database.execute("UPDATE orders SET done = TRUE WHERE id = ?", [order_id], true)
+                }
+                return result
             }
-            return result
+            else {
+                return await this.database.execute("UPDATE orders SET done = TRUE WHERE id = ?", [order_id], true)
+            }
         })
     }
 

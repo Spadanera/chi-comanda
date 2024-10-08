@@ -59,6 +59,11 @@ export default class Axios {
         return response.data
     }
 
+    private async delete(path: string): Promise<number> {
+        const response: AxiosResponse<number> = await this.client.delete(path, this.config)
+        return response.data
+    }
+
     async GetAllEvents(): Promise<Event[]> {
         return await this.get<Event>("/events")
     }
@@ -104,17 +109,19 @@ export default class Axios {
     }
 
     async CompleteOrder(order_id: number, input: CompleteOrderInput): Promise<Number> {
-        const response: AxiosResponse<number> = await this.client.put(`/orders/${order_id}/complete`, input, this.config)
-        return response.data
+        return (await this.client.put(`/orders/${order_id}/complete`, input, this.config)).data
     }
 
     async CompleteTable(table_id: number): Promise<Number> {
-        const response: AxiosResponse<number> = await this.client.put(`/tables/${table_id}/complete`, {}, this.config)
-        return response.data
+        return (await this.client.put(`/tables/${table_id}/complete`, {}, this.config)).data
     }
 
-    async PaySelectedItem(table_id: number, item_ids: number[]) {
-        const response: AxiosResponse<number> = await this.client.put(`/tables/${table_id}/payitems`, item_ids, this.config)
+    async PaySelectedItem(table_id: number, item_ids: number[]): Promise<number> {
+        return (await this.client.put(`/tables/${table_id}/payitems`, item_ids, this.config)).data
+    }
+
+    async DeleteItem(item_id: number) {
+        return await this.delete(`/items/${item_id}`);
     }
 
     async Login(email: string, password: string): Promise<void> {

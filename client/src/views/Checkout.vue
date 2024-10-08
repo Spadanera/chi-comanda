@@ -22,6 +22,8 @@ const tables = ref<Table[]>([])
 const selectedTable = ref<Table[]>([])
 const confirm = ref<boolean>(false)
 const confirm2 = ref<boolean>(false)
+const confirm3 = ref<boolean>(false)
+const deleteItemId = ref<number>(0)
 const drawer = ref<boolean>()
 const itemToBePaid = ref<number[]>([])
 
@@ -83,6 +85,20 @@ async function rollbackItem(item: Item) {
   selectedTable.value[0].items.find((i:Item) => i.master_item_id === item.master_item_id && i.note === item.note && i.paid).paid = false
 }
 
+async function deleteItemConfirm(item_id:number) {
+  deleteItemId.value = item_id;
+  confirm3.value = true
+}
+
+async function deleteItem() {
+  await axios.DeleteItem(deleteItemId.value)
+  tables.value.forEach((table: Table) => {
+    table.items = table.items.filter((i: Item) => i.id !== deleteItemId.value )
+  })
+  confirm3.value = false
+}
+
+
 async function completeTable() {
   await axios.CompleteTable(selectedTable.value[0].id)
   confirm.value = false
@@ -93,7 +109,7 @@ async function completeTable() {
   else {
     selectedTable.value = []
   }
-  snackbarStore.show("Tavolo chius")
+  snackbarStore.show("Tavolo chiuso")
 }
 
 async function paySelectedItem() {
@@ -177,14 +193,16 @@ onBeforeUnmount(() => {
   </v-navigation-drawer>
   <div>
     <ItemList subheader="DA PAGERE" :items="computedSelectedTable.itemsToDo">
+      <template v-slot:prequantity="slotProps">
+       <v-btn icon="mdi-delete" @click="deleteItemConfirm(slotProps.item.id)" variant="plain"></v-btn>
+      </template>
       <template v-slot:postquantity="slotProps">
-        <!-- <v-btn variant="plain" icon="mdi-check" @click="doneItem(slotProps.item)"></v-btn> -->
         <v-checkbox v-model="itemToBePaid" :value="slotProps.item.id"></v-checkbox>
       </template>
     </ItemList>
     <ItemList subheader="PAGATI" :items="computedSelectedTable.itemsDone" :done="true">
       <template v-slot:postquantity="slotProps">
-        <v-btn variant="plain" icon="mdi-keyboard-backspace" @click="rollbackItem(slotProps.item)"></v-btn>
+        <v-btn variant="plain" icon="mdi-arrow-up-thin" @click="rollbackItem(slotProps.item)"></v-btn>
       </template>
     </ItemList>
     <v-bottom-navigation>
@@ -196,7 +214,7 @@ onBeforeUnmount(() => {
       <v-btn variant="plain" @click="confirm2 = true" v-if="itemToBePaid.length">PAGA SELEZIONATI {{ itemToBePaidBill
         }}
         €</v-btn>
-      <v-btn class="show-xs" variant="plain" @click="confirm = true" v-if="selectedTable.length">
+      <v-btn class="show-xs" variant="plain" @click="confirm = true" v-if="selectedTable.length && !selectedTable[0].paid">
         CHIUDI TAVOLO
       </v-btn>
       <v-btn icon="mdi-close-box" class="hide-xs" variant="plain" @click="confirm = true" v-if="selectedTable.length">
@@ -211,6 +229,11 @@ onBeforeUnmount(() => {
     <Confirm v-model="confirm2">
       <template v-slot:action>
         <v-btn text="Conferma" variant="plain" @click="paySelectedItem"></v-btn>
+      </template>
+    </Confirm>
+    <Confirm v-model="confirm3">
+      <template v-slot:action>
+        <v-btn text="Conferma" variant="plain" @click="deleteItem"></v-btn>
       </template>
     </Confirm>
   </div>
