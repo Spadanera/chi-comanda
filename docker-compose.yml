@@ -32,6 +32,7 @@ services:
       MYSQL_USER: 'user'
       MYSQL_PASSWORD: 'password'
       SECRET: 'pippopluto'
+      PORT: 3000
     networks:
       - proxy_net
     command: npm run dev

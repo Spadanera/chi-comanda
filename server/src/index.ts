@@ -108,6 +108,6 @@ SocketIOService.instance().getServer().on('connection', function(socket) {
     });
 });
 
-server.listen(3000, () => {
+server.listen(process.env.PORT, () => {
     console.log(`App is listening on port 3000`)
 })
