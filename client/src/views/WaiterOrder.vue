@@ -92,10 +92,10 @@ async function setTableName() {
 
 onMounted(async () => {
   master_items.value = await axios.GetAllMasterItems()
-  if (props.table_id) {
+  if (parseInt(props.table_id)) {
     table_name.value = (await axios.GetTable(props.table_id)).name
   }
-  else if (props.master_table_id) {
+  else if (parseInt(props.master_table_id)) {
     table_name.value = (await axios.GetMasterTable(props.master_table_id)).name
   }
   else {

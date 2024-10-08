@@ -33,8 +33,8 @@ export default class TableApi {
                 WHERE table_id = tables.id
             ) items
             FROM tables 
-            WHERE event_id = ? AND status = 'ACTIVE'
-            ORDER BY tables.id
+            WHERE event_id = ?
+            ORDER BY status, tables.id
             `, [eventId])
     }
 

@@ -23,9 +23,3 @@ const props = defineProps(['items', 'subheader', 'done'])
         </v-list-item>
     </v-list>
 </template>
-
-<style scoped>
-    .done {
-        text-decoration: line-through;
-    }
-</style>

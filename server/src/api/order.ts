@@ -37,8 +37,8 @@ export default class OrderAPI {
                 ) items
             FROM orders 
             INNER JOIN tables ON orders.table_id = tables.id
-            WHERE orders.event_id = ? AND IFNULL(done, false) = false
-            ORDER BY orders.id`, [destination_ids, event_id])
+            WHERE orders.event_id = ?
+            ORDER BY done, orders.id`, [destination_ids, event_id])
     }
 
     async get(id: number): Promise<Order[]> {

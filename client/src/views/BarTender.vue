@@ -24,7 +24,6 @@ const selectedOrder = ref<Order[]>([])
 const confirm = ref<boolean>(false)
 const drawer = ref<boolean>()
 
-const ordersToDo = computed(() => orders.value.filter(o => !o.done && o.items && o.items.length))
 const computedSelectedOrder = computed(() => {
   let result = copy<Order>((selectedOrder.value.length ? selectedOrder.value[0] : { items: [] }) as Order)
   if (!result.items) {
@@ -79,8 +78,8 @@ async function completeOrder() {
   })
   confirm.value = false
   await getOrders()
-  if (ordersToDo.value.length) {
-    selectedOrder.value = [ordersToDo.value[0]]
+  if (orders.value.length && !orders.value[0].done) {
+    selectedOrder.value = [orders.value[0]]
   }
   else {
     selectedOrder.value = []
@@ -90,8 +89,8 @@ async function completeOrder() {
 
 async function getOrders() {
   orders.value = await axios.GetOrdersInEvent(event.value?.id || 0, props.destinations)
-  if (ordersToDo.value.length) {
-    selectedOrder.value = [ordersToDo.value[0]]
+  if (orders.value.length && !orders.value[0].done) {
+    selectedOrder.value = [orders.value[0]]
   }
   else {
     selectedOrder.value = []
@@ -135,9 +134,9 @@ onBeforeUnmount(() => {
 <template>
   <v-navigation-drawer v-model="drawer" mobile-breakpoint="sm">
     <v-list v-model:selected="selectedOrder" lines="two">
-      <v-list-item :key="order.id" :value="order" v-for="order in ordersToDo">
+      <v-list-item :key="order.id" :value="order" v-for="order in orders">
         <v-list-item-title>
-          Tavolo {{ order.table_name }}
+          <span :class="{ done: order.done }">Tavolo {{ order.table_name }}</span>
         </v-list-item-title>
         <template v-for="type in types">
           <v-btn readonly size="small" density="compact" variant="plain" v-if="getSubTypeCount(order, [type]) > 0">

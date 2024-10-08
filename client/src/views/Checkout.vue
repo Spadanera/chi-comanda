@@ -25,7 +25,6 @@ const confirm2 = ref<boolean>(false)
 const drawer = ref<boolean>()
 const itemToBePaid = ref<number[]>([])
 
-const tablesToDo = computed(() => tables.value.filter((o:Table) => !o.paid && o.items && o.items.length))
 const computedSelectedTable = computed(() => {
   let result = copy<Table>((selectedTable.value.length ? selectedTable.value[0] : { items: [] }) as Table)
   if (!result.items) {
@@ -88,8 +87,8 @@ async function completeTable() {
   await axios.CompleteTable(selectedTable.value[0].id)
   confirm.value = false
   await getTables()
-  if (tablesToDo.value.length) {
-    selectedTable.value = [tablesToDo.value[0]]
+  if (tables.value.length && tables.value[0].status === 'ACTIVE') {
+    selectedTable.value = [tables.value[0]]
   }
   else {
     selectedTable.value = []
@@ -110,8 +109,8 @@ async function paySelectedItem() {
 
 async function getTables() {
   tables.value = await axios.GetTablesInEvent(event.value?.id || 0)
-  if (tablesToDo.value.length) {
-    selectedTable.value = [tablesToDo.value[0]]
+  if (tables.value.length && tables.value[0].status === 'ACTIVE') {
+    selectedTable.value = [tables.value[0]]
   }
   else {
     selectedTable.value = []
@@ -164,9 +163,9 @@ onBeforeUnmount(() => {
 <template>
   <v-navigation-drawer v-model="drawer" mobile-breakpoint="sm">
     <v-list v-model:selected="selectedTable" lines="two">
-      <v-list-item :key="table.id" :value="table" v-for="table in tablesToDo">
+      <v-list-item :key="table.id" :value="table" v-for="table in tables">
         <v-list-item-title>
-          Tavolo {{ table.name }}
+          <span :class="{ done: table.paid }">Tavolo {{ table.name }}</span>
         </v-list-item-title>
         <template v-for="type in types">
           <v-btn readonly size="small" density="compact" variant="plain" v-if="getSubTypeCount(table, [type]) > 0">

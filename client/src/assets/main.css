@@ -7,3 +7,7 @@ a {
     bottom: 0;
     width: 100%;
 }
+
+.done {
+    text-decoration: line-through;
+}
