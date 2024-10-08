@@ -1,6 +1,7 @@
 a {
     text-decoration: none;
 }
+
 .waiter-foooter {
     position: fixed;
     background-color: red;
@@ -10,4 +11,52 @@ a {
 
 .done {
     text-decoration: line-through;
+}
+
+@media screen and (max-width: 600px) {
+    .show-xs {
+        display: none !important;
+    }
+}
+
+@media screen and (max-width: 960px) {
+    .show-sm {
+        display: none !important;
+    }
+}
+
+@media screen and (max-width: 1264px) {
+    .show-md {
+        display: none !important;
+    }
+}
+
+@media screen and (max-width: 1904px) {
+    .show-lg {
+        display: none !important;
+    }
+}
+
+@media screen and (min-width: 601px) {
+    .hide-xs {
+        display: none !important;
+    }
+}
+
+@media screen and (min-width: 961px) {
+    .hide-sm {
+        display: none !important;
+    }
+}
+
+@media screen and (min-width: 1265px) {
+    .hide-md {
+        display: none !important;
+    }
+}
+
+@media screen and (min-width: 1905px) {
+    .hide-lg {
+        display: none !important;
+    }
 }

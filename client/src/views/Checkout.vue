@@ -196,8 +196,11 @@ onBeforeUnmount(() => {
       <v-btn variant="plain" @click="confirm2 = true" v-if="itemToBePaid.length">PAGA SELEZIONATI {{ itemToBePaidBill
         }}
         €</v-btn>
-      <v-btn variant="plain" @click="confirm = true" v-if="selectedTable.length">
+      <v-btn class="show-xs" variant="plain" @click="confirm = true" v-if="selectedTable.length">
         CHIUDI TAVOLO
+      </v-btn>
+      <v-btn icon="mdi-close-box" class="hide-xs" variant="plain" @click="confirm = true" v-if="selectedTable.length">
+        
       </v-btn>
     </v-bottom-navigation>
     <Confirm v-model="confirm">

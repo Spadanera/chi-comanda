@@ -165,9 +165,10 @@ onBeforeUnmount(() => {
         <v-icon>{{ getIcon(type.type) }}</v-icon> {{ type.count }}
       </v-btn>
       <v-spacer></v-spacer>
-      <v-btn variant="plain" @click="confirm = true" v-if="selectedOrder.length">
+      <v-btn class="show-xs" variant="plain" @click="confirm = true" v-if="selectedOrder.length">
         COMPLETA ORDINE
       </v-btn>
+      <v-btn class="hide-xs" icon="mdi-check-all" variant="plain" @click="confirm = true" v-if="selectedOrder.length"></v-btn>
     </v-bottom-navigation>
     <Confirm v-model="confirm">
       <template v-slot:action>
