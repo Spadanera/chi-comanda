@@ -2,6 +2,7 @@ import express, { Express, Request, Response } from "express"
 import session from "express-session"
 import path from "path"
 import passport from "passport"
+import history from "connect-history-api-fallback"
 import * as passportStrategy from "passport-local"
 import UserApi from "./api/user"
 import apiRouter from "./routes"
@@ -38,6 +39,7 @@ app.use(session({
 }))
 app.use(passport.initialize())
 app.use(passport.session())
+app.use(history())
 
 passport.use(new passportStrategy.Strategy(
     { usernameField: 'email', passwordField: 'password' }, async (email, password, done) => {
