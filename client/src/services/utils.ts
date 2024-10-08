@@ -25,7 +25,7 @@ export function sortItem(a: Item, b: Item): number {
 export function groupItems(orderItems: Item[]): Item[] {
     if (orderItems) {
         return orderItems.reduce((a: Item[], i: Item) => {
-            let found = a.find((_i:Item) => (i.master_item_id === _i.master_item_id && i.note === _i.note))
+            let found = a.find((_i:Item) => (i.master_item_id === _i.master_item_id && i.note === _i.note && i.name === _i.name))
             if (found) {
                 found.quantity++
             }

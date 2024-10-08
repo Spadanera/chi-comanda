@@ -109,7 +109,7 @@ async function completeTable() {
   else {
     selectedTable.value = []
   }
-  snackbarStore.show("Tavolo chiuso")
+  snackbarStore.show("Tavolo chiuso", 3000, 'bottom', 'success')
 }
 
 async function paySelectedItem() {
@@ -147,11 +147,11 @@ onMounted(async () => {
   })
 
   is.on('disconnect', () => {
-    console.log('user disconnected')
+    
   })
 
   is.on('connect_error', (err:any) => {
-    console.log('connect_error', err.message)
+    snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
   })
 
   is.on('new-order', (data:Table) => {
@@ -171,7 +171,6 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  console.log('unmount')
   is.emit('end')
 })
 </script>

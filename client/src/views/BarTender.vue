@@ -99,7 +99,7 @@ async function completeOrder() {
   else {
     selectedOrder.value = []
   }
-  snackbarStore.show("Ordine completato")
+  snackbarStore.show("Ordine completato", 3000, 'bottom', 'success')
 }
 
 async function getOrders() {
@@ -122,16 +122,15 @@ onMounted(async () => {
   })
 
   is.on('connect', () => {
-    console.log('a user connected')
     is.emit('join', 'bar')
   })
 
   is.on('disconnect', () => {
-    console.log('user disconnected')
+    
   })
 
   is.on('connect_error', (err: any) => {
-    console.log('connect_error', err.message)
+    snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
   })
 
   is.on('new-order', (data: Order) => {

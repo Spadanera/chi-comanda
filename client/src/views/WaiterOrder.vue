@@ -48,18 +48,19 @@ function addItemToOrder(item: Item) {
 function addItemWithNote() {
   dialogItem.value.table_id = props.table_id
   dialogItem.value.master_item_id = dialogItem.value.id
-  orderItems.value.push(copy(dialogItem.value))
+  orderItems.value.push(copy<Item>(dialogItem.value))
   dialog.value = false
   snackbarStore.show(`${dialogItem.value.name} aggiunto`)
 }
 
 function addCocktailPremium(item: Item) {
-  item.table_id = props.table_id
-  item.master_item_id = item.id
-  item.price = 9
-  item.name = `${item.name} - PREMIUM`
-  orderItems.value.push(copy<Item>(item))
-  snackbarStore.show(`${item.name} aggiunto`, 2000, 'top')
+  var _item = copy<Item>(item)
+  _item.table_id = props.table_id
+  _item.master_item_id = item.id
+  _item.price = 9
+  _item.name = `${item.name} - PREMIUM`
+  orderItems.value.push(copy<Item>(_item))
+  snackbarStore.show(`${_item.name} aggiunto`, 2000, 'top')
 }
 
 function changeItemQuantity(item: Item, quantity: number) {
@@ -90,7 +91,7 @@ async function sendOrder() {
     items: orderItems.value,
     table_name: table_name.value
   } as Order)
-  snackbarStore.show("Ordine inviato con successo")
+  snackbarStore.show("Ordine inviato con successo", 3000, 'top', 'success')
   router.push('/waiter')
 }
 

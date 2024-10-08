@@ -1,7 +1,7 @@
-import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance } from 'axios'
+import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance, type AxiosProgressEvent } from 'axios'
 import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput } from "../../../models/src"
 import router from '@/router'
-import { UserStore, SnackbarStore, type IUser } from '@/stores'
+import { UserStore, SnackbarStore, type IUser, ProgressStore } from '@/stores'
 import type { StoreDefinition } from 'pinia'
 
 export default class Axios {
@@ -10,33 +10,72 @@ export default class Axios {
         headers: {
             'Content-Type': 'application/json'
         } as RawAxiosRequestHeaders,
+        onDownloadProgress: (progressEvent) => {
+            // Calcola l'avanzamento complessivo
+            this.updateOverallProgress(progressEvent);
+        }
     }
     userStoreDef: StoreDefinition
     snackbarStoreDef: StoreDefinition
+    progressStoreDef: StoreDefinition
 
     constructor() {
         this.client = axios.create({
             baseURL: '/api',
         })
 
+        this.client.interceptors.request.use((request) => {
+            const progressStore = this.progressStoreDef()
+            progressStore.activeRequests++;
+            progressStore.loading = true;
+            return request
+        })
+
         this.client.interceptors.response.use((response) => {
+            const progressStore = this.progressStoreDef()
+            progressStore.activeRequests--;
+            if (progressStore.activeRequests === 0) {
+                progressStore.loading = false;
+            }
             return response
         }, error => {
+            const progressStore = this.progressStoreDef()
+            progressStore.activeRequests--;
+            if (progressStore.activeRequests === 0) {
+                progressStore.loading = false;
+                progressStore.overallProgress = 0;
+            }
             if (error.response) {
                 if (error.response.status === 401) {
-                  // Redirect to login page
-                  router.push('/login')
+                    // Redirect to login page
+                    router.push('/login')
                 } else {
-                  // Show a generic error message
-                  const snackbar = SnackbarStore()
-                  snackbar.show("Si è verificare un errore", 3000, 'top')
+                    // Show a generic error message
+                    const snackbar = SnackbarStore()
+                    snackbar.show("Si è verificare un errore", 3000, 'top', 'error')
                 }
-              }
-              return Promise.reject(error)
+            }
+            return Promise.reject(error)
         })
 
         this.userStoreDef = UserStore
         this.snackbarStoreDef = SnackbarStore
+        this.progressStoreDef = ProgressStore
+    }
+
+    private updateOverallProgress(progressEvent: AxiosProgressEvent): void {
+        // Calcola la percentuale di completamento della singola richiesta
+        const individualProgress = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+        );
+
+        // Calcola l'avanzamento complessivo medio di tutte le richieste attive
+        const progressStore = this.progressStoreDef()
+
+        progressStore.overallProgress = Math.round(
+            (individualProgress + progressStore.overallProgress * (progressStore.activeRequests - 1)) /
+            progressStore.activeRequests
+        );
     }
 
     private async get<T extends Repository>(path: string): Promise<T[]> {
@@ -100,11 +139,11 @@ export default class Axios {
         return await this.post("/events", event)
     }
 
-    async CreateOrder(order: Order) : Promise<Number> {
+    async CreateOrder(order: Order): Promise<Number> {
         return await this.post("/orders", order)
     }
 
-    async UpdateItem(item: Item) : Promise<Number> {
+    async UpdateItem(item: Item): Promise<Number> {
         return await this.put("/items", item)
     }
 

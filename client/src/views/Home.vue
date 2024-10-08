@@ -50,9 +50,9 @@ const filteredRole = computed(() => {
   return roles.filter(r => user.value?.roles?.includes(r.role))
 })
 
-onBeforeMount(() =>
+onBeforeMount(() => {
   emit('reload')
-)
+})
 
 </script>
 
