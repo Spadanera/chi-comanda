@@ -12,12 +12,39 @@ const event = ref<Event>()
 const axios = new Axios()
 const loading = ref<boolean>(true)
 
+function sortTable(a:AvailableTable, b:AvailableTable): number {
+  const _a = a.table_name || a.master_table_name
+  const _b = b.table_name || b.master_table_name
+  const numRegex = /^\d+$/
+  if (numRegex.test(_a)) {
+    if (numRegex.test(_b)) {
+      return parseInt(_a) - parseInt(_b)
+    }
+    else {
+      return -1
+    }
+  }
+  else {
+    if (numRegex.test(_b)) {
+      return 1
+    }
+    else {
+      if (_a < _b) {
+        return -1
+      }
+      else {
+        return 1
+      }
+    }
+  }
+}
+
 onMounted(async () => {
   event.value = await axios.GetOnGoingEvent()
   if (event.value.id) {
     tables.value = await axios.GetAvailableTables(event.value.id)
-    availableTable.value = tables.value.filter(t => !t.event_id)
-    activeTable.value = tables.value.filter(t => t.event_id)
+    availableTable.value = tables.value.filter(t => !t.event_id).sort(sortTable)
+    activeTable.value = tables.value.filter(t => t.event_id).sort(sortTable)
     loading.value = false
   } else {
     loading.value = false
@@ -38,7 +65,7 @@ onMounted(async () => {
       <v-row>
         <v-col v-for="table in activeTable" cols="4">
           <RouterLink :to="`/event/${event?.id}/order/${table?.master_table_id ? table?.master_table_id : 0}/table/${table.table_id}`">
-            <v-card height="80px" style="padding-top: 20px;">
+            <v-card height="50px" style="padding-top: 10px;">
               {{ table.table_name }}
             </v-card>
           </RouterLink>
@@ -52,14 +79,14 @@ onMounted(async () => {
       <v-row>
         <v-col v-for="table in availableTable" cols="4">
           <RouterLink :to="`/event/${event?.id}/order/${table?.master_table_id}/table/0`">
-            <v-card height="80px" style="padding-top: 20px;">
+            <v-card height="50px" style="padding-top: 10px;">
               {{ table.master_table_name }}
             </v-card>
           </RouterLink>
         </v-col>
-        <v-col>
+        <v-col cols="4">
             <RouterLink :to="`/event/${event?.id}/order/0/table/0`">
-              <v-card height="80px" style="padding-top: 20px;">
+              <v-card height="50px" style="padding-top: 10px;">
                 <v-icon>mdi-plus</v-icon>
               </v-card>
             </RouterLink>
@@ -72,6 +99,6 @@ onMounted(async () => {
 <style scoped>
 .v-card {
   text-align: center;
-  font-size: x-large;
+  font-size: large;
 }
 </style>

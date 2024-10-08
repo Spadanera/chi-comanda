@@ -71,6 +71,8 @@ CREATE TABLE `items` (
   `table_id` integer,
   `order_id` integer,
   `master_item_id` integer,
+  `name` VARCHAR(255) NULL AFTER `paid`,
+  ADD COLUMN `price` DOUBLE NULL AFTER `name`,
   `note` varchar(255),
   `done` bool,
   `paid` bool

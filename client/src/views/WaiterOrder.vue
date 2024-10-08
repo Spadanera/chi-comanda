@@ -4,7 +4,7 @@ import { ref, onMounted, computed } from "vue"
 import router from '@/router'
 import Axios from '@/services/client'
 import { SnackbarStore, type IUser } from '@/stores'
-import { groupItems, copy } from "@/services/utils"
+import { groupItems, copy, sortItem } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
 
 const axios = new Axios()
@@ -35,7 +35,7 @@ const groupedOrderItems = computed(() => {
 })
 
 function filterItems(sub_type: string) {
-  return computedItems.value.filter((i: Item) => i.sub_type === sub_type)
+  return computedItems.value.filter((i: Item) => i.sub_type === sub_type).sort(sortItem)
 }
 
 function addItemToOrder(item: Item) {
@@ -53,6 +53,15 @@ function addItemWithNote() {
   snackbarStore.show(`${dialogItem.value.name} aggiunto`)
 }
 
+function addCocktailPremium(item: Item) {
+  item.table_id = props.table_id
+  item.master_item_id = item.id
+  item.price = 9
+  item.name = `${item.name} - PREMIUM`
+  orderItems.value.push(copy<Item>(item))
+  snackbarStore.show(`${item.name} aggiunto`, 2000, 'top')
+}
+
 function changeItemQuantity(item: Item, quantity: number) {
   if (quantity === 1) {
     delete item.quantity
@@ -60,7 +69,7 @@ function changeItemQuantity(item: Item, quantity: number) {
   }
   if (quantity === -1) {
     for (let i = 0; i < orderItems.value.length; i++) {
-      if (orderItems.value[i].master_item_id == item.master_item_id && orderItems.value[i].note === item.note) {
+      if (orderItems.value[i].master_item_id == item.master_item_id && orderItems.value[i].note === item.note && orderItems.value[i].name === item.name) {
         orderItems.value.splice(i, 1);
         break;
       }
@@ -109,7 +118,7 @@ onMounted(async () => {
   <v-skeleton-loader v-if="loading" :loading="loading" type="list-item-three-line"></v-skeleton-loader>
   <div>
     <v-text-field :clearable="true" v-model="filter" label="Cerca"></v-text-field>
-    <v-list style="margin-top: -20px;">
+    <v-list>
       <template v-for="type in types">
         <v-list-subheader style="margin-top: 10px" inset>{{ type }}</v-list-subheader>
         <template v-for="item in filterItems(type)">
@@ -118,6 +127,7 @@ onMounted(async () => {
               {{ item.name }}
             </v-list-item-title>
             <template v-slot:append>
+              <v-btn icon="mdi-star-circle" v-if="item.sub_type === 'COCKTAIL'" variant="text" @click="addCocktailPremium(item)"></v-btn>
               <v-btn icon="mdi-pencil" variant="text" @click="openNoteDialog(item)"></v-btn>
               <v-btn icon="mdi-plus" variant="text" @click="addItemToOrder(item)"></v-btn>
             </template>
@@ -153,7 +163,7 @@ onMounted(async () => {
       </v-card-title>
       <v-card-text>
         <v-row dense>
-          <v-col cols="12" md="4" sm="6">
+          <v-col cols="12">
             <v-text-field v-model="tableName" label="Nome Tavolo" required :autofocus="true"></v-text-field>
           </v-col>
         </v-row>
@@ -178,7 +188,7 @@ onMounted(async () => {
       </v-card-title>
       <v-card-text>
         <v-row dense>
-          <v-col cols="12" md="4" sm="6">
+          <v-col cols="12">
             <v-textarea v-model="dialogItem.note" label="Nota" required :autofocus="true"
               :clearable="true"></v-textarea>
           </v-col>

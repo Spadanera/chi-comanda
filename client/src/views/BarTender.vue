@@ -57,7 +57,7 @@ function getSubTypeCount(order: Order, subtype: string[]) {
 async function doneItem(item: Item) {
   item.done = true
   await axios.UpdateItem(item)
-  selectedOrder.value[0].items.find((i: Item) => i.master_item_id === item.master_item_id && i.note === item.note && !i.done).done = true
+  selectedOrder.value[0].items.find((i: Item) => i.master_item_id === item.master_item_id && i.note === item.note && i.name === item.name && !i.done).done = true
 
   if (computedSelectedOrder.value.itemsToDo.length === 0) {
     completeOrder()
@@ -68,7 +68,7 @@ async function rollbackItem(item: Item) {
   item.done = false
   await axios.UpdateItem(item)
   if (selectedOrder && selectedOrder.value && selectedOrder.value.length) {
-    selectedOrder.value[0].items.find((i: Item) => i.master_item_id === item.master_item_id && i.note === item.note && i.done).done = false
+    selectedOrder.value[0].items.find((i: Item) => i.master_item_id === item.master_item_id && i.note === item.note && i.name === item.name && i.done).done = false
   }
 }
 

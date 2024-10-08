@@ -20,10 +20,10 @@ export default class TableApi {
                     'id', items.id, 
                     'master_item_id', master_items.id, 
                     'note', items.note, 
-                    'name', master_items.name, 
+                    'name', items.name, 
                     'type', master_items.type, 
                     'sub_type', master_items.sub_type, 
-                    'price', master_items.price,
+                    'price', items.price,
                     'destination_id', master_items.destination_id,
                     'done', items.done,
                     'paid', items.paid
