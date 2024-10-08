@@ -16,8 +16,7 @@ export default class OrderAPI {
                 orders.id, 
                 orders.event_id,
                 orders.table_id, 
-                master_tables.name table_name,
-                master_tables.id master_table_id,
+                tables.name table_name,
                 orders.done, 
                 (
                     SELECT JSON_ARRAYAGG(JSON_OBJECT(
@@ -38,8 +37,6 @@ export default class OrderAPI {
                 ) items
             FROM orders 
             INNER JOIN tables ON orders.table_id = tables.id
-            INNER JOIN table_master_table ON table_master_table.table_id = tables.id
-            INNER JOIN master_tables ON table_master_table.master_table_id = master_tables.id
             WHERE orders.event_id = ? AND IFNULL(done, false) = false
             ORDER BY orders.id`, [destination_ids, event_id])
     }
@@ -50,9 +47,11 @@ export default class OrderAPI {
 
     async create(order: Order): Promise<number> {
         const table_id = await this.database.executeTransaction(async () => {
-            if (!order.table_id && order.master_table_id) {
+            if (!order.table_id) {
                 order.table_id = await this.database.execute('INSERT INTO tables (name, event_id, status) VALUES (?, ?, ?)', [order.table_name, order.event_id, 'ACTIVE'], true)
-                await this.database.execute('INSERT INTO table_master_table (table_id, master_table_id) VALUES (?, ?)', [order.table_id, order.master_table_id], true)
+                if (order.master_table_id) {
+                    await this.database.execute('INSERT INTO table_master_table (table_id, master_table_id) VALUES (?, ?)', [order.table_id, order.master_table_id], true)
+                }
             }
             const order_id = await this.database.execute('INSERT INTO orders (event_id, table_id) VALUES (?,?)', [order.event_id, order.table_id], true)
             if (order.items) {

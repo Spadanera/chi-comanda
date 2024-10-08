@@ -17,6 +17,8 @@ const props = defineProps(['event_id', 'table_id', 'master_table_id'])
 
 const loading = ref<boolean>(true)
 const dialog = ref<boolean>(false)
+const dialogTable = ref<boolean>(false)
+const tableName = ref<string>('')
 const dialogItem = ref<Item>()
 const master_items = ref<MasterItem[]>([])
 const sheet = ref(false)
@@ -24,16 +26,16 @@ const orderItems = ref<Item[]>([])
 const filter = ref<string>('')
 const table_name = ref<string>('')
 
-const orderTotal = computed(() => orderItems.value.reduce((a:number, i:Item) => a += i.price, 0))
-const foodTotal = computed(() => orderItems.value.filter((i:Item) => i.type === 'FOOD').length)
-const beverageTotal = computed(() => orderItems.value.filter((i:Item) => i.type === 'BEVERAGE').length)
-const computedItems = computed(() => master_items.value.filter((i:Item) => (filter.value === '' || filter.value === null || i.name.toLowerCase().indexOf(filter.value.toLowerCase()) > - 1)))
+const orderTotal = computed(() => orderItems.value.reduce((a: number, i: Item) => a += i.price, 0))
+const foodTotal = computed(() => orderItems.value.filter((i: Item) => i.type === 'FOOD').length)
+const beverageTotal = computed(() => orderItems.value.filter((i: Item) => i.type === 'BEVERAGE').length)
+const computedItems = computed(() => master_items.value.filter((i: Item) => (filter.value === '' || filter.value === null || i.name.toLowerCase().indexOf(filter.value.toLowerCase()) > - 1)))
 const groupedOrderItems = computed(() => {
   return groupItems(orderItems.value)
 })
 
 function filterItems(sub_type: string) {
-  return computedItems.value.filter((i:Item) => i.sub_type === sub_type)
+  return computedItems.value.filter((i: Item) => i.sub_type === sub_type)
 }
 
 function addItemToOrder(item: Item) {
@@ -83,9 +85,22 @@ async function sendOrder() {
   router.push('/waiter')
 }
 
+async function setTableName() {
+  table_name.value = tableName.value
+  dialogTable.value = false
+}
+
 onMounted(async () => {
   master_items.value = await axios.GetAllMasterItems()
-  table_name.value = (await axios.GetMasterTable(props.master_table_id)).name
+  if (props.table_id) {
+    table_name.value = (await axios.GetTable(props.table_id)).name
+  }
+  else if (props.master_table_id) {
+    table_name.value = (await axios.GetMasterTable(props.master_table_id)).name
+  }
+  else {
+    dialogTable.value = true
+  }
   loading.value = false
 })
 </script>
@@ -131,6 +146,31 @@ onMounted(async () => {
       </v-bottom-navigation>
     </v-bottom-sheet>
   </div>
+  <v-dialog v-model="dialogTable" max-width="600">
+    <v-card>
+      <v-card-title>
+        Indica il nome del tavolo
+      </v-card-title>
+      <v-card-text>
+        <v-row dense>
+          <v-col cols="12" md="4" sm="6">
+            <v-text-field v-model="tableName" label="Nome Tavolo" required :autofocus="true"></v-text-field>
+          </v-col>
+        </v-row>
+      </v-card-text>
+
+      <v-divider></v-divider>
+
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <RouterLink to="/waiter">
+          <v-btn text="Annulla" variant="plain"></v-btn>
+        </RouterLink>
+
+        <v-btn :disabled="tableName === ''" color="primary" text="Salva" variant="tonal" @click="setTableName"></v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
   <v-dialog v-model="dialog" max-width="600">
     <v-card>
       <v-card-title>
@@ -175,8 +215,7 @@ onMounted(async () => {
       <span>{{ orderTotal }}</span>
     </v-btn>
     <v-spacer></v-spacer>
-    <v-btn v-show="orderTotal > 0"
-      @click="sheet = !sheet">
+    <v-btn v-show="orderTotal > 0" @click="sheet = !sheet">
       <v-icon>mdi-list-box</v-icon>
     </v-btn>
   </v-bottom-navigation>

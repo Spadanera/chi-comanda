@@ -134,11 +134,22 @@ WITH available_tables AS (
 )
 
 SELECT 
-available_tables.id table_id, 
-available_tables.name table_name, 
-master_tables.id master_table_id, 
-master_tables.name master_table_name, 
-master_tables.default_seats,
-available_tables.event_id
+  available_tables.id table_id, 
+  available_tables.name table_name, 
+  master_tables.id master_table_id, 
+  master_tables.name master_table_name, 
+  master_tables.default_seats,
+  available_tables.event_id
 FROM available_tables
-RIGHT JOIN master_tables ON available_tables.master_table_id = master_tables.id;
+RIGHT JOIN master_tables ON available_tables.master_table_id = master_tables.id
+UNION
+SELECT 
+    tables.id table_id, 
+    tables.name table_name, 
+    null master_table_id, 
+    null master_table_name,
+    null default_seats,
+    tables.event_id
+FROM tables
+WHERE STATUS = 'ACTIVE'
+AND id NOT IN (SELECT table_id FROM table_master_table);

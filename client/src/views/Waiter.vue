@@ -37,9 +37,9 @@ onMounted(async () => {
       </v-row>
       <v-row>
         <v-col v-for="table in activeTable" cols="4">
-          <RouterLink :to="`/event/${event?.id}/order/${table?.master_table_id}/table/${table.table_id}`">
+          <RouterLink :to="`/event/${event?.id}/order/${table?.master_table_id ? table?.master_table_id : 0}/table/${table.table_id}`">
             <v-card height="80px">
-              {{ table.master_table_name }}
+              {{ table.table_name }}
             </v-card>
           </RouterLink>
         </v-col>
@@ -56,6 +56,13 @@ onMounted(async () => {
               {{ table.master_table_name }}
             </v-card>
           </RouterLink>
+        </v-col>
+        <v-col>
+            <RouterLink :to="`/event/${event?.id}/order/0/table/0`">
+              <v-card height="80px">
+                <v-icon>mdi-plus</v-icon>
+              </v-card>
+            </RouterLink>
         </v-col>
       </v-row>
     </v-container>

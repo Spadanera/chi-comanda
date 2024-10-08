@@ -381,7 +381,7 @@ apiRouter.get("/master-tables", async (req: Request, res: Response) => {
     try {
         const api = new MasterTableApi()
         const result = await api.getAll()
-        res.status(200).json(result[0])
+        res.status(200).json(result)
     } catch (error) {
         console.log(error)
         res.status(500).json(error)
@@ -392,7 +392,12 @@ apiRouter.get("/master-tables/:id", async (req: Request, res: Response) => {
     try {
         const api = new MasterTableApi()
         const result = await api.get(+req.params.id)
-        res.status(200).json(result[0])
+        if (result && result.length) {
+            res.status(200).json(result[0])
+        }
+        else {
+            res.status(200).json(0)
+        }
     } catch (error) {
         console.log(error)
         res.status(500).json(error)

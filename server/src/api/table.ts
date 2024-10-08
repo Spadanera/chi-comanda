@@ -14,7 +14,7 @@ export default class TableApi {
 
     async getActiveTable(eventId: number): Promise<Table[]> {
         return await this.database.query(`
-            SELECT tables.id, master_tables.name, tables.paid, tables.status, master_tables.id master_table_id,
+            SELECT tables.id, tables.name, tables.paid, tables.status,
             (
                 SELECT JSON_ARRAYAGG(JSON_OBJECT(
                     'id', items.id, 
@@ -33,8 +33,6 @@ export default class TableApi {
                 WHERE table_id = tables.id
             ) items
             FROM tables 
-            INNER JOIN table_master_table ON tables.id = table_master_table.table_id
-            INNER JOIN master_tables ON master_tables.id = table_master_table.master_table_id
             WHERE event_id = ? AND status = 'ACTIVE'
             ORDER BY tables.id
             `, [eventId])

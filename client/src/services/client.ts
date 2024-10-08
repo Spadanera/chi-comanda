@@ -71,6 +71,10 @@ export default class Axios {
         return await this.getSingle<MasterTable>(`/master-tables/${master_id}`)
     }
 
+    async GetTable(master_id: string): Promise<MasterTable> {
+        return await this.getSingle<MasterTable>(`/tables/${master_id}`)
+    }
+
     async GetOnGoingEvent(): Promise<Event> {
         return await this.getSingle<Event>("/events/ongoing")
     }
