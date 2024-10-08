@@ -22,7 +22,7 @@ const tables = ref<Table[]>([])
 const selectedTable = ref<Table[]>([])
 const confirm = ref<boolean>(false)
 const confirm2 = ref<boolean>(false)
-const drawer = ref<boolean>(false)
+const drawer = ref<boolean>()
 const itemToBePaid = ref<number[]>([])
 
 const tablesToDo = computed(() => tables.value.filter((o:Table) => !o.paid && o.items && o.items.length))
@@ -98,17 +98,13 @@ async function completeTable() {
 }
 
 async function paySelectedItem() {
-  if (itemToBePaid.value.length < computedSelectedTable.value.itemsToDo.length) {
-    await axios.PaySelectedItem(selectedTable.value[0].id, itemToBePaid.value)
-    console.log(itemToBePaid.value, selectedTable.value[0].items)
-    itemToBePaid.value.forEach(i => {
-      selectedTable.value[0].items.find((_i:Item) => _i.id === i).paid = true
-    });
-    itemToBePaid.value = []
-  }
-  else {
-    await completeTable()
-  }
+  await axios.PaySelectedItem(selectedTable.value[0].id, itemToBePaid.value)
+  console.log(itemToBePaid.value, selectedTable.value[0].items)
+  itemToBePaid.value.forEach(i => {
+    selectedTable.value[0].items.find((_i:Item) => _i.id === i).paid = true
+  });
+  itemToBePaid.value = []
+  
   confirm2.value = false
 }
 
@@ -132,7 +128,6 @@ onMounted(async () => {
   })
 
   is.on('connect', () => {
-    console.log('a user connected')
     is.emit('join', 'cassa')
   })
 
@@ -171,7 +166,7 @@ onBeforeUnmount(() => {
     <v-list v-model:selected="selectedTable" lines="two">
       <v-list-item :key="table.id" :value="table" v-for="table in tablesToDo">
         <v-list-item-title>
-          Tavolo {{ table.table_name }}
+          Tavolo {{ table.name }}
         </v-list-item-title>
         <template v-for="type in types">
           <v-btn readonly size="small" density="compact" variant="plain" v-if="getSubTypeCount(table, [type]) > 0">

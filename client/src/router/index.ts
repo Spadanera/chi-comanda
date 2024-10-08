@@ -63,7 +63,10 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const userStore = UserStore()
   const user = await userStore.checkAuthentication()
-  if (user.id || to.name === 'Login') {
+  if (user.id && to.name === 'Login') {
+    next({ name: "Home" })
+  }
+  else if (user.id || to.name === 'Login') {
     next()
   }
   else {

@@ -123,9 +123,11 @@ onMounted(async () => {
         </ItemList>
       </v-card>
       <v-bottom-navigation :name="'inner-button-nav-bar'">
-        <v-btn style="font-size: x-large;" text="Annulla" variant="plain" @click="sheet = !sheet"></v-btn>
+        <v-btn style="font-size: x-large;" icon="mdi-arrow-down" variant="plain" @click="sheet = !sheet"></v-btn>
         <v-spacer></v-spacer>
-        <v-btn style="font-size: x-large;" text="Invia" variant="plain" @click="sendOrder"></v-btn>
+        <v-btn style="font-size: x-large;" icon="mdi-send" variant="plain" @click="sendOrder">
+
+        </v-btn>
       </v-bottom-navigation>
     </v-bottom-sheet>
   </div>

@@ -49,7 +49,7 @@ export default class OrderAPI {
     }
 
     async create(order: Order): Promise<number> {
-        return await this.database.executeTransaction(async () => {
+        const table_id = await this.database.executeTransaction(async () => {
             if (!order.table_id && order.master_table_id) {
                 order.table_id = await this.database.execute('INSERT INTO tables (name, event_id, status) VALUES (?, ?, ?)', [order.table_name, order.event_id, 'ACTIVE'], true)
                 await this.database.execute('INSERT INTO table_master_table (table_id, master_table_id) VALUES (?, ?)', [order.table_id, order.master_table_id], true)
@@ -68,8 +68,18 @@ export default class OrderAPI {
                 event: "new-order",
                 body: order
             })
-            return order_id
+
+            return order.table_id || 0
         })
+        const tableApi = new TableApi()
+        const table = (await tableApi.getActiveTable(order.event_id || 0)).find(t => t.id === table_id)
+        SocketIOService.instance().sendMessage({
+            room: "cassa",
+            event: "new-order",
+            body: table
+        })
+
+        return table_id;
     }
 
     async completeOrder(order_id: number, input: CompleteOrderInput): Promise<number> {
@@ -78,13 +88,6 @@ export default class OrderAPI {
             const items = await this.database.query<Item>("SELECT id FROM items WHERE order_id = ? AND IFNULL(done, false) = FALSE", order_id)
             if (items.length === 0) {
                 await this.database.execute("UPDATE orders SET done = TRUE WHERE id = ?", [order_id], true)
-                const tableApi = new TableApi()
-                const table = (await tableApi.getActiveTable(input.event_id)).find(t => t.id === input.table_id)
-                SocketIOService.instance().sendMessage({
-                    room: "cassa",
-                    event: "new-order",
-                    body: table
-                })
             }
             return result
         })

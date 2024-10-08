@@ -30,7 +30,7 @@ export default class TableApi {
                 )) 
                 FROM items 
                 INNER JOIN master_items ON master_items.id = items.master_item_id
-                WHERE table_id = tables.id AND done = TRUE
+                WHERE table_id = tables.id
             ) items
             FROM tables 
             INNER JOIN table_master_table ON tables.id = table_master_table.table_id
