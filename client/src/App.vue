@@ -10,6 +10,7 @@ const userStore = UserStore()
 const snackbarStore = SnackbarStore()
 const progressStore = ProgressStore()
 const user = ref({})
+const test = ref<boolean>(true)
 
 function login() {
   user.value = userStore.user
@@ -38,8 +39,8 @@ onBeforeMount(async () => {
           <RouterLink class="hide-xs" to="/">LOMP</RouterLink>
           <RouterLink class="show-xs" to="/">LUDO ORDER MANAGEMENT PROJECT</RouterLink>
         </v-app-bar-title>
-        <v-progress-linear v-model="progressStore.overallProgress" color="cyan-darken-2" indeterminate absolute
-          :active="progressStore.loading"></v-progress-linear>
+        <!-- <v-progress-linear v-model="progressStore.overallProgress" color="cyan-darken-2" indeterminate absolute
+          :active="progressStore.loading"></v-progress-linear> -->
         <v-btn @click="axios.Logout()" v-if="userStore.isLoggedIn">
           LOG OUT
         </v-btn>
@@ -59,6 +60,9 @@ onBeforeMount(async () => {
           </v-btn>
         </template>
       </v-snackbar>
+      <v-overlay v-model="progressStore.loading" persistent scroll-strategy="block" class="align-center justify-center">
+        <v-progress-circular :size="80" color="primary" indeterminate></v-progress-circular>
+      </v-overlay>
     </v-app>
   </v-responsive>
 

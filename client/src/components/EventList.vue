@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
-import { type Event } from "../../../models/src"
+import { type Event, type Item } from "../../../models/src"
 import Confirm from '@/components/Confirm.vue'
 import Axios from '@/services/client'
 import { groupItems, copy, sortItem } from "@/services/utils"
@@ -22,34 +22,31 @@ const beverageItems = computed<Item[]>(() => {
     if (selectedEvent.value) {
         return groupItems(selectedEvent.value.items).filter((i: Item) => i.type === 'BEVERAGE')
     }
-    return [] as Items[]
+    return [] as Item[]
 })
 
 const foodItems = computed<Item[]>(() => {
     if (selectedEvent.value) {
         return groupItems(selectedEvent.value.items).filter((i: Item) => i.type === 'FOOD')
     }
-    return [] as Items[]
+    return [] as Item[]
 })
 
 function closeEventConfirm(event: Event) {
     selectedEvent.value = copy<Event>(event)
     selectedEvent.value.status = 'CLOSED'
     confirmCloseEvent.value = true
-    emit('reload')
 }
 
 function deleteEventConfirm(event: Event) {
     selectedEvent.value = copy<Event>(event)
     confirmDeleteEvent.value = true
-    emit('reload')
 }
 
 async function closeEvent() {
     await axios.SetEventStatus(selectedEvent.value)
     confirmCloseEvent.value = false
-    emit('reload')
-    tab.value = 'PLANNED'
+    emit('reload', true)
 }
 
 async function deleteEvent() {
@@ -82,8 +79,8 @@ onMounted(() => {
     <v-container>
         <v-row>
             <v-col v-for="event in events" sm="6" xs="12" lg="4">
-                <v-card :subtitle="event.name" :title="event.date.toString().split('T')[0]">
-                    <v-card-text v-show="event.status !== 'PLANNED'" @click="showEvent(event)">
+                <v-card :subtitle="event.name" :title="event.date.toString().split('T')[0]" @click="showEvent(event)">
+                    <v-card-text v-show="event.status !== 'PLANNED'">
                         <v-btn readonly size="small" density="compact" variant="plain">
                             <v-icon>mdi-table-furniture</v-icon> {{ event.tableCount }}
                         </v-btn>
@@ -99,13 +96,13 @@ onMounted(() => {
                     </v-card-text>
                     <v-card-actions v-if="event.status === 'ONGOING' || event.status === 'PLANNED'">
                         <v-btn text="APRI EVENTO" v-if="event.status === 'PLANNED' && !ongoing" size="small"
-                            density="compact" variant="plain" @click="setEventStatus(event, 'ONGOING')"></v-btn>
+                            density="compact" variant="plain" @click.stop="setEventStatus(event, 'ONGOING')"></v-btn>
                         <v-btn text="ELIMINA" v-if="event.status === 'PLANNED'" size="small" density="compact"
-                            variant="plain" @click="deleteEventConfirm(event)"></v-btn>
+                            variant="plain" @click.stop="deleteEventConfirm(event)"></v-btn>
                         <v-btn text="CHIUDI EVENTO" v-if="event.status === 'ONGOING'" size="small" density="compact"
-                            variant="plain" @click="closeEventConfirm(event)"></v-btn>
+                            variant="plain" @click.stop="closeEventConfirm(event)"></v-btn>
                         <v-btn text="ANNULLA" v-if="event.status === 'ONGOING' && event.tableCount === 0" size="small"
-                            density="compact" variant="plain" @click="setEventStatus(event, 'PLANNED')"></v-btn>
+                            density="compact" variant="plain" @click.stop="setEventStatus(event, 'PLANNED')"></v-btn>
                     </v-card-actions>
                 </v-card>
             </v-col>

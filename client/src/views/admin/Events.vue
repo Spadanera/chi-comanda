@@ -52,22 +52,16 @@ async function load(goToOngoing: boolean = false) {
 
 onMounted(async () => {
   await load()
-  if (event.id) {
-    ongoingEvents.value = [event]
-  }
-  if (!ongoingEvents.value.length && tab.value === 'ONGOING') {
-    tab.value = 'PLANNED'
-  }
 })
 </script>
 <template>
   <v-tabs v-model="tab" grow>
-    <v-tab value="ONGOING" v-show="ongoingEvents.length">Eventi Attivo</v-tab>
+    <v-tab value="ONGOING">Eventi Attivo</v-tab>
     <v-tab value="PLANNED">Eventi Programmati</v-tab>
     <v-tab value="CLOSED">Eventi Chiusi</v-tab>
   </v-tabs>
   <v-tabs-window v-model="tab">
-    <v-tabs-window-item value="ONGOING" v-show="ongoingEvents.length">
+    <v-tabs-window-item value="ONGOING">
       <EventList v-model="ongoingEvents" @reload="load"></EventList>
     </v-tabs-window-item>
     <v-tabs-window-item value="PLANNED">
