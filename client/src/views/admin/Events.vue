@@ -11,7 +11,10 @@ const tab = ref<string>(null)
 const events = ref<EventType[]>([])
 const dialog = ref<boolean>(false)
 const dialogEvent = ref<EventType>(null)
-const ongoingEvents = ref<EventType[]>([])
+
+const ongoingEvents = computed<EventType[]>(() => {
+  return events.value.filter(e => e.status === 'ONGOING')
+})
 
 const futureEvents = computed<EventType[]>(() => {
   return events.value.filter(e => e.status === 'PLANNED').sort((a: EventType, b: EventType) => a.date < b.date ? -1 : 1)
@@ -34,32 +37,27 @@ function openDialog() {
 }
 
 async function createEvent() {
-  axios.CreateEvent(dialogEvent.value)
+  await axios.CreateEvent(dialogEvent.value)
   snackbarStore.show('Evento creato con successo', 3000, 'bottom', 'success')
   await load()
   dialog.value = false
 }
 
-async function getOngoinEvents() {
-  const event = await axios.GetOnGoingEvent()
-  if (event.id) {
-    ongoingEvents.value = [event]
-  }
-  else {
-    ongoingEvents.value = []
-    if (tab.value === 'ONGOING') {
-      tab.value = 'PLANNED'
-    }
-  }
-}
-
-async function load() {
+async function load(goToOngoing: boolean = false) {
   await getAllEvents()
-  await getOngoinEvents()
+  if (goToOngoing) {
+    tab.value = ongoingEvents.value.length ? 'ONGOING' : 'PLANNED'
+  }
 }
 
 onMounted(async () => {
   await load()
+  if (event.id) {
+    ongoingEvents.value = [event]
+  }
+  if (!ongoingEvents.value.length && tab.value === 'ONGOING') {
+    tab.value = 'PLANNED'
+  }
 })
 </script>
 <template>
@@ -70,16 +68,17 @@ onMounted(async () => {
   </v-tabs>
   <v-tabs-window v-model="tab">
     <v-tabs-window-item value="ONGOING" v-show="ongoingEvents.length">
-      <EventList v-model="ongoingEvents" @reload="getAllEvents"></EventList>
+      <EventList v-model="ongoingEvents" @reload="load"></EventList>
     </v-tabs-window-item>
     <v-tabs-window-item value="PLANNED">
-      <EventList :ongoing="ongoingEvents.length" v-model="futureEvents" @reload="getAllEvents"></EventList>
+      <EventList :ongoing="ongoingEvents.length" v-model="futureEvents" @reload="load"></EventList>
     </v-tabs-window-item>
     <v-tabs-window-item value="CLOSED">
       <EventList v-model="passedEvents" @reload="load"></EventList>
     </v-tabs-window-item>
   </v-tabs-window>
-  <v-fab v-if="tab === 'PLANNED'" icon="mdi-plus" app style="position: fixed; right: 10px; bottom: 10px;" location="bottom right" @click="openDialog"></v-fab>
+  <v-fab v-if="tab === 'PLANNED'" icon="mdi-plus" app style="position: fixed; right: 10px; bottom: 10px;"
+    location="bottom right" @click="openDialog"></v-fab>
   <v-dialog v-model="dialog" width="380px">
     <v-card>
       <v-card-title>
@@ -88,7 +87,7 @@ onMounted(async () => {
       <v-card-text>
         <v-form @submit.prevent>
           <v-text-field v-model="dialogEvent.name" label="Nome Evento" clearable>
-  
+
           </v-text-field>
           <v-date-picker locale="it" first-day-of-week="1" v-model:model-value="dialogEvent.date"></v-date-picker>
         </v-form>

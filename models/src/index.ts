@@ -52,6 +52,10 @@ export interface Event extends Repository {
   tables?: Table[]
   workers?: User[]
   orders?: Order[]
+  tableCount?: number
+  foodCount?: number
+  beverageCount?: number
+  revenue?: number
 }
 
 export interface Table extends Repository {

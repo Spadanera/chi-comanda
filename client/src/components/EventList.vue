@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { type Event } from "../../../models/src"
 import Confirm from '@/components/Confirm.vue'
 import Axios from '@/services/client'
 import { groupItems, copy, sortItem } from "@/services/utils"
+import ItemList from '@/components/ItemList.vue'
 
 const emit = defineEmits(['reload'])
 const props = defineProps(['ongoing'])
@@ -15,6 +16,21 @@ const events = defineModel<Event[]>({ default: [] })
 const confirmCloseEvent = ref<boolean>(false)
 const confirmDeleteEvent = ref<boolean>(false)
 const selectedEvent = ref<Event>(null)
+const bottomSheet = ref<boolean>(null)
+
+const beverageItems = computed<Item[]>(() => {
+    if (selectedEvent.value) {
+        return groupItems(selectedEvent.value.items).filter((i: Item) => i.type === 'BEVERAGE')
+    }
+    return [] as Items[]
+})
+
+const foodItems = computed<Item[]>(() => {
+    if (selectedEvent.value) {
+        return groupItems(selectedEvent.value.items).filter((i: Item) => i.type === 'FOOD')
+    }
+    return [] as Items[]
+})
 
 function closeEventConfirm(event: Event) {
     selectedEvent.value = copy<Event>(event)
@@ -33,6 +49,7 @@ async function closeEvent() {
     await axios.SetEventStatus(selectedEvent.value)
     confirmCloseEvent.value = false
     emit('reload')
+    tab.value = 'PLANNED'
 }
 
 async function deleteEvent() {
@@ -45,7 +62,16 @@ async function setEventStatus(event: Event, status: string) {
     const _event = copy<Event>(event)
     _event.status = status
     await axios.SetEventStatus(_event)
-    emit('reload')
+    emit('reload', true)
+}
+
+async function showEvent(event: Event) {
+    if (event.status !== 'PLANNED') {
+        selectedEvent.value = copy<Event>(event)
+        const _event: Event = await axios.GetEvent(event.id)
+        selectedEvent.value.items = _event.items
+        bottomSheet.value = true
+    }
 }
 
 onMounted(() => {
@@ -57,34 +83,65 @@ onMounted(() => {
         <v-row>
             <v-col v-for="event in events" sm="6" xs="12" lg="4">
                 <v-card :subtitle="event.name" :title="event.date.toString().split('T')[0]">
-                    <v-card-text>
+                    <v-card-text v-show="event.status !== 'PLANNED'" @click="showEvent(event)">
                         <v-btn readonly size="small" density="compact" variant="plain">
-                            <v-icon>mdi-table-furniture</v-icon> 10
+                            <v-icon>mdi-table-furniture</v-icon> {{ event.tableCount }}
                         </v-btn>
                         <v-btn readonly size="small" density="compact" variant="plain">
-                            <v-icon>mdi-hamburger</v-icon> 10
+                            <v-icon>mdi-beer</v-icon> {{ event.beverageCount }}
                         </v-btn>
                         <v-btn readonly size="small" density="compact" variant="plain">
-                            <v-icon>mdi-beer</v-icon> 10
+                            <v-icon>mdi-hamburger</v-icon> {{ event.foodCount }}
                         </v-btn>
                         <v-btn readonly size="small" density="compact" variant="plain">
-                            <v-icon>mdi-currency-eur</v-icon> 10
+                            <v-icon>mdi-currency-eur</v-icon> {{ event.revenue }}
                         </v-btn>
                     </v-card-text>
                     <v-card-actions v-if="event.status === 'ONGOING' || event.status === 'PLANNED'">
-                        <v-btn text="CHIUDI EVENTO" v-if="event.status === 'ONGOING'" size="small"
-                            density="compact" variant="plain" @click="closeEventConfirm(event)"></v-btn>
-                        <v-btn text="ANNULLA" v-if="event.status === 'ONGOING'" size="small"
-                            density="compact" variant="plain" @click="setEventStatus(event, 'PLANNED')"></v-btn>
                         <v-btn text="APRI EVENTO" v-if="event.status === 'PLANNED' && !ongoing" size="small"
                             density="compact" variant="plain" @click="setEventStatus(event, 'ONGOING')"></v-btn>
                         <v-btn text="ELIMINA" v-if="event.status === 'PLANNED'" size="small" density="compact"
                             variant="plain" @click="deleteEventConfirm(event)"></v-btn>
+                        <v-btn text="CHIUDI EVENTO" v-if="event.status === 'ONGOING'" size="small" density="compact"
+                            variant="plain" @click="closeEventConfirm(event)"></v-btn>
+                        <v-btn text="ANNULLA" v-if="event.status === 'ONGOING' && event.tableCount === 0" size="small"
+                            density="compact" variant="plain" @click="setEventStatus(event, 'PLANNED')"></v-btn>
                     </v-card-actions>
                 </v-card>
             </v-col>
         </v-row>
     </v-container>
+    <v-bottom-sheet v-model="bottomSheet">
+        <v-card :title="selectedEvent.date.toString().split('T')[0]" :subtitle="selectedEvent.name">
+            <v-card-text>
+                <v-row>
+                    <v-col sm="6" xs="12">
+                        <ItemList v-model="beverageItems" subheader="BEVERAGE"></ItemList>
+                    </v-col>
+                    <v-col sm="6" xs="12">
+                        <ItemList v-model="foodItems" subheader="FOOD"></ItemList>
+                    </v-col>
+                </v-row>
+            </v-card-text>
+            <v-card-actions>
+                <v-btn readonly size="small" density="compact" variant="plain">
+                    <v-icon>mdi-table-furniture</v-icon> {{ selectedEvent.tableCount }}
+                </v-btn>
+                <v-btn readonly size="small" density="compact" variant="plain">
+                    <v-icon>mdi-beer</v-icon> {{ selectedEvent.beverageCount }}
+                </v-btn>
+                <v-btn readonly size="small" density="compact" variant="plain">
+                    <v-icon>mdi-hamburger</v-icon> {{ selectedEvent.foodCount }}
+                </v-btn>
+                <v-btn readonly size="small" density="compact" variant="plain">
+                    <v-icon>mdi-currency-eur</v-icon> {{ selectedEvent.revenue }}
+                </v-btn>
+
+                <v-spacer></v-spacer>
+                <v-btn text="CHIUDI" @click="bottomSheet = false"></v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-bottom-sheet>
     <Confirm v-model="confirmCloseEvent">
         <template v-slot:action>
             <v-btn text="Conferma" variant="plain" @click="closeEvent"></v-btn>

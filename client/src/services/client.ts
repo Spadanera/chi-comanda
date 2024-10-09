@@ -107,6 +107,10 @@ export default class Axios {
         return await this.get<Event>("/events")
     }
 
+    async GetEvent(event_id: number): Promise<Event> {
+        return await this.getSingle<Event>(`/events/${event_id}`)
+    }
+
     async GetOnGoingEvent(): Promise<Event> {
         return await this.getSingle<Event>("/events/ongoing")
     }

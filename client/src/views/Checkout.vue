@@ -190,8 +190,9 @@ onBeforeUnmount(() => {
       </v-list-item>
     </v-list>
   </v-navigation-drawer>
-  <div>
-    <ItemList subheader="DA PAGERE" :items="computedSelectedTable.itemsToDo">
+  <p v-if="!event?.id">Nessun evento attivo</p>
+  <div v-else>
+    <ItemList subheader="DA PAGERE" v-model="computedSelectedTable.itemsToDo">
       <template v-slot:prequantity="slotProps">
        <v-btn icon="mdi-delete" @click="deleteItemConfirm(slotProps.item.id)" variant="plain"></v-btn>
       </template>
@@ -199,7 +200,7 @@ onBeforeUnmount(() => {
         <v-checkbox v-model="itemToBePaid" :value="slotProps.item.id"></v-checkbox>
       </template>
     </ItemList>
-    <ItemList subheader="PAGATI" :items="computedSelectedTable.itemsDone" :done="true">
+    <ItemList subheader="PAGATI" v-model="computedSelectedTable.itemsDone" :done="true">
       <template v-slot:postquantity="slotProps">
         <v-btn variant="plain" icon="mdi-arrow-up-thin" @click="rollbackItem(slotProps.item)"></v-btn>
       </template>

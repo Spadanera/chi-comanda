@@ -134,7 +134,7 @@ onMounted(async () => {
     </v-list>
     <v-bottom-sheet v-model="sheet">
       <v-card :title="`Ordine Tavolo ${table_name}`" style="padding-bottom: 50px">
-        <ItemList :items="groupedOrderItems">
+        <ItemList v-model="groupedOrderItems">
           <template v-slot:prequantity="slotProps">
             <v-btn variant="plain" icon="mdi-minus" @click="changeItemQuantity(slotProps.item, -1)"></v-btn>
           </template>
@@ -209,12 +209,12 @@ onMounted(async () => {
       </v-btn>
     </RouterLink>
     <v-btn density="compact" readonly>
-      <v-icon>mdi-hamburger</v-icon>
-      <span>{{ foodTotal }}</span>
-    </v-btn>
-    <v-btn density="compact" readonly>
       <v-icon>mdi-beer</v-icon>
       <span>{{ beverageTotal }}</span>
+    </v-btn>
+    <v-btn density="compact" readonly>
+      <v-icon>mdi-hamburger</v-icon>
+      <span>{{ foodTotal }}</span>
     </v-btn>
     <v-btn density="compact" readonly>
       <v-icon>mdi-currency-eur</v-icon>

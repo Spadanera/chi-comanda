@@ -43,6 +43,7 @@ onMounted(async () => {
   event.value = await axios.GetOnGoingEvent()
   if (event.value.id) {
     tables.value = await axios.GetAvailableTables(event.value.id)
+    console.log(tables.value)
     availableTable.value = tables.value.filter(t => !t.event_id).sort(sortTable)
     activeTable.value = tables.value.filter(t => t.event_id).sort(sortTable)
     loading.value = false

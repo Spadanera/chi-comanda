@@ -131,7 +131,3 @@ INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('
 INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Nachos', 'FOOD', 'EXTRA', 5, 2);
 
 INSERT INTO master_items (name, type, sub_type, price, destination_id) VALUES ('Amari', 'BEVERAGE', 'SPIRIT', 5, 2);
-
-
-
-INSERT INTO events (name, date, status) VALUES ('First event', '2024-10-19', 'ONGOING')

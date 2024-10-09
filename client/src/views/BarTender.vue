@@ -159,8 +159,9 @@ onBeforeUnmount(() => {
       </v-list-item>
     </v-list>
   </v-navigation-drawer>
-  <div>
-    <ItemList subheader="DA FARE" :items="computedSelectedOrder.itemsToDo">
+  <p v-if="!event?.id">Nessun evento attivo</p>
+  <div v-else>
+    <ItemList subheader="DA FARE" v-model="computedSelectedOrder.itemsToDo">
       <template v-slot:prequantity="slotProps">
        <v-btn icon="mdi-delete" @click="deleteItemConfirm(slotProps.item.id)" variant="plain"></v-btn>
       </template>
@@ -168,7 +169,7 @@ onBeforeUnmount(() => {
         <v-btn variant="plain" icon="mdi-check" @click="doneItem(slotProps.item)"></v-btn>
       </template>
     </ItemList>
-    <ItemList subheader="COMPLETATI" :items="computedSelectedOrder.itemsDone" :done="true">
+    <ItemList subheader="COMPLETATI" v-model="computedSelectedOrder.itemsDone" :done="true">
       <template v-slot:postquantity="slotProps">
         <v-btn variant="plain" icon="mdi-arrow-up-thin" @click="rollbackItem(slotProps.item)"></v-btn>
       </template>

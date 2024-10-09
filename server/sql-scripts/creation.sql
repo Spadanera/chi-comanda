@@ -68,6 +68,7 @@ CREATE TABLE `master_items` (
 
 CREATE TABLE `items` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
+  `event_id` integer,
   `table_id` integer,
   `order_id` integer,
   `master_item_id` integer,
@@ -111,36 +112,8 @@ ALTER TABLE `items` ADD FOREIGN KEY (`master_item_id`) REFERENCES `master_items`
 
 ALTER TABLE `master_items` ADD FOREIGN KEY (`destination_id`) REFERENCES `destinations` (`id`);
 
+ALTER TABLE `items` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`)
+
 ALTER TABLE `items` ADD FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`);
 
 ALTER TABLE `items` ADD FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`);
-
-
-CREATE VIEW AvailableTables AS
-WITH available_tables AS (
-	SELECT tables.id, tables.name, table_master_table.master_table_id, tables.event_id
-	FROM tables
-	INNER JOIN table_master_table ON tables.id = table_master_table.table_id
-	WHERE STATUS = 'ACTIVE'
-)
-
-SELECT 
-  available_tables.id table_id, 
-  available_tables.name table_name, 
-  master_tables.id master_table_id, 
-  master_tables.name master_table_name, 
-  master_tables.default_seats,
-  available_tables.event_id
-FROM available_tables
-RIGHT JOIN master_tables ON available_tables.master_table_id = master_tables.id
-UNION
-SELECT 
-    tables.id table_id, 
-    tables.name table_name, 
-    null master_table_id, 
-    null master_table_name,
-    null default_seats,
-    tables.event_id
-FROM tables
-WHERE STATUS = 'ACTIVE'
-AND id NOT IN (SELECT table_id FROM table_master_table);

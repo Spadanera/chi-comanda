@@ -61,8 +61,8 @@ export default class OrderAPI {
             if (order.items) {
                 for (let i = 0; i < order.items.length; i++) {
                     let item = order.items[i]
-                    order.items[i].id = await this.database.execute('INSERT INTO items (order_id, table_id, master_item_id, name, price, note) VALUES (?,?,?,?,?,?)'
-                        , [order_id, order.table_id, item.master_item_id, item.name, item.price, item.note], true)
+                    order.items[i].id = await this.database.execute('INSERT INTO items (event_id, order_id, table_id, master_item_id, name, price, note) VALUES (?,?,?,?,?,?,?)'
+                        , [order.event_id, order_id, order.table_id, item.master_item_id, item.name, item.price, item.note], true)
                 }
             }
             order.id = order_id

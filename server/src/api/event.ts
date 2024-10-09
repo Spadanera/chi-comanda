@@ -9,11 +9,32 @@ export default class EventAPI {
     }
 
     async getAll(): Promise<Event[]> {
-        return await this.database.query('SELECT * FROM events ORDER BY date DESC', [])
+        return await this.database.query(`
+            SELECT id, name, date, status,
+            (SELECT count(tables.id) FROM tables WHERE event_id = events.id) tableCount,
+            (SELECT count(items.id) FROM items INNER JOIN master_items ON items.master_item_id = master_items.id WHERE event_id = events.id AND master_items.type = 'BEVERAGE') beverageCount,
+            (SELECT count(items.id) FROM items INNER JOIN master_items ON items.master_item_id = master_items.id WHERE event_id = events.id AND master_items.type IN ('FOOD', 'EXTRA')) foodCount,
+            (SELECT sum(items.id) FROM items WHERE event_id = events.id) revenue
+            FROM events
+            ORDER BY date DESC`
+            , [])
     }
 
     async get(id: number): Promise<Event[]> {
-        return await this.database.query('SELECT * FROM events WHERE ID = ?', [id])
+        return await this.database.query(`SELECT events.id, (
+            SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                'id', items.id, 
+                'name', items.name, 
+                'type', master_items.type, 
+                'sub_type', master_items.sub_type, 
+                'price', items.price
+            )) 
+            FROM items 
+            INNER JOIN master_items ON master_items.id = items.master_item_id
+            WHERE event_id = events.id
+            ) items
+            FROM events WHERE events.id = ?`
+            , [id])
     }
 
     async getOnGoing(): Promise<Event> {

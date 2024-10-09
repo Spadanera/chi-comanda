@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { getIcon } from "@/services/utils"
-const props = defineProps(['items', 'subheader', 'done', 'delete'])
+const props = defineProps(['subheader', 'done', 'delete'])
+const items = defineModel({ default: [] })
 </script>
 
 <template>
