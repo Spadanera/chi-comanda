@@ -7,11 +7,11 @@ INSERT INTO users (email, username, password) VALUES ('ziofagiolo@gmail.com', 'Z
 INSERT INTO users (email, username, password) VALUES ('titta@gmail.com', 'Titta', 'password');
 INSERT INTO users (email, username, password) VALUES ('dani@gmail.com', 'Dani', 'password');
 
-INSERT INTO roles (name) VALUES ('Admin');
-INSERT INTO roles (name) VALUES ('Checkout');
-INSERT INTO roles (name) VALUES ('Waiter');
-INSERT INTO roles (name) VALUES ('Bartender');
-INSERT INTO roles (name) VALUES ('Cook');
+INSERT INTO roles (name) VALUES ('admin');
+INSERT INTO roles (name) VALUES ('checkout');
+INSERT INTO roles (name) VALUES ('waiter');
+INSERT INTO roles (name) VALUES ('bartender');
+INSERT INTO roles (name) VALUES ('kitchen');
 
 INSERT INTO user_role (user_id, role_id) VALUES (1, 1);
 INSERT INTO user_role (user_id, role_id) VALUES (1, 2);

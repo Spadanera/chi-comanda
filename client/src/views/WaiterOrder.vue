@@ -53,16 +53,6 @@ function addItemWithNote() {
   snackbarStore.show(`${dialogItem.value.name} aggiunto`)
 }
 
-function addCocktailPremium(item: Item) {
-  var _item = copy<Item>(item)
-  _item.table_id = props.table_id
-  _item.master_item_id = item.id
-  _item.price = 9
-  _item.name = `${item.name} - PREMIUM`
-  orderItems.value.push(copy<Item>(_item))
-  snackbarStore.show(`${_item.name} aggiunto`, 2000, 'top')
-}
-
 function changeItemQuantity(item: Item, quantity: number) {
   if (quantity === 1) {
     delete item.quantity
@@ -78,8 +68,12 @@ function changeItemQuantity(item: Item, quantity: number) {
   }
 }
 
-function openNoteDialog(item: Item) {
+function openNoteDialog(item: Item, premium: boolean = false) {
   dialogItem.value = copy<Item>(item)
+  if (premium) {
+    dialogItem.value.price = 9
+    dialogItem.value.name = `${item.name} - PREMIUM`
+  }
   dialog.value = true
 }
 
@@ -128,8 +122,9 @@ onMounted(async () => {
               {{ item.name }}
             </v-list-item-title>
             <template v-slot:append>
-              <v-btn icon="mdi-star-circle" v-if="item.sub_type === 'COCKTAIL'" variant="text" @click="addCocktailPremium(item)"></v-btn>
-              <v-btn icon="mdi-pencil" variant="text" @click="openNoteDialog(item)"></v-btn>
+              <v-btn icon="mdi-star-circle" v-if="item.sub_type === 'COCKTAIL'" variant="text"
+                @click="openNoteDialog(item, true)"></v-btn>
+              <v-btn icon="mdi-pencil" variant="text" @click="openNoteDialog(item, false)"></v-btn>
               <v-btn icon="mdi-plus" variant="text" @click="addItemToOrder(item)"></v-btn>
             </template>
           </v-list-item>
@@ -185,7 +180,7 @@ onMounted(async () => {
   <v-dialog v-model="dialog" max-width="600">
     <v-card>
       <v-card-title>
-        {{ dialogItem.name }} - Aggiungi nota
+        {{ dialogItem.name }}
       </v-card-title>
       <v-card-text>
         <v-row dense>

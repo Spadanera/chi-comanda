@@ -9,7 +9,7 @@ export default class EventAPI {
     }
 
     async getAll(): Promise<Event[]> {
-        return await this.database.query('SELECT * FROM events', [])
+        return await this.database.query('SELECT * FROM events ORDER BY date DESC', [])
     }
 
     async get(id: number): Promise<Event[]> {
@@ -25,17 +25,7 @@ export default class EventAPI {
     }
 
     async create(event: Event): Promise<number> {
-        return await this.database.executeTransaction(async () => {
-            const event_id = await this.database.execute('INSERT INTO events (name, date, status) VALUES (?,?,?)', [event.name, event.date, 'PLANNED'])
-
-            if (event.workers) {
-                for (let i = 0; i < event.workers.length; i++) {
-                    await this.database.execute("INSERT INTO workers (event_id, user_id) VALUES (?, ?)", [event_id, event.workers[i].id])
-                }
-            }
-
-            return event_id
-        })
+        return this.database.execute('INSERT INTO events (name, date, status) VALUES (?,?,?)', [event.name, (event.date + "").split('T')[0], 'PLANNED'])
     }
 
     async delete(id: number): Promise<number> {
@@ -43,6 +33,6 @@ export default class EventAPI {
     }
 
     async update(event: Event, id: number): Promise<number> {
-        return await this.database.execute('UPDATE events SET name = ?, date = ? WHERE id = ?', [event.name, event.date, id])
+        return await this.database.execute('UPDATE events SET status = ? WHERE id = ?', [event.status, id])
     }
 }

@@ -14,31 +14,31 @@ const roles:Role[] = [
     title: 'Amministrazione',
     route: "/admin",
     text: "Gestione eventi, tavoli, lavoranti",
-    role: "Admin"
+    role: "admin"
   },
   {
     title: 'Cassa',
     route: "/checkout",
     text: "Gestione Cassa",
-    role: "Checkout"
+    role: "checkout"
   },
   {
     title: 'Cameriere',
     route: "/waiter",
     text: "Inviare ordini al bar e alla cucina",
-    role: "Waiter"
+    role: "waiter"
   },
   {
     title: 'Bar',
     route: "/bartender",
     text: "Preparazione bevande e nachos",
-    role: "Bartender"
+    role: "bartender"
   },
   {
     title: 'Cucina',
     route: "/kitchen",
     text: "Preparazione piade e panini",
-    role: "Cook"
+    role: "kitchen"
   },
 ]
 

@@ -44,7 +44,7 @@ export default class MySqlUtils implements DbUtils {
             return result[0]
         }
         else {
-            throw new Error("Record not found")
+            return {} as T
         }
     }
 

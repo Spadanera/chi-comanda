@@ -71,8 +71,8 @@ CREATE TABLE `items` (
   `table_id` integer,
   `order_id` integer,
   `master_item_id` integer,
-  `name` VARCHAR(255) NULL AFTER `paid`,
-  ADD COLUMN `price` DOUBLE NULL AFTER `name`,
+  `name` VARCHAR(255),
+  `price` DOUBLE,
   `note` varchar(255),
   `done` bool,
   `paid` bool
@@ -87,13 +87,6 @@ CREATE TABLE `audit` (
   `actionData` JSON,
   `actionDateTime` datetime
 );
-
-CREATE TABLE `workers` (
-  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
-  `event_id` integer,
-  `user_id` integer
-);
-
 ALTER TABLE `user_role` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 
 ALTER TABLE `user_role` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`);
@@ -107,10 +100,6 @@ ALTER TABLE `table_master_table` ADD FOREIGN KEY (`table_id`) REFERENCES `tables
 ALTER TABLE `orders` ADD FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`);
 
 ALTER TABLE `orders` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
-
-ALTER TABLE `workers` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
-
-ALTER TABLE `workers` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 
 ALTER TABLE `audit` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 

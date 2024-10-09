@@ -11,6 +11,7 @@ import * as directives from 'vuetify/directives'
 import '@mdi/font/css/materialdesignicons.css'
 import 'vuetify/styles'
 import Confirm from './components/Confirm.vue'
+import { it } from 'vuetify/locale'
 
 const vuetify = createVuetify({
     components,
@@ -18,6 +19,12 @@ const vuetify = createVuetify({
     icons: {
       defaultSet: 'mdi'
     },
+    locale: {
+      locale: 'it',
+      messages: {
+        it
+      }
+    }
   })
 
 const app = createApp(App)

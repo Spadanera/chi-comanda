@@ -35,11 +35,11 @@ onBeforeMount(async () => {
     <v-app>
       <v-app-bar>
         <v-app-bar-title>
-          <RouterLink to="/">LOMP</RouterLink>
+          <RouterLink class="hide-xs" to="/">LOMP</RouterLink>
+          <RouterLink class="show-xs" to="/">LUDO ORDER MANAGEMENT PROJECT</RouterLink>
         </v-app-bar-title>
         <v-progress-linear v-model="progressStore.overallProgress" color="cyan-darken-2" indeterminate absolute
           :active="progressStore.loading"></v-progress-linear>
-        <v-spacer></v-spacer>
         <v-btn @click="axios.Logout()" v-if="userStore.isLoggedIn">
           LOG OUT
         </v-btn>

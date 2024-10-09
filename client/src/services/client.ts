@@ -107,6 +107,18 @@ export default class Axios {
         return await this.get<Event>("/events")
     }
 
+    async GetOnGoingEvent(): Promise<Event> {
+        return await this.getSingle<Event>("/events/ongoing")
+    }
+
+    async SetEventStatus(event: Event): Promise<number> {
+        return await this.put(`/events/${event.id}`, event)
+    }
+
+    async DeleteEvent(event_id: number): Promise<number> {
+        return await this.delete(`/events/${event_id}`)
+    }
+
     async GetAvailableTables(event_id: number): Promise<AvailableTable[]> {
         return await this.get<AvailableTable>(`/events/${event_id}/tables/available`)
     }
@@ -117,10 +129,6 @@ export default class Axios {
 
     async GetTable(master_id: string): Promise<MasterTable> {
         return await this.getSingle<MasterTable>(`/tables/${master_id}`)
-    }
-
-    async GetOnGoingEvent(): Promise<Event> {
-        return await this.getSingle<Event>("/events/ongoing")
     }
 
     async GetAllMasterItems(): Promise<MasterItem[]> {
