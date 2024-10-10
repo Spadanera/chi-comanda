@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Event, type Order, type MasterItem, type Item, ItemTypes as types } from "../../../models/src"
+import { type Event, type Order, type Item, ItemTypes as types, type Type } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import Axios from '@/services/client'
 import { SnackbarStore, type IUser } from '@/stores'
@@ -37,10 +37,10 @@ const computedSelectedOrder = computed(() => {
 })
 const subTypesCount = computed(() => {
   let result: any = []
-  types.forEach(type => {
-    let count = getSubTypeCount(selectedOrder.value[0], [type])
+  types.forEach((type: Type) => {
+    let count = getSubTypeCount(selectedOrder.value[0], [type.name])
     if (count > 0) result.push({
-      type,
+      type: type.name,
       count
     })
   })
@@ -103,6 +103,7 @@ async function completeOrder() {
 }
 
 async function getOrders() {
+  loading.value = true
   orders.value = await axios.GetOrdersInEvent(event.value?.id || 0, props.destinations)
   if (orders.value.length && !orders.value[0].done) {
     selectedOrder.value = [orders.value[0]]
@@ -110,12 +111,12 @@ async function getOrders() {
   else {
     selectedOrder.value = []
   }
+  loading.value = false
 }
 
 onMounted(async () => {
   event.value = await axios.GetOnGoingEvent()
   await getOrders()
-  loading.value = false
 
   is = io(window.location.origin, {
     path: "/socket/socket.io"
@@ -152,14 +153,15 @@ onBeforeUnmount(() => {
           <span :class="{ done: order.done }">Tavolo {{ order.table_name }}</span>
         </v-list-item-title>
         <template v-for="type in types">
-          <v-btn readonly size="small" density="compact" variant="plain" v-if="getSubTypeCount(order, [type]) > 0">
-            <v-icon>{{ getIcon(type) }}</v-icon> {{ getSubTypeCount(order, [type]) }}
+          <v-btn readonly size="small" density="compact" variant="plain" v-if="getSubTypeCount(order, [type.name]) > 0">
+            <v-icon>{{ getIcon(type.name) }}</v-icon> {{ getSubTypeCount(order, [type.name]) }}
           </v-btn>
         </template>
       </v-list-item>
     </v-list>
   </v-navigation-drawer>
-  <p v-if="!event?.id">Nessun evento attivo</p>
+  <v-skeleton-loader type="card" v-if="loading"></v-skeleton-loader>
+  <p v-else-if="!event?.id">Nessun evento attivo</p>
   <div v-else>
     <ItemList subheader="DA FARE" v-model="computedSelectedOrder.itemsToDo">
       <template v-slot:prequantity="slotProps">

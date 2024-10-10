@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Order, type MasterItem, type Item, ItemTypes as types } from "../../../models/src"
+import { type Order, type MasterItem, type Item, ItemTypes as types, type Type } from "../../../models/src"
 import { ref, onMounted, computed } from "vue"
 import router from '@/router'
 import Axios from '@/services/client'
@@ -27,15 +27,15 @@ const filter = ref<string>('')
 const table_name = ref<string>('')
 
 const orderTotal = computed(() => orderItems.value.reduce((a: number, i: Item) => a += i.price, 0))
-const foodTotal = computed(() => orderItems.value.filter((i: Item) => i.type === 'FOOD').length)
-const beverageTotal = computed(() => orderItems.value.filter((i: Item) => i.type === 'BEVERAGE').length)
+const foodTotal = computed(() => orderItems.value.filter((i: Item) => i.type === 'Cibo').length)
+const beverageTotal = computed(() => orderItems.value.filter((i: Item) => i.type === 'Bevanda').length)
 const computedItems = computed(() => master_items.value.filter((i: Item) => (filter.value === '' || filter.value === null || i.name.toLowerCase().indexOf(filter.value.toLowerCase()) > - 1)))
 const groupedOrderItems = computed(() => {
   return groupItems(orderItems.value)
 })
 
-function filterItems(sub_type: string) {
-  return computedItems.value.filter((i: Item) => i.sub_type === sub_type).sort(sortItem)
+function filterItems(type: Type) {
+  return computedItems.value.filter((i: Item) => i.sub_type === type.name).sort(sortItem)
 }
 
 function addItemToOrder(item: Item) {
@@ -95,7 +95,7 @@ async function setTableName() {
 }
 
 onMounted(async () => {
-  master_items.value = await axios.GetAllMasterItems()
+  master_items.value = await axios.GetAvailableMasterItems()
   if (parseInt(props.table_id)) {
     table_name.value = (await axios.GetTable(props.table_id)).name
   }
@@ -110,12 +110,12 @@ onMounted(async () => {
 </script>
 
 <template>
-  <v-skeleton-loader v-if="loading" :loading="loading" type="list-item-three-line"></v-skeleton-loader>
-  <div>
+  <v-skeleton-loader v-if="loading" type="list-item-three-line"></v-skeleton-loader>
+  <div v-else>
     <v-text-field :clearable="true" v-model="filter" label="Cerca"></v-text-field>
     <v-list>
       <template v-for="type in types">
-        <v-list-subheader style="margin-top: 10px" inset>{{ type }}</v-list-subheader>
+        <v-list-subheader style="margin-top: 10px" inset>{{ type.name }}</v-list-subheader>
         <template v-for="item in filterItems(type)">
           <v-list-item>
             <v-list-item-title>

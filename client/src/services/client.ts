@@ -135,10 +135,6 @@ export default class Axios {
         return await this.getSingle<MasterTable>(`/tables/${master_id}`)
     }
 
-    async GetAllMasterItems(): Promise<MasterItem[]> {
-        return await this.get<MasterItem>("/master-items")
-    }
-
     async GetOrdersInEvent(event_id: number, destinations_ids: string): Promise<Order[]> {
         return await this.get<Order>(`/orders/${event_id}/${destinations_ids}`)
     }
@@ -173,6 +169,34 @@ export default class Axios {
 
     async DeleteItem(item_id: number) {
         return await this.delete(`/items/${item_id}`);
+    }
+
+    async GetAllMasterTables(): Promise<MasterTable[]> {
+        return await this.get<MasterTable>("/master-tables");
+    }
+
+    async CreateMasterTables(masterTable: MasterTable): Promise<number> {
+        return await this.post<MasterTable>("/master-tables", masterTable);
+    }
+
+    async EditMasterTables(masterTable: MasterItem): Promise<number> {
+        return await this.put<MasterItem>("/master-tables", masterTable);
+    }
+
+    async GetAllMasterItems(): Promise<MasterItem[]> {
+        return await this.get<MasterItem>("/master-items");
+    }
+
+    async GetAvailableMasterItems(): Promise<MasterItem[]> {
+        return await this.get<MasterItem>("/master-items/available");
+    }
+
+    async CreateMasterItems(masterItem: MasterItem): Promise<number> {
+        return await this.post<MasterItem>("/master-items", masterItem);
+    }
+
+    async EditMasterItems(masterItem: MasterItem): Promise<number> {
+        return await this.put<MasterItem>("/master-items", masterItem);
     }
 
     async Login(email: string, password: string): Promise<void> {

@@ -12,8 +12,8 @@ export default class EventAPI {
         return await this.database.query(`
             SELECT id, name, date, status,
             (SELECT count(tables.id) FROM tables WHERE event_id = events.id) tableCount,
-            (SELECT count(items.id) FROM items INNER JOIN master_items ON items.master_item_id = master_items.id WHERE event_id = events.id AND master_items.type = 'BEVERAGE') beverageCount,
-            (SELECT count(items.id) FROM items INNER JOIN master_items ON items.master_item_id = master_items.id WHERE event_id = events.id AND master_items.type IN ('FOOD', 'EXTRA')) foodCount,
+            (SELECT count(items.id) FROM items INNER JOIN master_items ON items.master_item_id = master_items.id WHERE event_id = events.id AND master_items.type = 'Bevanda') beverageCount,
+            (SELECT count(items.id) FROM items INNER JOIN master_items ON items.master_item_id = master_items.id WHERE event_id = events.id AND master_items.type IN ('Cibo')) foodCount,
             (SELECT sum(items.id) FROM items WHERE event_id = events.id) revenue
             FROM events
             ORDER BY date DESC`

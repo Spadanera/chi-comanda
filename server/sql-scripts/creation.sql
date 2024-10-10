@@ -19,7 +19,8 @@ CREATE TABLE `user_role` (
 CREATE TABLE `master_tables` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `name` varchar(255),
-  `default_seats` integer
+  `default_seats` integer,
+  `status`varchar(255)
 );
 
 CREATE TABLE `tables` (
@@ -63,7 +64,8 @@ CREATE TABLE `master_items` (
   `sub_type` varchar(255),
   `price` double,
   `destination_id` integer,
-  `available` bool
+  `available` bool,
+  `status` varchar(255)
 );
 
 CREATE TABLE `items` (
@@ -112,7 +114,7 @@ ALTER TABLE `items` ADD FOREIGN KEY (`master_item_id`) REFERENCES `master_items`
 
 ALTER TABLE `master_items` ADD FOREIGN KEY (`destination_id`) REFERENCES `destinations` (`id`);
 
-ALTER TABLE `items` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`)
+ALTER TABLE `items` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
 
 ALTER TABLE `items` ADD FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`);
 

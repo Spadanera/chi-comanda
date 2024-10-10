@@ -77,7 +77,7 @@ export default class OrderAPI {
         const tableApi = new TableApi()
         const table = (await tableApi.getActiveTable(order.event_id || 0)).find(t => t.id === table_id)
         SocketIOService.instance().sendMessage({
-            room: "cassa",
+            room: "checkout",
             event: "new-order",
             body: table
         })

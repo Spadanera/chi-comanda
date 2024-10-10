@@ -20,14 +20,14 @@ const bottomSheet = ref<boolean>(null)
 
 const beverageItems = computed<Item[]>(() => {
     if (selectedEvent.value) {
-        return selectedEvent.value.items.filter((i: Item) => i.type === 'BEVERAGE')
+        return selectedEvent.value.items.filter((i: Item) => i.type === 'Bevanda')
     }
     return [] as Item[]
 })
 
 const foodItems = computed<Item[]>(() => {
     if (selectedEvent.value) {
-        return selectedEvent.value.items.filter((i: Item) => i.type === 'FOOD')
+        return selectedEvent.value.items.filter((i: Item) => i.type === 'Cibo')
     }
     return [] as Item[]
 })
@@ -113,10 +113,10 @@ onMounted(() => {
             <v-card-text>
                 <v-row>
                     <v-col sm="6" xs="12">
-                        <ItemList v-model="beverageItems" subheader="BEVERAGE"></ItemList>
+                        <ItemList v-model="beverageItems" subheader="Bevanda"></ItemList>
                     </v-col>
                     <v-col sm="6" xs="12">
-                        <ItemList v-model="foodItems" subheader="FOOD"></ItemList>
+                        <ItemList v-model="foodItems" subheader="Cibo"></ItemList>
                     </v-col>
                 </v-row>
             </v-card-text>

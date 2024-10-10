@@ -1,5 +1,6 @@
 import DB from "../db"
 import { MasterTable, Table } from "../../../models/src"
+import { SocketIOService } from "../socket"
 
 export default class TableApi {
     database: DB
@@ -19,8 +20,9 @@ export default class TableApi {
             FROM (SELECT tables.id, tables.name, table_master_table.master_table_id, tables.event_id
                 FROM tables
                 INNER JOIN table_master_table ON tables.id = table_master_table.table_id
-                WHERE STATUS = 'ACTIVE' AND tables.event_id = ?) available_tables
+                WHERE tables.status = 'ACTIVE' AND tables.event_id = ?) available_tables
             RIGHT JOIN master_tables ON available_tables.master_table_id = master_tables.id
+            WHERE master_tables.status = 'ACTIVE'
             UNION
             SELECT 
                 tables.id table_id, 
@@ -30,7 +32,7 @@ export default class TableApi {
                 null default_seats,
                 tables.event_id
             FROM tables
-            WHERE STATUS = 'ACTIVE' AND event_id = ?
+            WHERE tables.status = 'ACTIVE' AND event_id = ?
             AND id NOT IN (SELECT table_id FROM table_master_table)
             ORDER BY table_name DESC, master_table_name`, [eventId, eventId])
     }
@@ -94,10 +96,16 @@ export default class TableApi {
     }
 
     async closeTable(table_id: number): Promise<number> {
-        return await this.database.executeTransaction(async () => {
+        const result = await this.database.executeTransaction(async () => {
             await this.database.execute('UPDATE items SET paid = TRUE WHERE table_id = ?', [table_id], true)
             return await this.database.execute('UPDATE tables SET status = "CLOSED", paid = TRUE WHERE id = ?', [table_id], true)
         })
+        SocketIOService.instance().sendMessage({
+            room: "waiter",
+            event: "new-table-available",
+            body: {}
+        })
+        return result
     }
 
     async paySelectedItem(table_id: number, item_ids: number[]): Promise<number> {

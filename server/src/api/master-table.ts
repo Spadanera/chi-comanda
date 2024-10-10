@@ -9,11 +9,7 @@ export default class MasterTableApi {
     }
 
     async getAll(): Promise<MasterTable[]> {
-        return await this.database.query('SELECT * FROM master_tables ORDER BY type, sub_type', [])
-    }
-
-    async getAllAvailable(): Promise<MasterTable[]> {
-        return await this.database.query('SELECT * FROM master_tables WHERE available = TRUE', [])
+        return await this.database.query('SELECT * FROM master_tables WHERE status = ?', ['ACTIVE'])
     }
 
     async get(id: number): Promise<MasterTable[]> {
@@ -21,8 +17,8 @@ export default class MasterTableApi {
     }
 
     async create(table: MasterTable): Promise<number> {
-        return await this.database.execute('INSERT INTO master_tables (name, default_seats) VALUES (?, ?)'
-            , [table.name, table.default_deats])
+        return await this.database.execute('INSERT INTO master_tables (name, default_seats, status) VALUES (?, ?, ?)'
+            , [table.name, table.default_seats, table.status])
     }
 
     async delete(id: number): Promise<number> {
@@ -30,7 +26,7 @@ export default class MasterTableApi {
     }
 
     async update(table: MasterTable): Promise<number> {
-        return await this.database.execute('UPDATE master_tables SET name = ?, default_deats = ? WHERE id = ?'
-            , [table.name, table.default_deats, table.id])
+        return await this.database.execute('UPDATE master_tables SET name = ?, default_seats = ?, status = ? WHERE id = ?'
+            , [table.name, table.default_seats, table.status, table.id])
     }
 }

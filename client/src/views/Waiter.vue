@@ -1,62 +1,56 @@
 <script setup lang="ts">
 import { type AvailableTable, type Event } from "../../../models/src"
-import { ref, onMounted } from "vue"
+import { ref, onMounted, computed } from "vue"
 import Axios from '@/services/client'
+import { sortTable } from "@/services/utils"
+import { io } from 'socket.io-client'
+import { SnackbarStore } from '@/stores'
 
 const emit = defineEmits(['login', 'reload'])
 
+var is: any
 const tables = ref<AvailableTable[]>([])
-const availableTable = ref<AvailableTable[]>([])
-const activeTable = ref<AvailableTable[]>([])
+const snackbarStore = SnackbarStore()
 const event = ref<Event>()
 const axios = new Axios()
 const loading = ref<boolean>(true)
-
-function sortTable(a:AvailableTable, b:AvailableTable): number {
-  const _a = a.table_name || a.master_table_name
-  const _b = b.table_name || b.master_table_name
-  const numRegex = /^\d+$/
-  if (numRegex.test(_a)) {
-    if (numRegex.test(_b)) {
-      return parseInt(_a) - parseInt(_b)
-    }
-    else {
-      return -1
-    }
-  }
-  else {
-    if (numRegex.test(_b)) {
-      return 1
-    }
-    else {
-      if (_a < _b) {
-        return -1
-      }
-      else {
-        return 1
-      }
-    }
-  }
-}
+const availableTable = computed<AvailableTable[]>(() => tables.value.filter(t => !t.event_id).sort(sortTable))
+const activeTable = computed<AvailableTable[]>(() => tables.value.filter(t => t.event_id).sort(sortTable))
 
 onMounted(async () => {
   event.value = await axios.GetOnGoingEvent()
   if (event.value.id) {
     tables.value = await axios.GetAvailableTables(event.value.id)
-    console.log(tables.value)
-    availableTable.value = tables.value.filter(t => !t.event_id).sort(sortTable)
-    activeTable.value = tables.value.filter(t => t.event_id).sort(sortTable)
-    loading.value = false
-  } else {
-    loading.value = false
+    is = io(window.location.origin, {
+      path: "/socket/socket.io"
+    })
+
+    is.on('connect', () => {
+      is.emit('join', 'waiter')
+    })
+
+    is.on('disconnect', () => {
+
+    })
+
+    is.on('connect_error', (err: any) => {
+      snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
+    })
+
+    is.on('new-table-available', async () => {
+      tables.value = await axios.GetAvailableTables(event.value.id)
+      snackbarStore.show("Nuovo tavolo disponibile")
+    })
   }
+  loading.value = false
+
 })
 </script>
 
 <template>
   <main>
-    <v-skeleton-loader v-if="loading" :loading="loading" type="card"></v-skeleton-loader>
-    <p v-if="!event?.id && !loading">Nessun evento attivo</p>
+    <v-skeleton-loader v-if="loading" type="card"></v-skeleton-loader>
+    <p v-if="!event?.id">Nessun evento attivo</p>
     <v-container v-else>
       <v-row>
         <v-col>
@@ -65,7 +59,8 @@ onMounted(async () => {
       </v-row>
       <v-row>
         <v-col v-for="table in activeTable" cols="4">
-          <RouterLink :to="`/waiter/${event?.id}/order/${table?.master_table_id ? table?.master_table_id : 0}/table/${table.table_id}`">
+          <RouterLink
+            :to="`/waiter/${event?.id}/order/${table?.master_table_id ? table?.master_table_id : 0}/table/${table.table_id}`">
             <v-card height="50px" style="padding-top: 10px;">
               {{ table.table_name }}
             </v-card>
@@ -86,11 +81,11 @@ onMounted(async () => {
           </RouterLink>
         </v-col>
         <v-col cols="4">
-            <RouterLink :to="`/waiter/${event?.id}/order/0/table/0`">
-              <v-card height="50px" style="padding-top: 10px;">
-                <v-icon>mdi-plus</v-icon>
-              </v-card>
-            </RouterLink>
+          <RouterLink :to="`/waiter/${event?.id}/order/0/table/0`">
+            <v-card height="50px" style="padding-top: 10px;">
+              <v-icon>mdi-plus</v-icon>
+            </v-card>
+          </RouterLink>
         </v-col>
       </v-row>
     </v-container>

@@ -325,7 +325,7 @@ apiRouter.get("/master-items/available", async (req: Request, res: Response) => 
     try {
         const api = new MasterItemsApi()
         const result = await api.getAllAvailable()
-        res.status(200).json(result[0])
+        res.status(200).json(result)
     } catch (error) {
         console.log(error)
         res.status(500).json(error)
@@ -354,7 +354,7 @@ apiRouter.post("/master-items", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.put("/master-items/:id", async (req: Request, res: Response) => {
+apiRouter.put("/master-items", async (req: Request, res: Response) => {
     try {
         const api = new MasterItemsApi()
         const result = await api.update(req.body)
@@ -415,21 +415,10 @@ apiRouter.post("/master-tables", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.put("/master-tables/:id", async (req: Request, res: Response) => {
+apiRouter.put("/master-tables", async (req: Request, res: Response) => {
     try {
         const api = new MasterTableApi()
         const result = await api.update(req.body)
-        res.status(200).json(result)
-    } catch (error) {
-        console.log(error)
-        res.status(500).json(error)
-    }
-})
-
-apiRouter.delete("/master-tables/:id", async (req: Request, res: Response) => {
-    try {
-        const api = new MasterTableApi()
-        const result = await api.delete(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)

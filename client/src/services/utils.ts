@@ -1,4 +1,4 @@
-import type { Item } from "../../../models/src"
+import type { Item, AvailableTable } from "../../../models/src"
 
 export function sortItem(a: Item, b: Item): number {
     if (a.sub_type < b.sub_type) {
@@ -25,7 +25,7 @@ export function sortItem(a: Item, b: Item): number {
 export function groupItems(orderItems: Item[]): Item[] {
     if (orderItems) {
         return orderItems.reduce((a: Item[], i: Item) => {
-            let found = a.find((_i:Item) => (i.master_item_id === _i.master_item_id && i.note === _i.note && i.name === _i.name))
+            let found = a.find((_i: Item) => (i.master_item_id === _i.master_item_id && i.note === _i.note && i.name === _i.name))
             if (found) {
                 found.quantity++
             }
@@ -39,27 +39,54 @@ export function groupItems(orderItems: Item[]): Item[] {
     else return []
 }
 
-export function copy<T>(input: T):T {
+export function copy<T>(input: T): T {
     return JSON.parse(JSON.stringify(input))
 }
 
 export function getIcon(key: string): string {
     switch (key) {
-        case "BEER":
+        case "Birra":
             return "mdi-beer"
-        case "COCKTAIL":
+        case "Cocktail":
             return "mdi-glass-cocktail"
-        case "SOFT-DRINK":
+        case "Analcolico":
             return "mdi-glass-stange"
-        case "EXTRA":
+        case "Extra":
+            return "mdi-glass-flute"
+        case "Special":
             return "mdi-french-fries"
-        case "SPIRIT":
-            return "mdi-glass-tulip"
-        case "PIADINA":
+        case "Piadina":
             return "mdi-food-hot-dog"
-        case "PANINO":
+        case "Panino":
             return "mdi-food-hot-dog"
         default:
             return "mdi-plus"
+    }
+}
+
+export function sortTable(a: AvailableTable, b: AvailableTable): number {
+    const _a = a.table_name || a.master_table_name
+    const _b = b.table_name || b.master_table_name
+    const numRegex = /^\d+$/
+    if (numRegex.test(_a)) {
+        if (numRegex.test(_b)) {
+            return parseInt(_a) - parseInt(_b)
+        }
+        else {
+            return -1
+        }
+    }
+    else {
+        if (numRegex.test(_b)) {
+            return 1
+        }
+        else {
+            if (_a < _b) {
+                return -1
+            }
+            else {
+                return 1
+            }
+        }
     }
 }

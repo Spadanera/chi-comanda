@@ -23,12 +23,6 @@ const navigationItems = ref<NavigationItem[]>([
     value: 0
   },
   {
-    title: "Utenti",
-    prependIcon: "mdi-account-group",
-    to: "users",
-    value: 1
-  },
-  {
     title: "Tavoli",
     prependIcon: "mdi-table-furniture",
     to: "tables",
@@ -39,7 +33,13 @@ const navigationItems = ref<NavigationItem[]>([
     prependIcon: "mdi-menu",
     to: "items",
     value: 3
-  }
+  },
+  {
+    title: "Utenti",
+    prependIcon: "mdi-account-group",
+    to: "users",
+    value: 1
+  },
 ])
 
 onMounted(() => {
@@ -53,7 +53,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-navigation-drawer v-model="drawer" mobile-breakpoint="sm" width="170">
+  <v-navigation-drawer v-model="drawer" mobile-breakpoint="sm" width="150">
     <v-list nav v-model:selected="selectedItem">
       <RouterLink :to="`/admin/${item.to}`" v-for="item in navigationItems">
         <v-list-item :prepend-icon="item.prependIcon" :title="item.title" :value="item.value" rounded="0"></v-list-item>

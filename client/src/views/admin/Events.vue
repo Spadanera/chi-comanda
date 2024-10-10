@@ -11,6 +11,7 @@ const tab = ref<string>(null)
 const events = ref<EventType[]>([])
 const dialog = ref<boolean>(false)
 const dialogEvent = ref<EventType>(null)
+const loading = ref<boolean>(false)
 
 const ongoingEvents = computed<EventType[]>(() => {
   return events.value.filter(e => e.status === 'ONGOING')
@@ -44,10 +45,12 @@ async function createEvent() {
 }
 
 async function load(goToOngoing: boolean = false) {
+  loading.value = true
   await getAllEvents()
   if (goToOngoing) {
     tab.value = ongoingEvents.value.length ? 'ONGOING' : 'PLANNED'
   }
+  loading.value = false
 }
 
 onMounted(async () => {
@@ -62,13 +65,16 @@ onMounted(async () => {
   </v-tabs>
   <v-tabs-window v-model="tab">
     <v-tabs-window-item value="ONGOING">
-      <EventList v-model="ongoingEvents" @reload="load"></EventList>
+      <v-skeleton-loader type="card" v-if="loading"></v-skeleton-loader>
+      <EventList v-else v-model="ongoingEvents" @reload="load"></EventList>
     </v-tabs-window-item>
     <v-tabs-window-item value="PLANNED">
-      <EventList :ongoing="ongoingEvents.length" v-model="futureEvents" @reload="load"></EventList>
+      <v-skeleton-loader type="card" v-if="loading"></v-skeleton-loader>
+      <EventList v-else :ongoing="ongoingEvents.length" v-model="futureEvents" @reload="load"></EventList>
     </v-tabs-window-item>
     <v-tabs-window-item value="CLOSED">
-      <EventList v-model="passedEvents" @reload="load"></EventList>
+      <v-skeleton-loader type="card" v-if="loading"></v-skeleton-loader>
+      <EventList v-else v-model="passedEvents" @reload="load"></EventList>
     </v-tabs-window-item>
   </v-tabs-window>
   <v-fab v-if="tab === 'PLANNED'" icon="mdi-plus" app style="position: fixed; right: 10px; bottom: 10px;"
