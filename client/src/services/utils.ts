@@ -1,16 +1,16 @@
 import type { Item } from "../../../models/src"
 
 export function sortItem(a: Item, b: Item): number {
-    if (a.type < b.type) {
-        return -1
-    }
-    if (a.type > b.type) {
-        return 1
-    }
     if (a.sub_type < b.sub_type) {
         return -1
     }
     if (a.sub_type > b.sub_type) {
+        return 1
+    }
+    if (a.type < b.type) {
+        return -1
+    }
+    if (a.type > b.type) {
         return 1
     }
     if (a.name < b.name) {

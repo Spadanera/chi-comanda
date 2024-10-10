@@ -20,14 +20,14 @@ const bottomSheet = ref<boolean>(null)
 
 const beverageItems = computed<Item[]>(() => {
     if (selectedEvent.value) {
-        return groupItems(selectedEvent.value.items).filter((i: Item) => i.type === 'BEVERAGE')
+        return selectedEvent.value.items.filter((i: Item) => i.type === 'BEVERAGE')
     }
     return [] as Item[]
 })
 
 const foodItems = computed<Item[]>(() => {
     if (selectedEvent.value) {
-        return groupItems(selectedEvent.value.items).filter((i: Item) => i.type === 'FOOD')
+        return selectedEvent.value.items.filter((i: Item) => i.type === 'FOOD')
     }
     return [] as Item[]
 })

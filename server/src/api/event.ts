@@ -21,18 +21,24 @@ export default class EventAPI {
     }
 
     async get(id: number): Promise<Event[]> {
-        return await this.database.query(`SELECT events.id, (
-            SELECT JSON_ARRAYAGG(JSON_OBJECT(
-                'id', items.id, 
-                'name', items.name, 
-                'type', master_items.type, 
-                'sub_type', master_items.sub_type, 
-                'price', items.price
-            )) 
-            FROM items 
-            INNER JOIN master_items ON master_items.id = items.master_item_id
-            WHERE event_id = events.id
-            ) items
+        return await this.database.query(`
+            SELECT events.id, (
+                SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                    'name', grouped_items.name, 
+                    'type', grouped_items.type, 
+                    'sub_type', grouped_items.sub_type, 
+                    'price', grouped_items.price,
+                    'quantity', grouped_items.quantity
+                )) 
+                FROM (
+                    SELECT items.name, master_items.type, master_items.sub_type, items.price, COUNT(items.id) quantity
+                    FROM items 
+                    INNER JOIN master_items ON master_items.id = items.master_item_id
+                    WHERE items.event_id = events.id
+                    GROUP BY items.name, master_items.type, master_items.sub_type, items.price
+                    ORDER BY master_items.sub_type, master_items.type, items.name
+                ) grouped_items
+                ) items
             FROM events WHERE events.id = ?`
             , [id])
     }
