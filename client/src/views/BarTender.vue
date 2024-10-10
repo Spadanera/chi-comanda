@@ -6,6 +6,7 @@ import { SnackbarStore, type IUser } from '@/stores'
 import { groupItems, copy, getIcon } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
 import { io } from 'socket.io-client'
+import fileAudio from '@/assets/nuovo-ordine.wav'
 
 const axios = new Axios()
 var is: any
@@ -25,6 +26,10 @@ const deleteItemId = ref<number>(0)
 const selectedOrder = ref<Order[]>([])
 const confirm2 = ref<boolean>(false)
 const drawer = ref<boolean>()
+const audio = ref(null);
+
+// console.log(fileAudio)
+
 
 const computedSelectedOrder = computed(() => {
   let result = copy<Order>((selectedOrder.value.length ? selectedOrder.value[0] : { items: [] }) as Order)
@@ -115,6 +120,7 @@ async function getOrders() {
 }
 
 onMounted(async () => {
+  audio.value = new Audio(fileAudio)
   event.value = await axios.GetOnGoingEvent()
   await getOrders()
 
@@ -127,7 +133,7 @@ onMounted(async () => {
   })
 
   is.on('disconnect', () => {
-    
+
   })
 
   is.on('connect_error', (err: any) => {
@@ -136,7 +142,8 @@ onMounted(async () => {
 
   is.on('new-order', (data: Order) => {
     orders.value.push(data)
-    snackbarStore.show("Nuovo ordine")
+    snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
+    audio.value.play();
   })
 })
 
@@ -165,7 +172,7 @@ onBeforeUnmount(() => {
   <div v-else>
     <ItemList subheader="DA FARE" v-model="computedSelectedOrder.itemsToDo">
       <template v-slot:prequantity="slotProps">
-       <v-btn icon="mdi-delete" @click="deleteItemConfirm(slotProps.item.id)" variant="plain"></v-btn>
+        <v-btn icon="mdi-delete" @click="deleteItemConfirm(slotProps.item.id)" variant="plain"></v-btn>
       </template>
       <template v-slot:postquantity="slotProps">
         <v-btn variant="plain" icon="mdi-check" @click="doneItem(slotProps.item)"></v-btn>
@@ -184,7 +191,8 @@ onBeforeUnmount(() => {
         <v-icon>{{ getIcon(type.type) }}</v-icon> {{ type.count }}
       </v-btn>
       <v-spacer></v-spacer>
-      <v-btn class="show-xs" variant="plain" @click="confirm = true" v-if="selectedOrder.length && !selectedOrder[0].done">
+      <v-btn class="show-xs" variant="plain" @click="confirm = true"
+        v-if="selectedOrder.length && !selectedOrder[0].done">
         COMPLETA ORDINE
       </v-btn>
       <v-btn class="hide-xs" icon="mdi-check-all" variant="plain" @click="confirm = true"

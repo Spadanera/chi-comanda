@@ -122,7 +122,7 @@ onMounted(async () => {
               {{ item.name }}
             </v-list-item-title>
             <template v-slot:append>
-              <v-btn icon="mdi-star-circle" v-if="item.sub_type === 'COCKTAIL'" variant="text"
+              <v-btn icon="mdi-star-circle" v-if="item.sub_type === 'Cocktail'" variant="text"
                 @click="openNoteDialog(item, true)"></v-btn>
               <v-btn icon="mdi-pencil" variant="text" @click="openNoteDialog(item, false)"></v-btn>
               <v-btn icon="mdi-plus" variant="text" @click="addItemToOrder(item)"></v-btn>
