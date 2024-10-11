@@ -78,7 +78,7 @@ onMounted(() => {
 <template>
     <v-container>
         <v-row>
-            <v-col v-for="event in events" sm="6" xs="12" lg="4">
+            <v-col v-for="event in events" sm="6" cols="12" lg="4">
                 <v-card :subtitle="event.name" :title="event.date.toString().split('T')[0]" @click="showEvent(event)">
                     <v-card-text v-show="event.status !== 'PLANNED'">
                         <v-btn readonly size="small" density="compact" variant="plain">
@@ -112,10 +112,10 @@ onMounted(() => {
         <v-card :title="selectedEvent.date.toString().split('T')[0]" :subtitle="selectedEvent.name">
             <v-card-text>
                 <v-row>
-                    <v-col style="padding: 0" sm="6" xs="12">
+                    <v-col style="padding: 0" sm="6" cols="12">
                         <ItemList v-model="beverageItems" subheader="Bevanda"></ItemList>
                     </v-col>
-                    <v-col style="padding: 0;" sm="6" xs="12">
+                    <v-col style="padding: 0;" sm="6" cols="12">
                         <ItemList v-model="foodItems" subheader="Cibo"></ItemList>
                     </v-col>
                 </v-row>

@@ -223,7 +223,7 @@ onBeforeUnmount(() => {
         v-if="selectedTable.length && !selectedTable[0].paid" :readonly="onGoing">
         <span :style="{ opacity: onGoing ? 0.2 : 'inherit' }">CHIUDI TAVOLO</span>
       </v-btn>
-      <v-btn icon="mdi-close-box" class="hide-xs" variant="plain" @click="confirm = true" v-if="selectedTable.length">
+      <v-btn icon="mdi-close-box" class="hide-xs" variant="plain" @click="confirm = true" v-if="selectedTable.length && !selectedTable[0].paid">
 
       </v-btn>
     </v-bottom-navigation>

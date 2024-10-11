@@ -24,7 +24,7 @@ async function login() {
   <main>
     <v-container>
       <v-row justify="center">
-        <v-col sm="8" xs="12" lg="4">
+        <v-col sm="8" cols="12" lg="4">
           <v-card>
             <v-card-text>
               <v-form fast-fail @submit.prevent>
