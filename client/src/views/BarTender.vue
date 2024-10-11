@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type Event, type Order, type Item, ItemTypes as types, type Type } from "../../../models/src"
+import { type Event, type Order, type Item, ItemTypes as types, type Type, Destinations, type Destination } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import Axios from '@/services/client'
 import { SnackbarStore, type IUser } from '@/stores'
-import { groupItems, copy, getIcon } from "@/services/utils"
+import { groupItems, copy, getIcon, sortOrder } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
 import { io } from 'socket.io-client'
 import fileAudio from '@/assets/nuovo-ordine.wav'
@@ -28,9 +28,7 @@ const confirm2 = ref<boolean>(false)
 const drawer = ref<boolean>()
 const audio = ref(null);
 
-// console.log(fileAudio)
-
-
+const pageTitle = computed(() => Destinations.find((d: Destination) => props.destinations.includes(d.id)).name)
 const computedSelectedOrder = computed(() => {
   let result = copy<Order>((selectedOrder.value.length ? selectedOrder.value[0] : { items: [] }) as Order)
   if (!result.items) {
@@ -51,6 +49,7 @@ const subTypesCount = computed(() => {
   })
   return result
 })
+const orderedOrders = computed(() => orders.value.sort(sortOrder))
 
 function getSubTypeCount(order: Order, subtype: string[]) {
   if (order && order.items) {
@@ -59,10 +58,21 @@ function getSubTypeCount(order: Order, subtype: string[]) {
   return 0
 }
 
-async function doneItem(item: Item) {
-  item.done = true
-  await axios.UpdateItem(item)
-  selectedOrder.value[0].items.find((i: Item) => i.master_item_id === item.master_item_id && i.note === item.note && i.name === item.name && !i.done).done = true
+async function doneItem(item: Item, multiple: boolean = false) {
+  if (!multiple) {
+    const _item = copy<Item>(item)
+    _item.done = true
+    await axios.UpdateItem(_item)
+    selectedOrder.value[0].items.find((i: Item) => i.master_item_id === item.master_item_id && i.note === item.note && i.name === item.name && !i.done).done = true
+  }
+  else {
+    for (let j = 0; j < item.quantity; j++) {
+      const _item = copy<Item>(selectedOrder.value[0].items.find((i: Item) => i.master_item_id === item.master_item_id && i.note === item.note && i.name === item.name && !i.done))
+      _item.done = true
+      await axios.UpdateItem(_item)
+      selectedOrder.value[0].items.find((i: Item) => i.id === _item.id).done = true
+    }
+  }
 
   if (computedSelectedOrder.value.itemsToDo.length === 0) {
     completeOrder()
@@ -85,7 +95,7 @@ async function deleteItemConfirm(item_id: number) {
 async function deleteItem() {
   await axios.DeleteItem(deleteItemId.value)
   orders.value.forEach((order: Order) => {
-    order.items = order.items.filter((i: Item) => i.id !== deleteItemId.value)
+    order.items = copy<Item[]>(order.items.filter((i: Item) => i.id !== deleteItemId.value))
   })
   confirm2.value = false
 }
@@ -141,9 +151,27 @@ onMounted(async () => {
   })
 
   is.on('new-order', (data: Order) => {
-    orders.value.push(data)
-    snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
-    audio.value.play();
+    if (data.items.filter((i: Item) => props.destinations.includes(i.destination_id)).length) {
+      orders.value.push(data)
+      snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
+      audio.value.play();
+    }
+  })
+
+  is.on('item-removed', (data: number) => {
+    const order = orders.value.find((o: Order) => {
+      if (o.items.find((i: Item) => i.id === data)) {
+        return true
+      }
+    })
+    const _items = copy<Item[]>(order.items.filter((i: Item) => i.id !== data))
+    order.items = _items
+    if (_items.length === 0) {
+      if (order.id === selectedOrder.value[0].id) {
+        selectedOrder.value = []
+      }
+      orders.value = copy<Order[]>(orders.value.filter((o: Order) => o.id !== order.id))
+    }
   })
 })
 
@@ -155,7 +183,8 @@ onBeforeUnmount(() => {
 <template>
   <v-navigation-drawer v-model="drawer" mobile-breakpoint="sm">
     <v-list v-model:selected="selectedOrder" lines="two">
-      <v-list-item :key="order.id" :value="order" v-for="order in orders">
+      <v-list-item :key="order.id" :value="order" v-for="order in orderedOrders"
+        :style="{ opacity: !order.done ? 'inherit' : 0.3 }">
         <v-list-item-title>
           <span :class="{ done: order.done }">Tavolo {{ order.table_name }}</span>
         </v-list-item-title>
@@ -168,16 +197,24 @@ onBeforeUnmount(() => {
     </v-list>
   </v-navigation-drawer>
   <v-skeleton-loader type="card" v-if="loading"></v-skeleton-loader>
-  <p v-else-if="!event?.id">Nessun evento attivo</p>
-  <div v-else>
-    <ItemList subheader="DA FARE" v-model="computedSelectedOrder.itemsToDo">
+  <v-container v-else-if="!event?.id">
+    <h3>{{ pageTitle }}</h3>
+    <p>Nessun evento attivo</p>
+  </v-container>
+  <template v-else>
+    <h3 style="padding-left: 15px; padding-top: 14px;">{{ pageTitle }}</h3>
+    <ItemList :quantitybefore="true" :showtype="true" subheader="DA FARE" v-model="computedSelectedOrder.itemsToDo">
       <template v-slot:prequantity="slotProps">
-        <v-btn icon="mdi-delete" @click="deleteItemConfirm(slotProps.item.id)" variant="plain"></v-btn>
-      </template>
-      <template v-slot:postquantity="slotProps">
+        <v-btn icon="mdi-delete" v-if="!slotProps.item.paid" @click="deleteItemConfirm(slotProps.item.id)"
+          variant="plain"></v-btn>
+        <v-btn variant="plain" v-if="slotProps.item.quantity > 1" icon="mdi-check-all"
+          @click="doneItem(slotProps.item, true)"></v-btn>
         <v-btn variant="plain" icon="mdi-check" @click="doneItem(slotProps.item)"></v-btn>
       </template>
+      <template v-slot:postquantity="slotProps">
+      </template>
     </ItemList>
+    <v-divider></v-divider>
     <ItemList subheader="COMPLETATI" v-model="computedSelectedOrder.itemsDone" :done="true">
       <template v-slot:postquantity="slotProps">
         <v-btn variant="plain" icon="mdi-arrow-up-thin" @click="rollbackItem(slotProps.item)"></v-btn>
@@ -193,7 +230,7 @@ onBeforeUnmount(() => {
       <v-spacer></v-spacer>
       <v-btn class="show-xs" variant="plain" @click="confirm = true"
         v-if="selectedOrder.length && !selectedOrder[0].done">
-        COMPLETA ORDINE
+        COMPLETA
       </v-btn>
       <v-btn class="hide-xs" icon="mdi-check-all" variant="plain" @click="confirm = true"
         v-if="selectedOrder.length"></v-btn>
@@ -208,7 +245,7 @@ onBeforeUnmount(() => {
         <v-btn text="Conferma" variant="plain" @click="deleteItem"></v-btn>
       </template>
     </Confirm>
-  </div>
+  </template>
 </template>
 
 <style scoped>

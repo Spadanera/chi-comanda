@@ -29,13 +29,13 @@ const table_name = ref<string>('')
 const orderTotal = computed(() => orderItems.value.reduce((a: number, i: Item) => a += i.price, 0))
 const foodTotal = computed(() => orderItems.value.filter((i: Item) => i.type === 'Cibo').length)
 const beverageTotal = computed(() => orderItems.value.filter((i: Item) => i.type === 'Bevanda').length)
-const computedItems = computed(() => master_items.value.filter((i: Item) => (filter.value === '' || filter.value === null || i.name.toLowerCase().indexOf(filter.value.toLowerCase()) > - 1)))
+const computedItems = computed(() => master_items.value.filter((i: MasterItem) => (filter.value === '' || filter.value === null || i.name.toLowerCase().indexOf(filter.value.toLowerCase()) > - 1)))
 const groupedOrderItems = computed(() => {
   return groupItems(orderItems.value)
 })
 
 function filterItems(type: Type) {
-  return computedItems.value.filter((i: Item) => i.sub_type === type.name).sort(sortItem)
+  return computedItems.value.filter((i: MasterItem) => i.sub_type === type.name).sort(sortItem)
 }
 
 function addItemToOrder(item: Item) {
@@ -78,13 +78,14 @@ function openNoteDialog(item: Item, premium: boolean = false) {
 }
 
 async function sendOrder() {
-  await axios.CreateOrder({
+  const _order: Order = {
     event_id: parseInt(props.event_id),
     master_table_id: parseInt(props.master_table_id),
     table_id: parseInt(props.table_id),
     items: orderItems.value,
     table_name: table_name.value
-  } as Order)
+  } as Order
+  await axios.CreateOrder(_order)
   snackbarStore.show("Ordine inviato con successo", 3000, 'top', 'success')
   router.push('/waiter')
 }
@@ -132,7 +133,7 @@ onMounted(async () => {
         </template>
       </template>
     </v-list>
-    <v-bottom-sheet v-model="sheet">
+    <v-bottom-sheet v-model="sheet" scrollable>
       <v-card :title="`Ordine Tavolo ${table_name}`" style="padding-bottom: 50px">
         <ItemList v-model="groupedOrderItems">
           <template v-slot:prequantity="slotProps">

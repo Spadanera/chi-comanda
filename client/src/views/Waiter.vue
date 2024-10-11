@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { type AvailableTable, type Event } from "../../../models/src"
-import { ref, onMounted, computed } from "vue"
+import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import Axios from '@/services/client'
-import { sortTable } from "@/services/utils"
+import { sortAvailableTable } from "@/services/utils"
 import { io } from 'socket.io-client'
 import { SnackbarStore } from '@/stores'
 
@@ -14,8 +14,8 @@ const snackbarStore = SnackbarStore()
 const event = ref<Event>()
 const axios = new Axios()
 const loading = ref<boolean>(true)
-const availableTable = computed<AvailableTable[]>(() => tables.value.filter(t => !t.event_id).sort(sortTable))
-const activeTable = computed<AvailableTable[]>(() => tables.value.filter(t => t.event_id).sort(sortTable))
+const availableTable = computed<AvailableTable[]>(() => tables.value.filter(t => !t.event_id).sort(sortAvailableTable))
+const activeTable = computed<AvailableTable[]>(() => tables.value.filter(t => t.event_id).sort(sortAvailableTable))
 
 onMounted(async () => {
   event.value = await axios.GetOnGoingEvent()
@@ -43,7 +43,10 @@ onMounted(async () => {
     })
   }
   loading.value = false
+})
 
+onBeforeUnmount(() => {
+  is.emit('end')
 })
 </script>
 

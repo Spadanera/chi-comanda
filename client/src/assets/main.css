@@ -18,8 +18,12 @@ a:visited {
     text-decoration: line-through;
 }
 
-.v-input__details {
+.v-checkbox > .v-input__details {
     display: none !important;
+}
+
+.v-list-item__spacer {
+    width: 15px !important;
 }
 
 @media screen and (max-width: 600px) {

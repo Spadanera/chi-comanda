@@ -108,14 +108,14 @@ onMounted(() => {
             </v-col>
         </v-row>
     </v-container>
-    <v-bottom-sheet v-model="bottomSheet">
+    <v-bottom-sheet scrollable v-model="bottomSheet">
         <v-card :title="selectedEvent.date.toString().split('T')[0]" :subtitle="selectedEvent.name">
             <v-card-text>
                 <v-row>
-                    <v-col sm="6" xs="12">
+                    <v-col style="padding: 0" sm="6" xs="12">
                         <ItemList v-model="beverageItems" subheader="Bevanda"></ItemList>
                     </v-col>
-                    <v-col sm="6" xs="12">
+                    <v-col style="padding: 0;" sm="6" xs="12">
                         <ItemList v-model="foodItems" subheader="Cibo"></ItemList>
                     </v-col>
                 </v-row>
@@ -135,7 +135,7 @@ onMounted(() => {
                 </v-btn>
 
                 <v-spacer></v-spacer>
-                <v-btn text="CHIUDI" @click="bottomSheet = false"></v-btn>
+                <v-btn text="Chiudi" variant="plain" @click="bottomSheet = false"></v-btn>
             </v-card-actions>
         </v-card>
     </v-bottom-sheet>

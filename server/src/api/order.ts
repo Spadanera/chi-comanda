@@ -12,37 +12,40 @@ export default class OrderAPI {
 
     async getAll(event_id: number, destination_ids: number[]): Promise<Order[]> {
         return await this.database.query(`
-            SELECT 
-                orders.id, 
-                orders.event_id,
-                orders.table_id, 
-                tables.name table_name,
-                (CASE WHEN (
-					SELECT COUNT(items.id) FROM items 
-                    INNER JOIN master_items ON master_items.id = items.master_item_id
-                    WHERE order_id = orders.id AND master_items.destination_id IN (?) AND IFNULL(done, FALSE) = FALSE
-				) > 0 THEN 0 ELSE 1 END) done,  
-                (
-                    SELECT JSON_ARRAYAGG(JSON_OBJECT(
-                        'id', items.id, 
-                        'master_item_id', master_items.id, 
-                        'note', items.note, 
-                        'name', items.name, 
-                        'type', master_items.type, 
-                        'sub_type', master_items.sub_type, 
-                        'price', items.price,
-                        'destination_id', master_items.destination_id,
-                        'done', items.done,
-                        'paid', items.paid
-                    )) 
-                    FROM items 
-                    INNER JOIN master_items ON master_items.id = items.master_item_id
-                    WHERE order_id = orders.id AND master_items.destination_id IN (?)
-                ) items
-            FROM orders 
-            INNER JOIN tables ON orders.table_id = tables.id
-            WHERE orders.event_id = ?
-            ORDER BY done, orders.id`, [destination_ids, destination_ids, event_id])
+            SELECT * FROM (
+                SELECT 
+                    orders.id, 
+                    orders.event_id,
+                    orders.table_id, 
+                    tables.name table_name,
+                    (CASE WHEN (
+                        SELECT COUNT(items.id) FROM items 
+                        INNER JOIN master_items ON master_items.id = items.master_item_id
+                        WHERE order_id = orders.id AND master_items.destination_id IN (?) AND IFNULL(done, FALSE) = FALSE
+                    ) > 0 THEN 0 ELSE 1 END) done,  
+                    (
+                        SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                            'id', items.id, 
+                            'master_item_id', master_items.id, 
+                            'note', items.note, 
+                            'name', items.name, 
+                            'type', master_items.type, 
+                            'sub_type', master_items.sub_type, 
+                            'price', items.price,
+                            'destination_id', master_items.destination_id,
+                            'done', items.done,
+                            'paid', items.paid
+                        )) 
+                        FROM items 
+                        INNER JOIN master_items ON master_items.id = items.master_item_id
+                        WHERE order_id = orders.id AND master_items.destination_id IN (?)
+                    ) items
+                FROM orders 
+                INNER JOIN tables ON orders.table_id = tables.id
+                WHERE orders.event_id = ?
+            ) pivot
+            WHERE pivot.items != '[]'
+            ORDER BY pivot.done, pivot.id`, [destination_ids, destination_ids, event_id])
     }
 
     async get(id: number): Promise<Order[]> {
@@ -86,7 +89,7 @@ export default class OrderAPI {
     }
 
     async completeOrder(order_id: number, input: CompleteOrderInput): Promise<number> {
-        return await this.database.executeTransaction(async () => {
+        const result = await this.database.executeTransaction(async () => {
             if (input.item_ids && input.item_ids.length) {
                 const result = await this.database.execute('UPDATE items SET done = TRUE WHERE order_id = ? AND id in (?)', [order_id, input.item_ids], true)
                 const items = await this.database.query<Item>("SELECT id FROM items WHERE order_id = ? AND IFNULL(done, false) = FALSE", order_id)
@@ -99,6 +102,14 @@ export default class OrderAPI {
                 return await this.database.execute("UPDATE orders SET done = TRUE WHERE id = ?", [order_id], true)
             }
         })
+
+        SocketIOService.instance().sendMessage({
+            room: "checkout",
+            event: "order-completed",
+            body: { ...input, order_id }
+        })
+
+        return result
     }
 
     async delete(id: number): Promise<number> {

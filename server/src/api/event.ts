@@ -14,7 +14,7 @@ export default class EventAPI {
             (SELECT count(tables.id) FROM tables WHERE event_id = events.id) tableCount,
             (SELECT count(items.id) FROM items INNER JOIN master_items ON items.master_item_id = master_items.id WHERE event_id = events.id AND master_items.type = 'Bevanda') beverageCount,
             (SELECT count(items.id) FROM items INNER JOIN master_items ON items.master_item_id = master_items.id WHERE event_id = events.id AND master_items.type IN ('Cibo')) foodCount,
-            (SELECT sum(items.id) FROM items WHERE event_id = events.id) revenue
+            (SELECT sum(items.price) FROM items WHERE event_id = events.id) revenue
             FROM events
             ORDER BY date DESC`
             , [])

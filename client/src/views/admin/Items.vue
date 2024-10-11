@@ -14,6 +14,8 @@ const confirm = ref<boolean>(false)
 const selectedItem = ref<MasterItem>(null)
 const items = ref<MasterItem[]>([])
 const filter = ref<string>('')
+const form = ref(null)
+const requiredRule = ref([(value: any) => !!value || 'Inserire un valore'])
 
 const filteredItems = computed(() => items.value.filter((i: MasterItem) => !filter.value || new RegExp(filter.value, 'i').test(i.name)).sort(sortItem))
 
@@ -23,22 +25,29 @@ function openDialog(item: MasterItem) {
 }
 
 async function updateItem(del: boolean = false) {
-  setType()
-  if (del) {
-    selectedItem.value.status = 'DELETED'
+  const { valid } = await form.value?.validate()
+  if (valid) {
+    setType()
+    if (del) {
+      selectedItem.value.status = 'DELETED'
+    }
+    await axios.EditMasterItems(selectedItem.value)
+    dialog.value = false
+    confirm.value = false
+    getMasterItems()
+    snackbarStore.show(del ? "Item eliminato" : "Item aggiornato")
   }
-  await axios.EditMasterItems(selectedItem.value)
-  dialog.value = false
-  getMasterItems()
-  snackbarStore.show(del ? "Item eliminato" : "Item aggiornato")
 }
 
 async function createItem() {
-  setType()
-  await axios.CreateMasterItems(selectedItem.value)
-  dialog.value = false
-  getMasterItems()
-  snackbarStore.show("Tavolo creato")
+  const { valid } = await form.value?.validate()
+  if (valid) {
+    setType()
+    await axios.CreateMasterItems(selectedItem.value)
+    dialog.value = false
+    getMasterItems()
+    snackbarStore.show("Tavolo creato")
+  }
 }
 
 async function getMasterItems() {
@@ -83,7 +92,7 @@ onMounted(async () => {
           </th>
         </tr>
       </thead>
-      <tbody>
+      <tbody style="cursor: pointer;">
         <tr v-for="item in filteredItems" :key="item.id" @click="openDialog(item)">
           <td>{{ item.name }}</td>
           <td>{{ item.type }}</td>
@@ -106,27 +115,30 @@ onMounted(async () => {
           Crea nuovo elemento
         </v-card-title>
         <v-card-text>
-          <v-form @submit.prevent>
+          <v-form ref="form" @submit.prevent>
             <v-row>
               <v-col cols="12">
-                <v-text-field v-model="selectedItem.name" label="Nome"></v-text-field>
+                <v-text-field v-model="selectedItem.name" label="Nome" :rules="requiredRule"></v-text-field>
               </v-col>
               <v-col cols="6">
-                <v-text-field v-model="selectedItem.price" label="Prezzo" type="number"
+                <v-text-field v-model="selectedItem.price" label="Prezzo" type="number" :rules="requiredRule"
                   append-inner-icon="mdi-currency-eur"></v-text-field>
               </v-col>
               <v-col>
-                <v-switch color="green" label="Disponibile" :false-value="0" :true-value="1" v-model:model-value="selectedItem.available"></v-switch>
+                <v-switch color="green" label="Disponibile" :false-value="0" :true-value="1"
+                  v-model:model-value="selectedItem.available"></v-switch>
               </v-col>
               <v-col cols="12">
-                <v-select :items="ItemTypes" label="Tipologia" item-title="name" v-model="selectedItem.sub_type">
+                <v-select :items="ItemTypes" label="Tipologia" item-title="name" v-model="selectedItem.sub_type"
+                  :rules="requiredRule">
                   <template v-slot:item="{ props, item }">
                     <v-list-item v-bind="props" :subtitle="item.raw.type" :title="item.raw.name"></v-list-item>
                   </template>
                 </v-select>
               </v-col>
               <v-col cols="12">
-                <v-select :items="Destinations" label="Destinazione" item-value="id" item-title="name" v-model="selectedItem.destination_id">
+                <v-select :items="Destinations" label="Destinazione" item-value="id" item-title="name"
+                  :rules="requiredRule" v-model="selectedItem.destination_id">
                   <template v-slot:item="{ props, item }">
                     <v-list-item v-bind="props" :subtitle="item.raw.location" :title="item.raw.name"></v-list-item>
                   </template>

@@ -9,11 +9,7 @@ export default class Axios {
     config: AxiosRequestConfig = {
         headers: {
             'Content-Type': 'application/json'
-        } as RawAxiosRequestHeaders,
-        onDownloadProgress: (progressEvent) => {
-            // Calcola l'avanzamento complessivo
-            this.updateOverallProgress(progressEvent);
-        }
+        } as RawAxiosRequestHeaders
     }
     userStoreDef: StoreDefinition
     snackbarStoreDef: StoreDefinition
@@ -26,28 +22,46 @@ export default class Axios {
 
         this.client.interceptors.request.use((request) => {
             const progressStore = this.progressStoreDef()
-            progressStore.activeRequests++;
-            progressStore.loading = true;
+            if (request.url !== "/checkauthentication") {
+                progressStore.activeRequestCount++
+                progressStore.loading = true;
+            }
             return request
+        }, error => {
+            const progressStore = this.progressStoreDef()
+            progressStore.activeRequestCount--
+            setInterval(() => {
+                if (progressStore.activeRequestCount === 0) {
+                    progressStore.loading = false;
+                }
+            }, 200)
+            return Promise.reject(error)
         })
 
         this.client.interceptors.response.use((response) => {
             const progressStore = this.progressStoreDef()
-            progressStore.activeRequests--;
-            if (progressStore.activeRequests === 0) {
-                progressStore.loading = false;
+            if (response.config.url !== "/checkauthentication") {
+                progressStore.activeRequestCount--
+                setInterval(() => {
+                    if (progressStore.activeRequestCount === 0) {
+                        progressStore.loading = false;
+                    }
+                }, 200)
             }
             return response
         }, error => {
             const progressStore = this.progressStoreDef()
-            progressStore.activeRequests--;
-            if (progressStore.activeRequests === 0) {
-                progressStore.loading = false;
-                progressStore.overallProgress = 0;
-            }
+            progressStore.loading = false;
             if (error.response) {
+                progressStore.activeRequestCount--
+                setInterval(() => {
+                    if (progressStore.activeRequestCount === 0) {
+                        progressStore.loading = false;
+                    }
+                }, 200)
                 if (error.response.status === 401) {
-                    // Redirect to login page
+                    const userStore = this.userStoreDef()
+                    userStore.logout()
                     router.push('/login')
                 } else {
                     // Show a generic error message
@@ -61,21 +75,6 @@ export default class Axios {
         this.userStoreDef = UserStore
         this.snackbarStoreDef = SnackbarStore
         this.progressStoreDef = ProgressStore
-    }
-
-    private updateOverallProgress(progressEvent: AxiosProgressEvent): void {
-        // Calcola la percentuale di completamento della singola richiesta
-        const individualProgress = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-        );
-
-        // Calcola l'avanzamento complessivo medio di tutte le richieste attive
-        const progressStore = this.progressStoreDef()
-
-        progressStore.overallProgress = Math.round(
-            (individualProgress + progressStore.overallProgress * (progressStore.activeRequests - 1)) /
-            progressStore.activeRequests
-        );
     }
 
     private async get<T extends Repository>(path: string): Promise<T[]> {

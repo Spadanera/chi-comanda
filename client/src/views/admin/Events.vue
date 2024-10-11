@@ -12,6 +12,8 @@ const events = ref<EventType[]>([])
 const dialog = ref<boolean>(false)
 const dialogEvent = ref<EventType>(null)
 const loading = ref<boolean>(false)
+const form = ref(null)
+const requiredRule = ref([(value: any) => !!value || 'Inserire un valore'])
 
 const ongoingEvents = computed<EventType[]>(() => {
   return events.value.filter(e => e.status === 'ONGOING')
@@ -38,10 +40,13 @@ function openDialog() {
 }
 
 async function createEvent() {
-  await axios.CreateEvent(dialogEvent.value)
-  snackbarStore.show('Evento creato con successo', 3000, 'bottom', 'success')
-  await load()
-  dialog.value = false
+  const { valid } = await form.value?.validate()
+  if (valid) {
+    await axios.CreateEvent(dialogEvent.value)
+    snackbarStore.show('Evento creato con successo', 3000, 'bottom', 'success')
+    await load()
+    dialog.value = false
+  }
 }
 
 async function load(goToOngoing: boolean = false) {
@@ -49,6 +54,8 @@ async function load(goToOngoing: boolean = false) {
   await getAllEvents()
   if (goToOngoing) {
     tab.value = ongoingEvents.value.length ? 'ONGOING' : 'PLANNED'
+  } else if (!ongoingEvents.value.length && tab.value === 'ONGOING') {
+    tab.value = 'PLANNED'
   }
   loading.value = false
 }
@@ -85,8 +92,8 @@ onMounted(async () => {
         Crea nuovo evento
       </v-card-title>
       <v-card-text>
-        <v-form @submit.prevent>
-          <v-text-field v-model="dialogEvent.name" label="Nome Evento" clearable>
+        <v-form @submit.prevent ref="form">
+          <v-text-field v-model="dialogEvent.name" label="Nome Evento" clearable :rules="requiredRule">
 
           </v-text-field>
           <v-date-picker locale="it" first-day-of-week="1" v-model:model-value="dialogEvent.date"></v-date-picker>

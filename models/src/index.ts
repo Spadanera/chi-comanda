@@ -57,22 +57,23 @@ export const Destinations: Destination[] = [
 export interface CompleteOrderInput {
   event_id: number,
   table_id: number,
+  order_id?: number,
   item_ids: number[]
 }
 
-
 export enum Roles {
-  Admin,
-  Checkout,
-  Waiter,
-  Bertender,
-  Cook
+  admin,
+  checkout,
+  waiter,
+  bertender,
+  kitchen
 }
 
 export interface Message {
-  room: string
+  room?: string
+  rooms?: string[]
   event: string
-  body: any
+  body?: any
 }
 
 export interface Repository extends RowDataPacket {
@@ -105,10 +106,13 @@ export interface Event extends Repository {
 export interface Table extends Repository {
   id?: number
   event_id?: number
+  order_id?: number
+  table_id?: number
   master_table_id?: number[]
   name?: string
   paid?: boolean
   status?: string
+  items?: Item[]
 }
 
 export interface AvailableTable extends Repository {
@@ -140,6 +144,7 @@ export interface Item extends Repository {
   note?: string
   done?: boolean
   paid?: boolean
+  destination_id?: number
 }
 
 export interface MasterTable extends Repository {
@@ -147,6 +152,7 @@ export interface MasterTable extends Repository {
   name?: string
   default_seats?: number
   status?: string
+  inUse?: boolean
 }
 
 export interface User extends Repository {

@@ -1,6 +1,6 @@
-import type { Item, AvailableTable } from "../../../models/src"
+import type { Item, AvailableTable, Order, Table, MasterItem } from "../../../models/src"
 
-export function sortItem(a: Item, b: Item): number {
+export function sortItem<T extends Item & MasterItem>(a: T, b: T): number {
     if (a.sub_type < b.sub_type) {
         return -1
     }
@@ -64,7 +64,7 @@ export function getIcon(key: string): string {
     }
 }
 
-export function sortTable(a: AvailableTable, b: AvailableTable): number {
+export function sortAvailableTable(a: AvailableTable, b: AvailableTable): number {
     const _a = a.table_name || a.master_table_name
     const _b = b.table_name || b.master_table_name
     const numRegex = /^\d+$/
@@ -89,4 +89,34 @@ export function sortTable(a: AvailableTable, b: AvailableTable): number {
             }
         }
     }
+}
+
+export function sortOrder(a: Order, b: Order): number {
+    if (a.done) {
+        if (b.done) {
+            return a.id - b.id
+        }
+        else {
+            return 1
+        }
+    }
+    else if (b.done) {
+        return -1
+    }
+    return a.id - b.id
+}
+
+export function sortTables(a: Table, b: Table): number {
+    if (a.paid) {
+        if (b.paid) {
+            return a.id - b.id
+        }
+        else {
+            return 1
+        }
+    }
+    else if (b.paid) {
+        return -1
+    }
+    return a.id - b.id
 }

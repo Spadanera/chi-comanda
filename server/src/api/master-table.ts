@@ -9,7 +9,18 @@ export default class MasterTableApi {
     }
 
     async getAll(): Promise<MasterTable[]> {
-        return await this.database.query('SELECT * FROM master_tables WHERE status = ?', ['ACTIVE'])
+        return await this.database.query(`
+            SELECT 
+                master_tables.*,
+                (
+                    SELECT 
+                        CASE WHEN COUNT(tables.id) > 0 THEN TRUE ELSE FALSE END 
+                    FROM tables
+                    INNER JOIN table_master_table ON table_master_table.table_id = tables.id
+                    WHERE tables.status = 'ACTIVE' AND table_master_table.master_table_id = master_tables.id
+                ) inUse
+            FROM master_tables WHERE status = 'ACTIVE'`
+        , [])
     }
 
     async get(id: number): Promise<MasterTable[]> {

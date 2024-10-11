@@ -81,5 +81,5 @@ export const SnackbarStore: StoreDefinition = defineStore('snackbar', {
 })
 
 export const ProgressStore: StoreDefinition = defineStore('progress', {
-    state: () => ({ enable: 0, activeRequests: 0, loading: false })
+    state: () => ({ loading: false, activeRequestCount: 0 })
 })

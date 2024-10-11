@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue';
 import { type MasterTable } from "../../../../models/src"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
-import { sortTable, copy } from '@/services/utils';
+import { sortAvailableTable, copy } from '@/services/utils';
 import Confirm from '@/components/Confirm.vue';
 const axios = new Axios()
 const snackbarStore = SnackbarStore()
@@ -13,6 +13,8 @@ const dialog = ref<boolean>(false)
 const confirm = ref<boolean>(false)
 const selectedTable = ref<MasterTable>(null)
 const tables = ref<MasterTable[]>([])
+const requiredRule = ref([(value:any) => !!value || 'Inserire un nome'])
+const form = ref(null)
 
 function openDialog(table: MasterTable) {
   selectedTable.value = copy<MasterTable>(table)
@@ -25,20 +27,24 @@ async function updateTable(del: boolean = false) {
   }
   await axios.EditMasterTables(selectedTable.value)
   dialog.value = false
+  confirm.value = false
   getAllMasterTable()
   snackbarStore.show(del ? "Tavolo eliminato" : "Tavolo aggiornato")
 }
 
 async function createTable() {
-  await axios.CreateMasterTables(selectedTable.value)
-  dialog.value = false
-  getAllMasterTable()
-  snackbarStore.show("Tavolo creato")
+  const { valid } = await form.value?.validate()
+  if (valid) {
+    await axios.CreateMasterTables(selectedTable.value)
+    dialog.value = false
+    getAllMasterTable()
+    snackbarStore.show("Tavolo creato")
+  }
 }
 
 async function getAllMasterTable() {
   loading.value = true
-  tables.value = (await axios.GetAllMasterTables()).sort(sortTable)
+  tables.value = (await axios.GetAllMasterTables()).sort(sortAvailableTable)
   loading.value = false
 }
 
@@ -48,12 +54,18 @@ onMounted(async () => {
 </script>
 <template>
   <v-container>
+    <h3>Elenco Tavoli</h3>
+  </v-container>
+  <v-container>
     <v-skeleton-loader v-if="loading" type="card"></v-skeleton-loader>
     <v-row v-else>
       <v-col v-for="table in tables" cols="4">
         <v-card height="50px" style="padding-top: 10px;" @click="openDialog(table)">
           {{ table.name }}
         </v-card>
+        <v-card-subtitle v-if="table.inUse" style="margin-top: -22px;">
+          in uso
+        </v-card-subtitle>
       </v-col>
     </v-row>
     <v-fab icon="mdi-plus" app style="position: fixed; right: 10px; bottom: 10px;" location="bottom right" @click="openDialog({
@@ -68,14 +80,14 @@ onMounted(async () => {
           Crea nuovo tavolo
         </v-card-title>
         <v-card-text>
-          <v-form @submit.prevent>
-            <v-text-field v-model="selectedTable.name" label="Nome Tavolo" clearable></v-text-field>
+          <v-form @submit.prevent="updateTable()" ref="form">
+            <v-text-field v-model="selectedTable.name" label="Nome Tavolo" clearable :rules="requiredRule"></v-text-field>
           </v-form>
         </v-card-text>
         <v-card-actions>
           <v-btn variant="plain" @click="dialog = false">ANNULLA</v-btn>
-          <v-btn color="red" v-if="selectedTable.id" variant="plain" @click="confirm = true">ELIMINA</v-btn>
-          <v-btn v-if="selectedTable.id" variant="plain" @click="updateTable()">AGGIORNA</v-btn>
+          <v-btn color="red" v-if="selectedTable.id && !selectedTable.inUse" variant="plain" @click="confirm = true">ELIMINA</v-btn>
+          <v-btn v-if="selectedTable.id" variant="plain" type="submit">AGGIORNA</v-btn>
           <v-btn v-else variant="plain" @click="createTable">CONFERMA</v-btn>
         </v-card-actions>
       </v-card>

@@ -37,7 +37,16 @@ export class SocketIOService {
   }
 
   sendMessage(message: Message) {
-    this.getServer().to(message.room).emit(message.event, message.body)
+    try {
+      if (message.room) {
+        this.getServer().to(message.room).emit(message.event, message.body)
+      }
+      else if (message.rooms) {
+        message.rooms.forEach(r => this.getServer().to(r).emit(message.event, message.body))
+      }
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   emitAll(key: string, message: string) {

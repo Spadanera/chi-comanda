@@ -1,5 +1,6 @@
 import DB from "../db"
 import { Item } from "../../../models/src"
+import { SocketIOService } from "../socket"
 
 export default class ItemsApi {
     database: DB
@@ -21,7 +22,13 @@ export default class ItemsApi {
     }
 
     async delete(id: number): Promise<number> {
-        return await this.database.execute('DELETE FROM items WHERE id = ?', [id])
+        const result = await this.database.execute('DELETE FROM items WHERE id = ?', [id])
+        SocketIOService.instance().sendMessage({
+            rooms: ["bar", "checkout"],
+            event: "item-removed",
+            body: id
+        })
+        return result
     }
 
     async update(item: Item): Promise<number> {

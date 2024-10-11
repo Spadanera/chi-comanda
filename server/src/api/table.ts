@@ -44,6 +44,9 @@ export default class TableApi {
                 SELECT JSON_ARRAYAGG(JSON_OBJECT(
                     'id', items.id, 
                     'master_item_id', master_items.id, 
+                    'event_id', items.event_id,
+                    'table_id', items.table_id,
+                    'order_id', items.order_id,
                     'note', items.note, 
                     'name', items.name, 
                     'type', master_items.type, 
@@ -59,7 +62,7 @@ export default class TableApi {
             ) items
             FROM tables 
             WHERE event_id = ?
-            ORDER BY status, tables.id
+            ORDER BY paid, tables.id
             `, [eventId])
     }
 
