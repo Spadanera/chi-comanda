@@ -1,15 +1,12 @@
-import DB from "../db"
+import db from "../db"
 import { MasterTable } from "../../../models/src"
 
-export default class MasterTableApi {
-    database: DB
-
+class MasterTableApi {
     constructor() {
-        this.database = new DB()
     }
 
     async getAll(): Promise<MasterTable[]> {
-        return await this.database.query(`
+        return await db.query(`
             SELECT 
                 master_tables.*,
                 (
@@ -24,20 +21,23 @@ export default class MasterTableApi {
     }
 
     async get(id: number): Promise<MasterTable[]> {
-        return await this.database.query('SELECT * FROM master_tables WHERE ID = ?', [id])
+        return await db.query('SELECT * FROM master_tables WHERE ID = ?', [id])
     }
 
     async create(table: MasterTable): Promise<number> {
-        return await this.database.execute('INSERT INTO master_tables (name, default_seats, status) VALUES (?, ?, ?)'
-            , [table.name, table.default_seats, table.status])
+        return await db.executeInsert('INSERT INTO master_tables (name, status) VALUES (?, ?)'
+            , [table.name, table.status])
     }
 
     async delete(id: number): Promise<number> {
-        return await this.database.execute('DELETE FROM master_tables WHERE id = ?', [id])
+        return await db.executeUpdate('DELETE FROM master_tables WHERE id = ?', [id])
     }
 
     async update(table: MasterTable): Promise<number> {
-        return await this.database.execute('UPDATE master_tables SET name = ?, default_seats = ?, status = ? WHERE id = ?'
+        return await db.executeUpdate('UPDATE master_tables SET name = ?, default_seats = ?, status = ? WHERE id = ?'
             , [table.name, table.default_seats, table.status, table.id])
     }
 }
+
+const masterItemApi = new MasterTableApi()
+export default masterItemApi

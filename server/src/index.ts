@@ -8,7 +8,8 @@ import UserApi from "./api/user"
 import apiRouter from "./routes"
 import { createServer } from 'http'
 import { SocketIOService } from "./socket"
-import { User } from "../../models/src" 
+import { User } from "../../models/src"
+import db from "./db"
 
 const AUTH_COOKIE_NAME: string = 'lp-session'
 
@@ -77,7 +78,7 @@ app.get("/api/checkauthentication", async (req: Request, res: Response) => {
         res.json(req.user)
     }
     else {
-        res.json(0) 
+        res.json(0)
     }
 })
 
@@ -100,16 +101,26 @@ SocketIOService.instance().initialize(server, {
     path: "/socket"
 })
 
-SocketIOService.instance().getServer().on('connection', function(socket) {
-    socket.on('end', function(room) {
+SocketIOService.instance().getServer().on('connection', function (socket) {
+    socket.on('end', function (room) {
         socket.disconnect()
     });
 
-    socket.on('join', function(room) {
+    socket.on('join', function (room) {
         socket.join(room);
     });
 });
 
 server.listen(process.env.PORT, () => {
     console.log(`App is listening on port 3000`)
+})
+
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received')
+    server.close(() => {
+        db.closePool().then(() => {
+            console.log('Database pool closed')
+            process.exit(0)
+        })
+    })
 })

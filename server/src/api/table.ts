@@ -1,16 +1,13 @@
-import DB from "../db"
+import db from "../db"
 import { MasterTable, Table } from "../../../models/src"
 import { SocketIOService } from "../socket"
 
-export default class TableApi {
-    database: DB
-
+class TableApi {
     constructor() {
-        this.database = new DB()
     }
 
     async getAvailableTable(eventId: number): Promise<MasterTable[]> {
-        return await this.database.query(`SELECT 
+        return await db.query(`SELECT 
             available_tables.id table_id, 
             available_tables.name table_name, 
             master_tables.id master_table_id, 
@@ -38,7 +35,7 @@ export default class TableApi {
     }
 
     async getActiveTable(eventId: number): Promise<Table[]> {
-        return await this.database.query(`
+        return await db.query(`
             SELECT tables.id, tables.name, tables.paid, tables.status,
             (
                 SELECT JSON_ARRAYAGG(JSON_OBJECT(
@@ -67,42 +64,53 @@ export default class TableApi {
     }
 
     async getAll(): Promise<Table[]> {
-        return await this.database.query('SELECT * FROM tables', [])
+        return await db.query('SELECT * FROM tables', [])
     }
 
     async get(id: number): Promise<Table[]> {
-        return await this.database.query('SELECT * FROM tables WHERE ID = ?', [id])
+        return await db.query('SELECT * FROM tables WHERE ID = ?', [id])
     }
 
     async create(table: Table): Promise<number> {
-        return await this.database.executeTransaction(async () => {
-            const table_id = await this.database.execute('INSERT INTO tables (name, event_id, status) VALUES (?,?)', [table.name, table.event_id, 'ACTIVE'], true)
-            if (table.master_table_id) {
-                for (let i = 0; i < table.master_table_id.length; i++) {
-                    await this.database.execute('INSERT INTO table_master_table (table_id, master_table_id) VALUES (?, ?)', [table_id, table.master_table_id[i]], true)
-                }
+        const table_id = await db.executeInsert('INSERT INTO tables (name, event_id, status) VALUES (?,?)', [table.name, table.event_id, 'ACTIVE'])
+        if (table.master_table_id) {
+            const transactionInput: { queries: string[], values: any[]} = {
+                queries: [],
+                values: []
             }
-            return table_id
-        })
+            for (let i = 0; i < table.master_table_id.length; i++) {
+                transactionInput.queries.push('INSERT INTO table_master_table (table_id, master_table_id) VALUES (?, ?)')
+                transactionInput.values.push([table_id, table.master_table_id[i]])
+            }
+            await db.executeTransaction(transactionInput.queries, transactionInput.values)
+        }
+        return table_id
     }
 
     async delete(id: number): Promise<number> {
-        return this.database.executeTransaction(async () => {
-            await this.database.execute('DELETE FROM items WHERE table_id = ?', [id])
-            await this.database.execute('DELETE FROM orders WHERE table_id = ?', [id])
-            return await this.database.execute('DELETE FROM tables WHERE id = ?', [id])
-        })
+        return db.executeTransaction([
+            'DELETE FROM items WHERE table_id = ?',
+            'DELETE FROM orders WHERE table_id = ?',
+            'DELETE FROM tables WHERE id = ?'
+        ], [
+            [id],
+            [id],
+            [id]
+        ])
     }
 
     async update(table: Table, id: number): Promise<number> {
-        return await this.database.execute('UPDATE tables SET STATUS = ? WHERE id = ?', [table.status, id])
+        return await db.executeUpdate('UPDATE tables SET STATUS = ? WHERE id = ?', [table.status, id])
     }
 
     async closeTable(table_id: number): Promise<number> {
-        const result = await this.database.executeTransaction(async () => {
-            await this.database.execute('UPDATE items SET paid = TRUE WHERE table_id = ?', [table_id], true)
-            return await this.database.execute('UPDATE tables SET status = "CLOSED", paid = TRUE WHERE id = ?', [table_id], true)
-        })
+        const result = await db.executeTransaction([
+            'UPDATE items SET paid = TRUE WHERE table_id = ?',
+            'UPDATE tables SET status = "CLOSED", paid = TRUE WHERE id = ?'
+        ], [
+            [table_id],
+            [table_id]
+        ])
         SocketIOService.instance().sendMessage({
             room: "waiter",
             event: "new-table-available",
@@ -112,6 +120,9 @@ export default class TableApi {
     }
 
     async paySelectedItem(table_id: number, item_ids: number[]): Promise<number> {
-        return await this.database.execute('UPDATE items SET paid = TRUE WHERE table_id = ? AND id IN (?)', [table_id, item_ids])
+        return await db.executeUpdate(`UPDATE items SET paid = TRUE WHERE table_id = ? AND id IN (${item_ids.join(',')})`, [table_id])
     }
 }
+
+const tableApi = new TableApi()
+export default tableApi

@@ -37,7 +37,7 @@ const computedSelectedTable = computed(() => {
 })
 const tableTotalOrder = computed(() => {
   if (computedSelectedTable.value.items) {
-    return computedSelectedTable.value.items.reduce((a: number, i: Item) => a += i.price, 0)
+    return computedSelectedTable.value.items.reduce((a: number, i: Item) => a += i.paid ? 0 : i.price, 0)
   }
   else return 0
 })

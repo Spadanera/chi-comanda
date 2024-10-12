@@ -35,6 +35,7 @@ async function updateTable(del: boolean = false) {
 async function createTable() {
   const { valid } = await form.value?.validate()
   if (valid) {
+    selectedTable.value.status = 'ACTIVE'
     await axios.CreateMasterTables(selectedTable.value)
     dialog.value = false
     getAllMasterTable()
@@ -80,14 +81,14 @@ onMounted(async () => {
           Crea nuovo tavolo
         </v-card-title>
         <v-card-text>
-          <v-form @submit.prevent="updateTable()" ref="form">
+          <v-form @submit.prevent ref="form">
             <v-text-field v-model="selectedTable.name" label="Nome Tavolo" clearable :rules="requiredRule"></v-text-field>
           </v-form>
         </v-card-text>
         <v-card-actions>
           <v-btn variant="plain" @click="dialog = false">ANNULLA</v-btn>
           <v-btn color="red" v-if="selectedTable.id && !selectedTable.inUse" variant="plain" @click="confirm = true">ELIMINA</v-btn>
-          <v-btn v-if="selectedTable.id" variant="plain" type="submit">AGGIORNA</v-btn>
+          <v-btn v-if="selectedTable.id" variant="plain" @click="updateTable()" type="submit">AGGIORNA</v-btn>
           <v-btn v-else variant="plain" @click="createTable">CONFERMA</v-btn>
         </v-card-actions>
       </v-card>

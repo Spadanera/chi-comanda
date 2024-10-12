@@ -1,17 +1,15 @@
-import DB from "../db"
+import db from "../db"
 import { Item, Order, CompleteOrderInput } from "../../../models/src"
 import { SocketIOService } from "../socket"
-import TableApi from "./table"
+import tableApi from "./table"
 
-export default class OrderAPI {
-    database: DB
-
+class OrderAPI {
     constructor() {
-        this.database = new DB()
     }
 
-    async getAll(event_id: number, destination_ids: number[]): Promise<Order[]> {
-        return await this.database.query(`
+    async getAll(event_id: number, destinationIds: number[]): Promise<Order[]> {
+        const destinationIdsString = destinationIds.join(','); 
+        return await db.query(`
             SELECT * FROM (
                 SELECT 
                     orders.id, 
@@ -21,7 +19,7 @@ export default class OrderAPI {
                     (CASE WHEN (
                         SELECT COUNT(items.id) FROM items 
                         INNER JOIN master_items ON master_items.id = items.master_item_id
-                        WHERE order_id = orders.id AND master_items.destination_id IN (?) AND IFNULL(done, FALSE) = FALSE
+                        WHERE order_id = orders.id AND master_items.destination_id IN (${destinationIdsString}) AND IFNULL(done, FALSE) = FALSE
                     ) > 0 THEN 0 ELSE 1 END) done,  
                     (
                         SELECT JSON_ARRAYAGG(JSON_OBJECT(
@@ -38,70 +36,64 @@ export default class OrderAPI {
                         )) 
                         FROM items 
                         INNER JOIN master_items ON master_items.id = items.master_item_id
-                        WHERE order_id = orders.id AND master_items.destination_id IN (?)
+                        WHERE order_id = orders.id AND master_items.destination_id IN (${destinationIdsString})
                     ) items
                 FROM orders 
                 INNER JOIN tables ON orders.table_id = tables.id
                 WHERE orders.event_id = ?
             ) pivot
             WHERE pivot.items != '[]'
-            ORDER BY pivot.done, pivot.id`, [destination_ids, destination_ids, event_id])
+            ORDER BY pivot.done, pivot.id`, [event_id])
     }
 
     async get(id: number): Promise<Order[]> {
-        return await this.database.query('SELECT * FROM orders WHERE ID = ?', [id])
+        return await db.query('SELECT * FROM orders WHERE ID = ?', [id])
     }
 
     async create(order: Order): Promise<number> {
-        const table_id = await this.database.executeTransaction(async () => {
-            if (!order.table_id) {
-                order.table_id = await this.database.execute('INSERT INTO tables (name, event_id, status) VALUES (?, ?, ?)', [order.table_name, order.event_id, 'ACTIVE'], true)
-                if (order.master_table_id) {
-                    await this.database.execute('INSERT INTO table_master_table (table_id, master_table_id) VALUES (?, ?)', [order.table_id, order.master_table_id], true)
-                }
+        if (!order.table_id) {
+            order.table_id = await db.executeInsert('INSERT INTO tables (name, event_id, status) VALUES (?, ?, ?)', [order.table_name, order.event_id, 'ACTIVE'])
+            if (order.master_table_id) {
+                await db.executeInsert('INSERT INTO table_master_table (table_id, master_table_id) VALUES (?, ?)', [order.table_id, order.master_table_id])
             }
-            const order_id = await this.database.execute('INSERT INTO orders (event_id, table_id) VALUES (?,?)', [order.event_id, order.table_id], true)
-            if (order.items) {
-                for (let i = 0; i < order.items.length; i++) {
-                    let item = order.items[i]
-                    order.items[i].id = await this.database.execute('INSERT INTO items (event_id, order_id, table_id, master_item_id, name, price, note) VALUES (?,?,?,?,?,?,?)'
-                        , [order.event_id, order_id, order.table_id, item.master_item_id, item.name, item.price, item.note], true)
-                }
+        }
+        const order_id = await db.executeInsert('INSERT INTO orders (event_id, table_id) VALUES (?,?)', [order.event_id, order.table_id])
+        if (order.items) {
+            for (let i = 0; i < order.items.length; i++) {
+                let item = order.items[i]
+                order.items[i].id = await db.executeInsert('INSERT INTO items (event_id, order_id, table_id, master_item_id, name, price, note) VALUES (?,?,?,?,?,?,?)'
+                    , [order.event_id, order_id, order.table_id, item.master_item_id, item.name, item.price, item.note || ''])
             }
-            order.id = order_id
-            SocketIOService.instance().sendMessage({
-                room: "bar",
-                event: "new-order",
-                body: order
-            })
-
-            return order.table_id || 0
+        }
+        order.id = order_id
+        SocketIOService.instance().sendMessage({
+            room: "bar",
+            event: "new-order",
+            body: order
         })
-        const tableApi = new TableApi()
-        const table = (await tableApi.getActiveTable(order.event_id || 0)).find(t => t.id === table_id)
+
+        const table = (await tableApi.getActiveTable(order.event_id || 0)).find(t => t.id === order.table_id)
         SocketIOService.instance().sendMessage({
             room: "checkout",
             event: "new-order",
             body: table
         })
 
-        return table_id;
+        return order.table_id || 0
     }
 
     async completeOrder(order_id: number, input: CompleteOrderInput): Promise<number> {
-        const result = await this.database.executeTransaction(async () => {
-            if (input.item_ids && input.item_ids.length) {
-                const result = await this.database.execute('UPDATE items SET done = TRUE WHERE order_id = ? AND id in (?)', [order_id, input.item_ids], true)
-                const items = await this.database.query<Item>("SELECT id FROM items WHERE order_id = ? AND IFNULL(done, false) = FALSE", order_id)
-                if (items.length === 0) {
-                    await this.database.execute("UPDATE orders SET done = TRUE WHERE id = ?", [order_id], true)
-                }
-                return result
+        let result: any
+        if (input.item_ids && input.item_ids.length) {
+            result = await db.executeUpdate(`UPDATE items SET done = TRUE WHERE order_id = ? AND id in (${input.item_ids.join(',')})`, [order_id])
+            const items = await db.query<Item>("SELECT id FROM items WHERE order_id = ? AND IFNULL(done, false) = FALSE", [order_id])
+            if (items.length === 0) {
+                await db.executeUpdate("UPDATE orders SET done = TRUE WHERE id = ?", [order_id])
             }
-            else {
-                return await this.database.execute("UPDATE orders SET done = TRUE WHERE id = ?", [order_id], true)
-            }
-        })
+        }
+        else {
+            result = await db.executeUpdate("UPDATE orders SET done = TRUE WHERE id = ?", [order_id])
+        }
 
         SocketIOService.instance().sendMessage({
             room: "checkout",
@@ -113,13 +105,19 @@ export default class OrderAPI {
     }
 
     async delete(id: number): Promise<number> {
-        return await this.database.executeTransaction(async () => {
-            await this.database.execute('DELETE FROM items WHERE order_id = ?', [id], true)
-            return await this.database.execute('DELETE FROM orders WHERE id = ?', [id], true)
-        })
+        return await db.executeTransaction([
+            'DELETE FROM items WHERE order_id = ?',
+            'DELETE FROM orders WHERE id = ?'
+        ], [
+            [id],
+            [id]
+        ])
     }
 
     async update(order: Order, id: number): Promise<number> {
-        return await this.database.execute('UPDATE orders SET done = ? WHERE id = ?', [order.done, id])
+        return await db.executeUpdate('UPDATE orders SET done = ? WHERE id = ?', [order.done, id])
     }
 }
+
+const orderApi = new OrderAPI()
+export default orderApi

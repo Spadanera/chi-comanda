@@ -24,6 +24,12 @@ function openDialog(item: MasterItem) {
   dialog.value = true
 }
 
+async function updateTableItem(item: MasterItem) {
+  selectedItem.value = item
+  await updateItem()
+  await getMasterItems()
+}
+
 async function updateItem(del: boolean = false) {
   const { valid } = await form.value?.validate()
   if (valid) {
@@ -100,8 +106,8 @@ onMounted(async () => {
           <td>{{ item.price }} €</td>
           <td>{{ item.destination }}</td>
           <td>
-            <v-icon v-if="item.available" color="green">mdi-check</v-icon>
-            <v-icon v-else color="red">mdi-close</v-icon>
+            <v-switch color="green" :false-value="0" :true-value="1"
+              v-model:model-value="item.available" @change.stop="updateTableItem(item)"></v-switch>
           </td>
         </tr>
       </tbody>

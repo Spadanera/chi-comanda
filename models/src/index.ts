@@ -101,6 +101,7 @@ export interface Event extends Repository {
   foodCount?: number
   beverageCount?: number
   revenue?: number
+  tablesOpen?: number
 }
 
 export interface Table extends Repository {

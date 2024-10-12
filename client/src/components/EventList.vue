@@ -99,8 +99,12 @@ onMounted(() => {
                             density="compact" variant="plain" @click.stop="setEventStatus(event, 'ONGOING')"></v-btn>
                         <v-btn text="ELIMINA" v-if="event.status === 'PLANNED'" size="small" density="compact"
                             variant="plain" @click.stop="deleteEventConfirm(event)"></v-btn>
-                        <v-btn text="CHIUDI EVENTO" v-if="event.status === 'ONGOING'" size="small" density="compact"
-                            variant="plain" @click.stop="closeEventConfirm(event)"></v-btn>
+                        <v-btn text="CHIUDI EVENTO" v-if="event.status === 'ONGOING' && event.tablesOpen === 0"
+                            size="small" density="compact" variant="plain"
+                            @click.stop="closeEventConfirm(event)"></v-btn>
+                        <v-btn text="SONO PRESENTI TAVOLI APERTI" v-if="event.status === 'ONGOING' && event.tablesOpen > 0"
+                            size="small" density="compact" variant="plain" :readonly="true"
+                            @click.stop="closeEventConfirm(event)"></v-btn>
                         <v-btn text="ANNULLA" v-if="event.status === 'ONGOING' && event.tableCount === 0" size="small"
                             density="compact" variant="plain" @click.stop="setEventStatus(event, 'PLANNED')"></v-btn>
                     </v-card-actions>

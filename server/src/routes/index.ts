@@ -1,10 +1,10 @@
 import router, { Router, Request, Response } from "express"
-import EventAPI from "../api/event"
-import OrderAPI from "../api/order"
-import TableApi from "../api/table"
-import ItemApi from "../api/item"
-import MasterItemsApi from "../api/master-item"
-import MasterTableApi from "../api/master-table"
+import eventAPI from "../api/event"
+import orderAPI from "../api/order"
+import tableApi from "../api/table"
+import itemApi from "../api/item"
+import masterItemsApi from "../api/master-item"
+import masterTableApi from "../api/master-table"
 import { CompleteOrderInput } from "../../../models/src"
 
 const apiRouter: Router = router()
@@ -12,8 +12,7 @@ const apiRouter: Router = router()
 // events API
 apiRouter.get("/events", async (req: Request, res: Response) => {
     try {
-        const api = new EventAPI()
-        const result = await api.getAll()
+        const result = await eventAPI.getAll()
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -23,8 +22,7 @@ apiRouter.get("/events", async (req: Request, res: Response) => {
 
 apiRouter.get("/events/ongoing", async (req: Request, res: Response) => {
     try {
-        const api = new EventAPI()
-        const result = await api.getOnGoing()
+        const result = await eventAPI.getOnGoing()
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -34,8 +32,7 @@ apiRouter.get("/events/ongoing", async (req: Request, res: Response) => {
 
 apiRouter.get("/events/:id", async (req: Request, res: Response) => {
     try {
-        const api = new EventAPI()
-        const result = await api.get(+req.params.id)
+        const result = await eventAPI.get(+req.params.id)
         if (result.length) {
             res.status(200).json(result[0])
         }
@@ -50,8 +47,7 @@ apiRouter.get("/events/:id", async (req: Request, res: Response) => {
 
 apiRouter.post("/events", async (req: Request, res: Response) => {
     try {
-        const api = new EventAPI()
-        const result = await api.create(req.body)
+        const result = await eventAPI.create(req.body)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -61,8 +57,7 @@ apiRouter.post("/events", async (req: Request, res: Response) => {
 
 apiRouter.put("/events/:id", async (req: Request, res: Response) => {
     try {
-        const api = new EventAPI()
-        const result = await api.update(req.body, +req.params.id)
+        const result = await eventAPI.update(req.body, +req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -72,8 +67,7 @@ apiRouter.put("/events/:id", async (req: Request, res: Response) => {
 
 apiRouter.delete("/events/:id", async (req: Request, res: Response) => {
     try {
-        const api = new EventAPI()
-        const result = await api.delete(+req.params.id)
+        const result = await eventAPI.delete(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -83,8 +77,7 @@ apiRouter.delete("/events/:id", async (req: Request, res: Response) => {
 
 apiRouter.get("/events/:id/tables/available", async (req: Request, res: Response) => {
     try {
-        const api = new TableApi()
-        const result = await api.getAvailableTable(+req.params.id)
+        const result = await tableApi.getAvailableTable(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -94,8 +87,7 @@ apiRouter.get("/events/:id/tables/available", async (req: Request, res: Response
 
 apiRouter.get("/events/:id/tables", async (req: Request, res: Response) => {
     try {
-        const api = new TableApi()
-        const result = await api.getActiveTable(+req.params.id)
+        const result = await tableApi.getActiveTable(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -106,8 +98,7 @@ apiRouter.get("/events/:id/tables", async (req: Request, res: Response) => {
 // table API
 apiRouter.get("/tables", async (req: Request, res: Response) => {
     try {
-        const api = new TableApi()
-        const result = await api.getAll()
+        const result = await tableApi.getAll()
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -117,8 +108,7 @@ apiRouter.get("/tables", async (req: Request, res: Response) => {
 
 apiRouter.get("/tables/:id", async (req: Request, res: Response) => {
     try {
-        const api = new TableApi()
-        const result = await api.get(+req.params.id)
+        const result = await tableApi.get(+req.params.id)
         if (result.length) {
             res.status(200).json(result[0])
         }
@@ -133,8 +123,7 @@ apiRouter.get("/tables/:id", async (req: Request, res: Response) => {
 
 apiRouter.post("/tables", async (req: Request, res: Response) => {
     try {
-        const api = new TableApi()
-        const result = await api.create(req.body)
+        const result = await tableApi.create(req.body)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -144,8 +133,7 @@ apiRouter.post("/tables", async (req: Request, res: Response) => {
 
 apiRouter.put("/tables/:id", async (req: Request, res: Response) => {
     try {
-        const api = new TableApi()
-        const result = await api.update(req.body, +req.params.id)
+        const result = await tableApi.update(req.body, +req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -155,8 +143,7 @@ apiRouter.put("/tables/:id", async (req: Request, res: Response) => {
 
 apiRouter.put("/tables/:id/payitems", async (req: Request, res: Response) => {
     try {
-        const api = new TableApi()
-        const result = await api.paySelectedItem(+req.params.id, req.body as number[])
+        const result = await tableApi.paySelectedItem(+req.params.id, req.body as number[])
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -166,8 +153,7 @@ apiRouter.put("/tables/:id/payitems", async (req: Request, res: Response) => {
 
 apiRouter.delete("/tables/:id", async (req: Request, res: Response) => {
     try {
-        const api = new TableApi()
-        const result = await api.delete(+req.params.id)
+        const result = await tableApi.delete(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -177,8 +163,7 @@ apiRouter.delete("/tables/:id", async (req: Request, res: Response) => {
 
 apiRouter.post("/tables/:id/close", async (req: Request, res: Response) => {
     try {
-        const api = new TableApi()
-        const result = await api.closeTable(+req.params.id)
+        const result = await tableApi.closeTable(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -189,8 +174,7 @@ apiRouter.post("/tables/:id/close", async (req: Request, res: Response) => {
 // orders API
 apiRouter.get("/orders/:eventid/:destinationsids", async (req: Request, res: Response) => {
     try {
-        const api = new OrderAPI()
-        const result = await api.getAll(+req.params.eventid, JSON.parse(req.params.destinationsids))
+        const result = await orderAPI.getAll(+req.params.eventid, JSON.parse(req.params.destinationsids))
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -200,8 +184,7 @@ apiRouter.get("/orders/:eventid/:destinationsids", async (req: Request, res: Res
 
 apiRouter.get("/orders/:id", async (req: Request, res: Response) => {
     try {
-        const api = new OrderAPI()
-        const result = await api.get(+req.params.id)
+        const result = await orderAPI.get(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -211,8 +194,7 @@ apiRouter.get("/orders/:id", async (req: Request, res: Response) => {
 
 apiRouter.post("/orders", async (req: Request, res: Response) => {
     try {
-        const api = new OrderAPI()
-        const result = await api.create(req.body)
+        const result = await orderAPI.create(req.body)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -222,8 +204,7 @@ apiRouter.post("/orders", async (req: Request, res: Response) => {
 
 apiRouter.put("/orders/:id", async (req: Request, res: Response) => {
     try {
-        const api = new OrderAPI()
-        const result = await api.update(req.body, +req.params.id)
+        const result = await orderAPI.update(req.body, +req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -233,8 +214,7 @@ apiRouter.put("/orders/:id", async (req: Request, res: Response) => {
 
 apiRouter.delete("/orders/:id", async (req: Request, res: Response) => {
     try {
-        const api = new OrderAPI()
-        const result = await api.delete(+req.params.id)
+        const result = await orderAPI.delete(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -245,8 +225,7 @@ apiRouter.delete("/orders/:id", async (req: Request, res: Response) => {
 // order items API
 apiRouter.get("/orders/:id/items", async (req: Request, res: Response) => {
     try {
-        const api = new ItemApi()
-        const result = await api.getByOrderId(+req.params.id)
+        const result = await itemApi.getByOrderId(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -256,8 +235,7 @@ apiRouter.get("/orders/:id/items", async (req: Request, res: Response) => {
 
 apiRouter.put("/orders/:order_id/complete", async (req: Request, res: Response) => {
     try {
-        const api = new OrderAPI()
-        const result = await api.completeOrder(+req.params.order_id, req.body as CompleteOrderInput)
+        const result = await orderAPI.completeOrder(+req.params.order_id, req.body as CompleteOrderInput)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -267,8 +245,7 @@ apiRouter.put("/orders/:order_id/complete", async (req: Request, res: Response) 
 
 apiRouter.get("/tables/:id/items", async (req: Request, res: Response) => {
     try {
-        const api = new ItemApi()
-        const result = await api.getByTableId(+req.params.id)
+        const result = await itemApi.getByTableId(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -278,8 +255,7 @@ apiRouter.get("/tables/:id/items", async (req: Request, res: Response) => {
 
 apiRouter.put("/tables/:id/complete", async (req: Request, res: Response) => {
     try {
-        const api = new TableApi()
-        const result = await api.closeTable(+req.params.id)
+        const result = await tableApi.closeTable(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -289,8 +265,7 @@ apiRouter.put("/tables/:id/complete", async (req: Request, res: Response) => {
 
 apiRouter.delete("/items/:id", async (req: Request, res: Response) => {
     try {
-        const api = new ItemApi()
-        const result = await api.delete(+req.params.id)
+        const result = await itemApi.delete(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -300,8 +275,7 @@ apiRouter.delete("/items/:id", async (req: Request, res: Response) => {
 
 apiRouter.put("/items", async (req: Request, res: Response) => {
     try {
-        const api = new ItemApi()
-        const result = await api.update(req.body)
+        const result = await itemApi.update(req.body)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -312,8 +286,7 @@ apiRouter.put("/items", async (req: Request, res: Response) => {
 // master items API
 apiRouter.get("/master-items", async (req: Request, res: Response) => {
     try {
-        const api = new MasterItemsApi()
-        const result = await api.getAll()
+        const result = await masterItemsApi.getAll()
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -323,8 +296,7 @@ apiRouter.get("/master-items", async (req: Request, res: Response) => {
 
 apiRouter.get("/master-items/available", async (req: Request, res: Response) => {
     try {
-        const api = new MasterItemsApi()
-        const result = await api.getAllAvailable()
+        const result = await masterItemsApi.getAllAvailable()
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -334,8 +306,7 @@ apiRouter.get("/master-items/available", async (req: Request, res: Response) => 
 
 apiRouter.get("/master-items/:id", async (req: Request, res: Response) => {
     try {
-        const api = new MasterItemsApi()
-        const result = await api.get(+req.params.id)
+        const result = await masterItemsApi.get(+req.params.id)
         res.status(200).json(result[0])
     } catch (error) {
         console.log(error)
@@ -345,8 +316,7 @@ apiRouter.get("/master-items/:id", async (req: Request, res: Response) => {
 
 apiRouter.post("/master-items", async (req: Request, res: Response) => {
     try {
-        const api = new MasterItemsApi()
-        const result = await api.create(req.body)
+        const result = await masterItemsApi.create(req.body)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -356,8 +326,7 @@ apiRouter.post("/master-items", async (req: Request, res: Response) => {
 
 apiRouter.put("/master-items", async (req: Request, res: Response) => {
     try {
-        const api = new MasterItemsApi()
-        const result = await api.update(req.body)
+        const result = await masterItemsApi.update(req.body)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -367,8 +336,7 @@ apiRouter.put("/master-items", async (req: Request, res: Response) => {
 
 apiRouter.delete("/master-items/:id", async (req: Request, res: Response) => {
     try {
-        const api = new MasterItemsApi()
-        const result = await api.delete(+req.params.id)
+        const result = await masterItemsApi.delete(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -379,8 +347,7 @@ apiRouter.delete("/master-items/:id", async (req: Request, res: Response) => {
 // master tables API
 apiRouter.get("/master-tables", async (req: Request, res: Response) => {
     try {
-        const api = new MasterTableApi()
-        const result = await api.getAll()
+        const result = await masterTableApi.getAll()
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -390,8 +357,7 @@ apiRouter.get("/master-tables", async (req: Request, res: Response) => {
 
 apiRouter.get("/master-tables/:id", async (req: Request, res: Response) => {
     try {
-        const api = new MasterTableApi()
-        const result = await api.get(+req.params.id)
+        const result = await masterTableApi.get(+req.params.id)
         if (result && result.length) {
             res.status(200).json(result[0])
         }
@@ -406,8 +372,7 @@ apiRouter.get("/master-tables/:id", async (req: Request, res: Response) => {
 
 apiRouter.post("/master-tables", async (req: Request, res: Response) => {
     try {
-        const api = new MasterTableApi()
-        const result = await api.create(req.body)
+        const result = await masterTableApi.create(req.body)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -417,8 +382,7 @@ apiRouter.post("/master-tables", async (req: Request, res: Response) => {
 
 apiRouter.put("/master-tables", async (req: Request, res: Response) => {
     try {
-        const api = new MasterTableApi()
-        const result = await api.update(req.body)
+        const result = await masterTableApi.update(req.body)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)

@@ -22,6 +22,10 @@ a:visited {
     display: none !important;
 }
 
+.v-switch > .v-input__details {
+    display: none !important;
+}
+
 .v-list-item__spacer {
     width: 15px !important;
 }

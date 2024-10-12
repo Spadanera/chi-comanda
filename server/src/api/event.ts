@@ -1,27 +1,25 @@
-import DB from "../db"
+import db from "../db"
 import { Event } from "../../../models/src"
 
-export default class EventAPI {
-    database: DB
-
+class EventAPI {
     constructor() {
-        this.database = new DB()
     }
 
     async getAll(): Promise<Event[]> {
-        return await this.database.query(`
+        return await db.query(`
             SELECT id, name, date, status,
             (SELECT count(tables.id) FROM tables WHERE event_id = events.id) tableCount,
             (SELECT count(items.id) FROM items INNER JOIN master_items ON items.master_item_id = master_items.id WHERE event_id = events.id AND master_items.type = 'Bevanda') beverageCount,
             (SELECT count(items.id) FROM items INNER JOIN master_items ON items.master_item_id = master_items.id WHERE event_id = events.id AND master_items.type IN ('Cibo')) foodCount,
-            (SELECT sum(items.price) FROM items WHERE event_id = events.id) revenue
+            (SELECT sum(items.price) FROM items WHERE items.event_id = events.id) revenue,
+            (SELECT count(tables.id) FROM tables WHERE tables.event_id = events.id AND tables.status = 'ACTIVE') tablesOpen
             FROM events
             ORDER BY date DESC`
             , [])
     }
 
     async get(id: number): Promise<Event[]> {
-        return await this.database.query(`
+        return await db.query(`
             SELECT events.id, (
                 SELECT JSON_ARRAYAGG(JSON_OBJECT(
                     'name', grouped_items.name, 
@@ -45,21 +43,25 @@ export default class EventAPI {
 
     async getOnGoing(): Promise<Event> {
         try {
-            return await this.database.queryOne<Event>('SELECT * FROM events WHERE STATUS = ?', ["ONGOING"])
+            return await db.queryOne<Event>('SELECT * FROM events WHERE STATUS = ?', ["ONGOING"])
         } catch (error) {
             return {} as Event
         }
     }
 
     async create(event: Event): Promise<number> {
-        return this.database.execute('INSERT INTO events (name, date, status) VALUES (?,?,?)', [event.name, (event.date + "").split('T')[0], 'PLANNED'])
+        return db.executeInsert('INSERT INTO events (name, date, status) VALUES (?,?,?)', [event.name, (event.date + "").split('T')[0], 'PLANNED'])
     }
 
     async delete(id: number): Promise<number> {
-        return await this.database.execute('DELETE FROM events WHERE id = ?', [id])
+        return await db.executeUpdate('DELETE FROM events WHERE id = ?', [id])
     }
 
     async update(event: Event, id: number): Promise<number> {
-        return await this.database.execute('UPDATE events SET status = ? WHERE id = ?', [event.status, id])
+        return await db.executeUpdate('UPDATE events SET status = ? WHERE id = ?', [event.status, id])
     }
 }
+
+const eventApi = new EventAPI()
+
+export default eventApi
