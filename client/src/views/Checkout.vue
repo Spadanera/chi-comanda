@@ -196,7 +196,7 @@ onBeforeUnmount(() => {
   </v-container>
   <div v-else>
     <h3 style="padding-left: 15px; padding-top: 14px;">Cassa</h3>
-    <ItemList :showtype="true" subheader="DA PAGERE" v-model="computedSelectedTable.itemsToDo">
+    <ItemList :showtype="true" subheader="DA PAGARE" v-model="computedSelectedTable.itemsToDo">
       <template v-slot:prequantity="slotProps">
         <v-btn icon="mdi-delete" @click="deleteItemConfirm(slotProps.item.id)" variant="plain"></v-btn>
       </template>

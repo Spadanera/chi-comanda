@@ -224,16 +224,18 @@ onBeforeUnmount(() => {
       <v-btn icon="mdi-menu" @click="drawer = !drawer" id="drawer-button">
 
       </v-btn>
-      <v-btn v-for="type in subTypesCount" readonly size="small" density="compact" variant="plain">
-        <v-icon>{{ getIcon(type.type) }}</v-icon> {{ type.count }}
-      </v-btn>
+      <template v-for="(type, i) in subTypesCount" >
+        <v-btn min-width="50" readonly size="small" density="compact" variant="plain">
+          <v-icon>{{ getIcon(type.type) }}</v-icon> {{ type.count }}
+        </v-btn>
+      </template>
       <v-spacer></v-spacer>
       <v-btn class="show-xs" variant="plain" @click="confirm = true"
         v-if="selectedOrder.length && !selectedOrder[0].done">
         COMPLETA
       </v-btn>
       <v-btn class="hide-xs" icon="mdi-check-all" variant="plain" @click="confirm = true"
-        v-if="selectedOrder.length"></v-btn>
+        v-if="selectedOrder.length  && !selectedOrder[0].done"></v-btn>
     </v-bottom-navigation>
     <Confirm v-model="confirm">
       <template v-slot:action>

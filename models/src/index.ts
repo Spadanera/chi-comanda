@@ -7,7 +7,7 @@ export interface Type {
 
 export const ItemTypes:Type[] = [
   {
-    name: "Analcolico",
+    name: "Birra",
     type: "Bevanda"
   },
   {
@@ -15,7 +15,7 @@ export const ItemTypes:Type[] = [
     type: "Bevanda"
   },
   {
-    name: "Birra",
+    name: "Analcolico",
     type: "Bevanda"
   },
   {
@@ -23,15 +23,15 @@ export const ItemTypes:Type[] = [
     type: "Bevanda"
   },
   {
+    name: "Special",
+    type: "Cibo"
+  },
+  {
     name: "Piadina",
     type: "Cibo"
   },
   {
     name: "Panino",
-    type: "Cibo"
-  },
-  {
-    name: "Special",
     type: "Cibo"
   }
 ]

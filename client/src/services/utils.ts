@@ -56,7 +56,7 @@ export function getIcon(key: string): string {
         case "Special":
             return "mdi-french-fries"
         case "Piadina":
-            return "mdi-food-hot-dog"
+            return "mdi-taco"
         case "Panino":
             return "mdi-food-hot-dog"
         default:
