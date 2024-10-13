@@ -35,9 +35,15 @@ onBeforeMount(async () => {
   <v-responsive class="" max-height="100%">
     <v-app>
       <v-app-bar>
+        <template v-slot:prepend>
+          <!-- <v-img scr="@/assets/chicomanda.png" alt="Chi Comanda"></v-img> -->
+          <RouterLink to="/">
+            <img alt="Chi Comanda" class="logo" src="@/assets/chicomanda.png" style="margin-left: 8px; margin-top: 7px;" width="40"
+              height="40" />
+          </RouterLink>
+        </template>
         <v-app-bar-title>
-          <RouterLink class="hide-xs" to="/">LOMP</RouterLink>
-          <RouterLink class="show-xs" to="/">LUDO ORDER MANAGEMENT PROJECT</RouterLink>
+          <RouterLink to="/">CHI COMANDA</RouterLink>
         </v-app-bar-title>
         <v-btn @click="axios.Logout()" v-if="userStore.isLoggedIn">
           LOG OUT

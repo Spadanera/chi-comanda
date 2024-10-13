@@ -26,12 +26,14 @@ async function login() {
       <v-row justify="center">
         <v-col sm="8" cols="12" lg="4">
           <v-card>
-            <v-card-text>
+            <v-card-text style="text-align: center;">
+              <img alt="Chi Comanda" class="logo" src="@/assets/chicomanda.png"
+                style="" width="240" height="240" />
               <v-form fast-fail @submit.prevent>
                 <v-text-field type="email" label="Email" v-model="credentials.email"></v-text-field>
-      
+
                 <v-text-field type="password" label="Password" v-model="credentials.password"></v-text-field>
-      
+
               </v-form>
             </v-card-text>
             <v-card-actions>
