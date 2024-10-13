@@ -10,6 +10,7 @@ import fileAudio from '@/assets/nuovo-ordine.wav'
 
 const axios = new Axios()
 var is: any
+var interval: number
 const user = defineModel<IUser>()
 const snackbarStore = SnackbarStore()
 
@@ -18,15 +19,15 @@ const emit = defineEmits(['login', 'reload'])
 const props = defineProps(['destinations'])
 
 const loading = ref<boolean>(true)
-const sheet = ref(false)
 const event = ref<Event>()
 const orders = ref<Order[]>([])
 const confirm = ref<boolean>(false)
 const deleteItemId = ref<number>(0)
 const selectedOrder = ref<Order[]>([])
 const confirm2 = ref<boolean>(false)
-const drawer = ref<boolean>()
+const drawer = ref<boolean>(true)
 const audio = ref(null);
+const origin = props.destinations.includes(3) ? 'kitchen' : 'bartender'
 
 const pageTitle = computed(() => Destinations.find((d: Destination) => props.destinations.includes(d.id)).name)
 const computedSelectedOrder = computed(() => {
@@ -120,6 +121,7 @@ async function completeOrder() {
 async function getOrders() {
   loading.value = true
   orders.value = await axios.GetOrdersInEvent(event.value?.id || 0, props.destinations)
+  calculateMinPassed()
   if (orders.value.length && !orders.value[0].done) {
     selectedOrder.value = [orders.value[0]]
   }
@@ -127,6 +129,28 @@ async function getOrders() {
     selectedOrder.value = []
   }
   loading.value = false
+}
+
+function getMinutesPassed(datetimeString:string):number {
+  const [datePart, timePart] = datetimeString.split(/T| /);
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hours, minutes, seconds] = timePart.split('.')[0].split(':').map(Number);   
+
+
+  const then = new Date(year, month - 1, day, hours, minutes, seconds);
+
+  const now = new Date().toLocaleString("en-US", { timeZone: "Europe/Rome" });
+  const nowItaly = new Date(now);
+
+  const differenceMs = nowItaly.getTime() - then.getTime();
+
+  const minutesPassed = Math.floor(differenceMs / (1000 * 60));
+
+  return minutesPassed;
+}
+
+function calculateMinPassed() {
+  orders.value.forEach((o: Order) => o.minPassed = getMinutesPassed(o.order_date))
 }
 
 onMounted(async () => {
@@ -152,9 +176,17 @@ onMounted(async () => {
 
   is.on('new-order', (data: Order) => {
     if (data.items.filter((i: Item) => props.destinations.includes(i.destination_id)).length) {
-      orders.value.push(data)
-      snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
-      audio.value.play();
+      data.items = data.items?.filter((i: Item) => props.destinations.includes(i.destination_id))
+      if (data.items?.length) {
+        orders.value.push(data)
+        console.log(data)
+        calculateMinPassed()
+        if (!selectedOrder.value.length) {
+          selectedOrder.value.push(data)
+        }
+        snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
+        audio.value.play();
+      }
     }
   })
 
@@ -173,20 +205,29 @@ onMounted(async () => {
       orders.value = copy<Order[]>(orders.value.filter((o: Order) => o.id !== order.id))
     }
   })
+
+  interval = window.setTimeout(calculateMinPassed, 1000 * 60)
 })
 
 onBeforeUnmount(() => {
+  window.clearInterval(interval)
   is.emit('end')
 })
 </script>
 
 <template>
   <v-navigation-drawer v-model="drawer" mobile-breakpoint="sm">
+    <RouterLink :to="`/waiter?origin=${origin}`">
+      <v-btn style="margin-top: 8px; margin-left: 15px;">Nuovo Ordine</v-btn>
+    </RouterLink>
     <v-list v-model:selected="selectedOrder" lines="two">
       <v-list-item :key="order.id" :value="order" v-for="order in orderedOrders"
         :style="{ opacity: !order.done ? 'inherit' : 0.3 }">
         <v-list-item-title>
           <span :class="{ done: order.done }">Tavolo {{ order.table_name }}</span>
+          <v-btn variant="plain" v-if="!order.done">
+            {{ order.minPassed }} <span style="text-transform: lowercase;">m</span>
+          </v-btn>
         </v-list-item-title>
         <template v-for="type in types">
           <v-btn readonly size="small" density="compact" variant="plain" v-if="getSubTypeCount(order, [type.name]) > 0">
@@ -203,6 +244,8 @@ onBeforeUnmount(() => {
   </v-container>
   <template v-else>
     <h3 style="padding-left: 15px; padding-top: 14px;">{{ pageTitle }}</h3>
+    <h5 style="padding-left: 15px; padding-top: 0;" v-if="selectedOrder.length">Tavolo {{ selectedOrder[0].table_name }}
+    </h5>
     <ItemList :quantitybefore="true" :showtype="true" subheader="DA FARE" v-model="computedSelectedOrder.itemsToDo">
       <template v-slot:prequantity="slotProps">
         <v-btn icon="mdi-delete" v-if="!slotProps.item.paid" @click="deleteItemConfirm(slotProps.item.id)"
@@ -224,7 +267,7 @@ onBeforeUnmount(() => {
       <v-btn icon="mdi-menu" @click="drawer = !drawer" id="drawer-button">
 
       </v-btn>
-      <template v-for="(type, i) in subTypesCount" >
+      <template v-for="(type, i) in subTypesCount">
         <v-btn min-width="50" readonly size="small" density="compact" variant="plain">
           <v-icon>{{ getIcon(type.type) }}</v-icon> {{ type.count }}
         </v-btn>
@@ -235,7 +278,7 @@ onBeforeUnmount(() => {
         COMPLETA
       </v-btn>
       <v-btn class="hide-xs" icon="mdi-check-all" variant="plain" @click="confirm = true"
-        v-if="selectedOrder.length  && !selectedOrder[0].done"></v-btn>
+        v-if="selectedOrder.length && !selectedOrder[0].done"></v-btn>
     </v-bottom-navigation>
     <Confirm v-model="confirm">
       <template v-slot:action>

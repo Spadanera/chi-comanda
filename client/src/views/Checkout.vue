@@ -7,6 +7,7 @@ import { SnackbarStore, type IUser } from '@/stores'
 import { copy, getIcon, sortItem, sortTables } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
 import { io } from 'socket.io-client'
+import { RouterLink } from 'vue-router';
 
 const axios = new Axios()
 var is: any
@@ -23,7 +24,7 @@ const confirm = ref<boolean>(false)
 const confirm2 = ref<boolean>(false)
 const confirm3 = ref<boolean>(false)
 const deleteItemId = ref<number>(0)
-const drawer = ref<boolean>()
+const drawer = ref<boolean>(true)
 const itemToBePaid = ref<number[]>([])
 
 const computedSelectedTable = computed(() => {
@@ -42,7 +43,14 @@ const tableTotalOrder = computed(() => {
   else return 0
 })
 const sortedTables = computed(() => tables.value.sort(sortTables))
-const itemToBePaidBill = computed(() => selectedTable.value[0].items.filter((i: Item) => itemToBePaid.value.includes(i.id || 0)).reduce((a: number, i: Item) => a += i.price, 0))
+const itemToBePaidBill = computed(() => { 
+  if (selectedTable.value.length && selectedTable.value[0].items) {
+    return selectedTable.value[0].items.filter((i: Item) => itemToBePaid.value.includes(i.id || 0)).reduce((a: number, i: Item) => a += i.price, 0)
+  }
+  else {
+    return 0
+  }
+})
 const onGoing = computed(() => selectedTable.value[0].items.filter((i: Item) => !i.done).length ? true : false)
 
 function getSubTypeCount(table: Table, subtype: string[]) {
@@ -160,7 +168,7 @@ onMounted(async () => {
 
   is.on('order-completed', (data: CompleteOrderInput) => {
     const table = tables.value.find((t: Table) => t.id === data.table_id)
-    table.items.forEach((i:Item) => {
+    table.items.forEach((i: Item) => {
       if (data.order_id === i.order_id) {
         i.done = true
       }
@@ -175,6 +183,9 @@ onBeforeUnmount(() => {
 
 <template>
   <v-navigation-drawer v-model="drawer" mobile-breakpoint="sm">
+    <RouterLink to="/waiter?origin=checkout">
+      <v-btn style="margin-top: 8px; margin-left: 15px;">Nuovo Ordine</v-btn>
+    </RouterLink>
     <v-list v-model:selected="selectedTable" lines="two">
       <v-list-item :key="table.id" v-for="(table, i) in sortedTables" :value="table"
         :style="{ opacity: table.status === 'CLOSED' ? 0.3 : 'inherit' }">
@@ -196,6 +207,7 @@ onBeforeUnmount(() => {
   </v-container>
   <div v-else>
     <h3 style="padding-left: 15px; padding-top: 14px;">Cassa</h3>
+    <h5 style="padding-left: 15px; padding-top: 0;" v-if="selectedTable.length">Tavolo {{ selectedTable[0].name }}</h5>
     <ItemList :showtype="true" subheader="DA PAGARE" v-model="computedSelectedTable.itemsToDo">
       <template v-slot:prequantity="slotProps">
         <v-btn icon="mdi-delete" @click="deleteItemConfirm(slotProps.item.id)" variant="plain"></v-btn>
@@ -223,16 +235,17 @@ onBeforeUnmount(() => {
         v-if="selectedTable.length && !selectedTable[0].paid" :readonly="onGoing">
         <span :style="{ opacity: onGoing ? 0.2 : 'inherit' }">CHIUDI TAVOLO</span>
       </v-btn>
-      <v-btn icon="mdi-close-box" class="hide-xs" variant="plain" @click="confirm = true" v-if="selectedTable.length && !selectedTable[0].paid">
+      <v-btn icon="mdi-close-box" class="hide-xs" variant="plain" @click="confirm = true" :readonly="onGoing"
+        v-if="selectedTable.length && !selectedTable[0].paid">
 
       </v-btn>
     </v-bottom-navigation>
-    <Confirm v-model="confirm">
+    <Confirm v-model="confirm" text="Sei sicuro chiudere il tavolo e pagare tutti gli elementi rimanenti?">
       <template v-slot:action>
         <v-btn text="Conferma" variant="plain" @click="completeTable"></v-btn>
       </template>
     </Confirm>
-    <Confirm v-model="confirm2">
+    <Confirm v-model="confirm2" text="Sei sicuro di procedere con il pagamento degli elementi selezionati?">
       <template v-slot:action>
         <v-btn text="Conferma" variant="plain" @click="paySelectedItem"></v-btn>
       </template>

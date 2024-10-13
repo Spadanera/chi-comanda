@@ -5,9 +5,12 @@ import Axios from '@/services/client'
 import { sortAvailableTable } from "@/services/utils"
 import { io } from 'socket.io-client'
 import { SnackbarStore } from '@/stores'
+import { useRoute } from 'vue-router'
 
 const emit = defineEmits(['login', 'reload'])
 
+const route = useRoute()
+const queryToPass = route.query.origin ? `?origin=${route.query.origin}` : ''
 var is: any
 const tables = ref<AvailableTable[]>([])
 const snackbarStore = SnackbarStore()
@@ -63,7 +66,7 @@ onBeforeUnmount(() => {
       <v-row>
         <v-col v-for="table in activeTable" cols="4">
           <RouterLink
-            :to="`/waiter/${event?.id}/order/${table?.master_table_id ? table?.master_table_id : 0}/table/${table.table_id}`">
+            :to="`/waiter/${event?.id}/order/${table?.master_table_id ? table?.master_table_id : 0}/table/${table.table_id}${queryToPass}`">
             <v-card height="50px" style="padding-top: 10px;">
               {{ table.table_name }}
             </v-card>
@@ -77,7 +80,7 @@ onBeforeUnmount(() => {
       </v-row>
       <v-row>
         <v-col v-for="table in availableTable" cols="4">
-          <RouterLink :to="`/waiter/${event?.id}/order/${table?.master_table_id}/table/0`">
+          <RouterLink :to="`/waiter/${event?.id}/order/${table?.master_table_id}/table/0${queryToPass}`">
             <v-card height="50px" style="padding-top: 10px;">
               {{ table.master_table_name }}
             </v-card>

@@ -6,7 +6,10 @@ import Axios from '@/services/client'
 import { SnackbarStore, type IUser } from '@/stores'
 import { groupItems, copy, sortItem } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
+import { useRoute } from 'vue-router'
 
+const route = useRoute()
+const origin = route.query.origin ? `/${route.query.origin}` : '/waiter'
 const axios = new Axios()
 const user = defineModel<IUser>()
 const snackbarStore = SnackbarStore()
@@ -87,7 +90,7 @@ async function sendOrder() {
   } as Order
   await axios.CreateOrder(_order)
   snackbarStore.show("Ordine inviato con successo", 3000, 'top', 'success')
-  router.push('/waiter')
+  router.push(origin)
 }
 
 async function setTableName() {

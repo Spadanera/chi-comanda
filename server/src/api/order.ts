@@ -3,18 +3,50 @@ import { Item, Order, CompleteOrderInput } from "../../../models/src"
 import { SocketIOService } from "../socket"
 import tableApi from "./table"
 
+function getCurrentDateTimeInItaly(): string {
+    const now = new Date();
+    const options: Intl.DateTimeFormatOptions = {
+        timeZone: 'Europe/Rome',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    };
+    const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(now);
+
+    const year = parts.find(part => part.type === 'year')?.value;
+    const month = parts.find(part => part.type === 'month')?.value;
+    const day = parts.find(part => part.type === 'day')?.value;
+
+    const hour = parts.find(part => part.type === 'hour')?.value;
+    const minute = parts.find(part => part.type === 'minute')?.value;
+    const second = parts.find(part => part.type === 'second')?.value;
+
+
+    if (year && month && day && hour && minute && second) {
+        return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+    } else {
+        // Handle the case where some parts are missing (e.g., throw an error or return a default value)
+        throw new Error("Failed to format date correctly.");
+    }
+}
+
 class OrderAPI {
     constructor() {
     }
 
     async getAll(event_id: number, destinationIds: number[]): Promise<Order[]> {
-        const destinationIdsString = destinationIds.join(','); 
+        const destinationIdsString = destinationIds.join(',');
         return await db.query(`
             SELECT * FROM (
                 SELECT 
                     orders.id, 
                     orders.event_id,
                     orders.table_id, 
+                    orders.order_date,
                     tables.name table_name,
                     (CASE WHEN (
                         SELECT COUNT(items.id) FROM items 
@@ -57,7 +89,8 @@ class OrderAPI {
                 await db.executeInsert('INSERT INTO table_master_table (table_id, master_table_id) VALUES (?, ?)', [order.table_id, order.master_table_id])
             }
         }
-        const order_id = await db.executeInsert('INSERT INTO orders (event_id, table_id) VALUES (?,?)', [order.event_id, order.table_id])
+        order.order_date = getCurrentDateTimeInItaly()
+        const order_id = await db.executeInsert('INSERT INTO orders (event_id, table_id, order_date) VALUES (?,?,?)', [order.event_id, order.table_id, order.order_date])
         if (order.items) {
             for (let i = 0; i < order.items.length; i++) {
                 let item = order.items[i]

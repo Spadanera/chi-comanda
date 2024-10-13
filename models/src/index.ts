@@ -132,6 +132,8 @@ export interface Order extends Repository {
   table_name?: string
   master_table_id?: number
   done?: boolean
+  order_date?: string
+  minPassed?: number
   items?: Item[]
   itemsToDo?: Item[]
   itemsDone?: Item[]

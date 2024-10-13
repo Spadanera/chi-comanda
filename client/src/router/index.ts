@@ -9,10 +9,7 @@ const router = createRouter({
       path: '/',
       name: 'Home',
       component: Home,
-      props: true,
-      meta: {
-        allowedRole: 'admin'
-      }
+      props: true
     },
     {
       path: '/login',
