@@ -225,8 +225,11 @@ onMounted(async () => {
       <span>{{ orderTotal }}</span>
     </v-btn>
     <v-spacer></v-spacer>
-    <v-btn v-show="orderTotal > 0" @click="sheet = !sheet">
+    <v-btn class="hide-xs" v-show="orderTotal > 0" @click="sheet = !sheet">
       <v-icon>mdi-list-box</v-icon>
+    </v-btn>
+    <v-btn class="show-xs" v-show="orderTotal > 0" @click="sheet = !sheet" variant="plain">
+      INVIA ORDINE
     </v-btn>
   </v-bottom-navigation>
 </template>
