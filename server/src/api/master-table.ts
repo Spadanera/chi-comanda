@@ -1,4 +1,4 @@
-import db from "../db"
+import db from "../utils/db"
 import { MasterTable } from "../../../models/src"
 
 class MasterTableApi {

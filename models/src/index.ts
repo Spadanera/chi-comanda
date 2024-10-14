@@ -80,6 +80,11 @@ export interface Repository extends RowDataPacket {
 
 }
 
+export interface Invitation extends User {
+  id?: number,
+  creation_date?: string
+}
+
 export interface Audit extends Repository {
   id?: number,
   user_id?: number,

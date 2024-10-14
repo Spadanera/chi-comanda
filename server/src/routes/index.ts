@@ -5,6 +5,7 @@ import tableApi from "../api/table"
 import itemApi from "../api/item"
 import masterItemsApi from "../api/master-item"
 import masterTableApi from "../api/master-table"
+import userApi from "../api/user"
 import { CompleteOrderInput } from "../../../models/src"
 
 const apiRouter: Router = router()
@@ -383,6 +384,46 @@ apiRouter.post("/master-tables", async (req: Request, res: Response) => {
 apiRouter.put("/master-tables", async (req: Request, res: Response) => {
     try {
         const result = await masterTableApi.update(req.body)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.post("/users/invitation", async (req: Request, res: Response) => {
+    try {
+        const result = await userApi.inviteUser(req.body)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.post("/users/invitation/accept", async (req: Request, res: Response) => {
+    try {
+        const result = await userApi.acceptInvitation(req.body)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.post("/users/askreset", async (req: Request, res: Response) => {
+    try {
+        const result = await userApi.askResetPassword(req.body)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.post("/users/reset", async (req: Request, res: Response) => {
+    try {
+        const result = await userApi.resetPassword(req.body)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)

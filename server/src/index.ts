@@ -9,7 +9,8 @@ import apiRouter from "./routes"
 import { createServer } from 'http'
 import { SocketIOService } from "./socket"
 import { User } from "../../models/src"
-import db from "./db"
+import db from "./utils/db"
+import userApi from "./api/user"
 
 const AUTH_COOKIE_NAME: string = 'lp-session'
 
@@ -46,8 +47,7 @@ passport.use(new passportStrategy.Strategy(
     { usernameField: 'email', passwordField: 'password' }, async (email, password, done) => {
         try {
             if (!email) { done(null, false) }
-            const api = new UserApi()
-            const user = await api.getByEmailAndPassword(email, password)
+            const user = await userApi.getByEmailAndPassword(email, password)
             done(null, user)
         } catch (e) {
             done(e);
@@ -60,9 +60,9 @@ passport.serializeUser((user, done) => {
 
 
 passport.deserializeUser((user: User, done) => {
-    const api = new UserApi()
     done(null, user);
 });
+
 
 app.post("/api/login", passport.authenticate('local'), async (req: Request, res: Response) => {
     res.json(req.user)
@@ -112,8 +112,9 @@ SocketIOService.instance().getServer().on('connection', function (socket) {
     });
 });
 
-server.listen(process.env.PORT, () => {
-    console.log(`App is listening on port ${process.env.PORT}`)
+const port = process.env.PORT || 3000
+server.listen(port, () => {
+    console.log(`App is listening on port ${port}`)
 })
 
 process.on('SIGTERM', () => {
