@@ -159,7 +159,8 @@ onMounted(async () => {
   await getOrders()
 
   is = io(window.location.origin, {
-    path: "/socket/socket.io"
+    path: "/socket/socket.io",
+    transports: ['websocket']
   })
 
   is.on('connect', () => {
@@ -172,6 +173,7 @@ onMounted(async () => {
 
   is.on('connect_error', (err: any) => {
     snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
+    is.emit('end')
   })
 
   is.on('new-order', (data: Order) => {

@@ -25,7 +25,8 @@ onMounted(async () => {
   if (event.value.id) {
     tables.value = await axios.GetAvailableTables(event.value.id)
     is = io(window.location.origin, {
-      path: "/socket/socket.io"
+      path: "/socket/socket.io",
+      transports: ['websocket']
     })
 
     is.on('connect', () => {
@@ -38,6 +39,7 @@ onMounted(async () => {
 
     is.on('connect_error', (err: any) => {
       snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
+      is.emit('end')
     })
 
     is.on('new-table-available', async () => {

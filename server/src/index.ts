@@ -98,10 +98,12 @@ app.use(express.static(path.join(__dirname, 'static')))
 const server = createServer(app)
 
 SocketIOService.instance().initialize(server, {
-    path: "/socket"
+    path: "/socket",
+    transports: ['websocket']
 })
 
 SocketIOService.instance().getServer().on('connection', function (socket) {
+    console.log(socket.handshake)
     socket.on('end', function (room) {
         socket.disconnect()
     });
