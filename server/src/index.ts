@@ -98,8 +98,7 @@ app.use(express.static(path.join(__dirname, 'static')))
 const server = createServer(app)
 
 SocketIOService.instance().initialize(server, {
-    path: "/socket",
-    transports: ['websocket']
+    path: "/socket"
 })
 
 SocketIOService.instance().getServer().on('connection', function (socket) {

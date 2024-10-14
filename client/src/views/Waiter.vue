@@ -25,8 +25,7 @@ onMounted(async () => {
   if (event.value.id) {
     tables.value = await axios.GetAvailableTables(event.value.id)
     is = io(window.location.origin, {
-      path: "/socket/socket.io",
-      transports: ['websocket']
+      path: "/socket/socket.io"
     })
 
     is.on('connect', () => {

@@ -126,8 +126,7 @@ onMounted(async () => {
   await getTables()
 
   is = io(window.location.origin, {
-    path: "/socket/socket.io",
-    transports: ['websocket']
+    path: "/socket/socket.io"
   })
 
   is.on('connect', () => {
