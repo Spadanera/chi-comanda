@@ -132,21 +132,25 @@ async function getOrders() {
 }
 
 function getMinutesPassed(datetimeString:string):number {
-  const [datePart, timePart] = datetimeString.split(/T| /);
-  const [year, month, day] = datePart.split('-').map(Number);
-  const [hours, minutes, seconds] = timePart.split('.')[0].split(':').map(Number);   
-
-
-  const then = new Date(year, month - 1, day, hours, minutes, seconds);
-
-  const now = new Date().toLocaleString("en-US", { timeZone: "Europe/Rome" });
-  const nowItaly = new Date(now);
-
-  const differenceMs = nowItaly.getTime() - then.getTime();
-
-  const minutesPassed = Math.floor(differenceMs / (1000 * 60));
-
-  return minutesPassed;
+  try {
+    const [datePart, timePart] = datetimeString.split(/T| /);
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hours, minutes, seconds] = timePart.split('.')[0].split(':').map(Number);   
+  
+  
+    const then = new Date(year, month - 1, day, hours, minutes, seconds);
+  
+    const now = new Date().toLocaleString("en-US", { timeZone: "Europe/Rome" });
+    const nowItaly = new Date(now);
+  
+    const differenceMs = nowItaly.getTime() - then.getTime();
+  
+    const minutesPassed = Math.floor(differenceMs / (1000 * 60));
+  
+    return minutesPassed;
+  } catch (error) {
+    return 0
+  }
 }
 
 function calculateMinPassed() {
