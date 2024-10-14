@@ -113,7 +113,7 @@ SocketIOService.instance().getServer().on('connection', function (socket) {
 });
 
 server.listen(process.env.PORT, () => {
-    console.log(`App is listening on port 3000`)
+    console.log(`App is listening on port ${process.env.PORT}`)
 })
 
 process.on('SIGTERM', () => {
