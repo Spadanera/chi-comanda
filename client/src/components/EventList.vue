@@ -71,6 +71,19 @@ async function showEvent(event: Event) {
     }
 }
 
+function getExtendedDate(dateString: string): string {
+    const date = new Date(dateString);
+
+    const options: Intl.DateTimeFormatOptions = {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    };
+
+    return date.toLocaleDateString("it-IT", options);
+}
+
 onMounted(() => {
 
 })
@@ -79,8 +92,10 @@ onMounted(() => {
     <v-container>
         <v-row>
             <v-col v-for="event in events" sm="6" cols="12" lg="4">
-                <v-card :title="event.date.toString().split('T')[0]" @click="showEvent(event)">{{ event.date }}
-                    <v-card-subtitle>{{ event.name }} <span v-if="event.status === 'ONGOING'"> - <span style="font-weight: bold">Incasso attuale: {{ event.currentPaid }} €</span></span></v-card-subtitle>
+                <v-card :title="getExtendedDate(event.date.toString())" @click="showEvent(event)">
+                    <v-card-subtitle>{{ event.name }} <span v-if="event.status === 'ONGOING'"> - <span
+                                style="font-weight: bold">Incasso attuale: {{ event.currentPaid }}
+                                €</span></span></v-card-subtitle>
                     <v-card-text v-show="event.status !== 'PLANNED'">
                         <v-btn readonly size="small" density="compact" variant="plain">
                             <v-icon>mdi-table-furniture</v-icon> {{ event.tableCount }}
@@ -106,9 +121,9 @@ onMounted(() => {
                         <v-btn text="CHIUDI EVENTO" v-if="event.status === 'ONGOING' && event.tablesOpen === 0"
                             size="small" density="compact" variant="plain"
                             @click.stop="closeEventConfirm(event)"></v-btn>
-                        <v-btn text="SONO PRESENTI TAVOLI APERTI" v-if="event.status === 'ONGOING' && event.tablesOpen > 0"
-                            size="small" density="compact" variant="plain" :readonly="true"
-                            @click.stop="closeEventConfirm(event)"></v-btn>
+                        <v-btn text="SONO PRESENTI TAVOLI APERTI"
+                            v-if="event.status === 'ONGOING' && event.tablesOpen > 0" size="small" density="compact"
+                            variant="plain" :readonly="true" @click.stop="closeEventConfirm(event)"></v-btn>
                         <v-btn text="ANNULLA" v-if="event.status === 'ONGOING' && event.tableCount === 0" size="small"
                             density="compact" variant="plain" @click.stop="setEventStatus(event, 'PLANNED')"></v-btn>
                     </v-card-actions>
