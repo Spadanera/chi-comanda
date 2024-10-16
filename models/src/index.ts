@@ -33,6 +33,14 @@ export const ItemTypes:Type[] = [
   {
     name: "Panino",
     type: "Cibo"
+  },
+  {
+    name: "Fuori Menu",
+    type: "Bevanda"
+  },
+  {
+    name: "Sconto",
+    type: ""
   }
 ]
 
@@ -101,6 +109,8 @@ export interface Event extends Repository {
   foodCount?: number
   beverageCount?: number
   revenue?: number
+  discount?: number
+  currentPaid?: number
   tablesOpen?: number
 }
 
@@ -114,6 +124,7 @@ export interface Table extends Repository {
   paid?: boolean
   status?: string
   items?: Item[]
+  discuntItems?: Item[]
 }
 
 export interface AvailableTable extends Repository {
@@ -144,10 +155,14 @@ export interface Item extends Repository {
   table_id?: number
   order_id?: number
   master_item_id?: number
+  type?: string
+  sub_type?: string
   note?: string
   done?: boolean
   paid?: boolean
+  price?: number
   destination_id?: number
+  grouped_ids?: number[]
 }
 
 export interface MasterTable extends Repository {

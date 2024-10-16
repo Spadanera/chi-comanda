@@ -6,6 +6,47 @@ class TableApi {
     constructor() {
     }
 
+    async getFreeTable(eventId: number): Promise<MasterTable[]> {
+        return await db.query(`
+            SELECT 
+            master_tables.id table_id, 
+            master_tables.name table_name
+            FROM master_tables
+            WHERE id NOT IN (
+				SELECT id FROM table_master_table
+                WHERE master_table_id = master_tables.id
+                AND table_id IN (
+					SELECT id FROM tables WHERE event_id = ?
+                )
+            )
+            `, [eventId])
+    }
+
+    async changeTable(table_id: number, master_table_id: number): Promise<number> {
+        const table_name = (await db.queryOne<MasterTable>("SELECT name FROM master_tables WHERE id = ?", [master_table_id])).name
+        const result = await db.executeTransaction([
+            "UPDATE table_master_table SET master_table_id = ? WHERE table_id = ?",
+            "UPDATE tables SET name = ? WHERE id = ?"
+        ], [
+            [master_table_id, table_id],
+            [table_name, table_id]
+        ])
+        SocketIOService.instance().sendMessage({
+            rooms: ["waiter", "bar"],
+            event: "new-table-available",
+            body: {}
+        })
+        return result
+    }
+
+    async insertDiscount(eventId: number, tableId: number, discount: number): Promise<number> {
+        return await db.executeInsert(`INSERT INTO items (
+                name, event_id, table_id, order_id, type, sub_type, price, done, paid, destination_id
+            ) VALUES (
+                ?,?,?,?,?,?,?,?,?,?
+            )`, ['Sconto', eventId, tableId, 0, 'Sconto', 'Sconto', discount * -1, true, true, 1])
+    }
+
     async getAvailableTable(eventId: number): Promise<MasterTable[]> {
         return await db.query(`SELECT 
             available_tables.id table_id, 
@@ -40,21 +81,20 @@ class TableApi {
             (
                 SELECT JSON_ARRAYAGG(JSON_OBJECT(
                     'id', items.id, 
-                    'master_item_id', master_items.id, 
+                    'master_item_id', items.master_item_id, 
                     'event_id', items.event_id,
                     'table_id', items.table_id,
                     'order_id', items.order_id,
                     'note', items.note, 
                     'name', items.name, 
-                    'type', master_items.type, 
-                    'sub_type', master_items.sub_type, 
+                    'type', items.type, 
+                    'sub_type', items.sub_type, 
                     'price', items.price,
-                    'destination_id', master_items.destination_id,
+                    'destination_id', items.destination_id,
                     'done', items.done,
                     'paid', items.paid
                 )) 
                 FROM items 
-                INNER JOIN master_items ON master_items.id = items.master_item_id
                 WHERE table_id = tables.id
             ) items
             FROM tables 

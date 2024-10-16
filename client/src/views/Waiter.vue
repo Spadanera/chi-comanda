@@ -50,14 +50,18 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  is.emit('end')
+  if (is) {
+    is.emit('end')
+  }
 })
 </script>
 
 <template>
   <main>
     <v-skeleton-loader v-if="loading" type="card"></v-skeleton-loader>
-    <p v-if="!event?.id">Nessun evento attivo</p>
+    <v-container v-else-if="!event?.id">
+      <p>Nessun evento attivo</p>
+    </v-container>
     <v-container v-else>
       <v-row>
         <v-col>

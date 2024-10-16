@@ -126,6 +126,14 @@ export default class Axios {
         return await this.get<AvailableTable>(`/events/${event_id}/tables/available`)
     }
 
+    async GetFreeTables(event_id: number): Promise<AvailableTable[]> {
+        return await this.get<AvailableTable>(`/events/${event_id}/tables/free`)
+    }
+
+    async ChangeTable(table_id: number, master_table_id: number): Promise<number> {
+        return await this.put<AvailableTable>(`/tables/${table_id}/change/${master_table_id}`, {} as AvailableTable)
+    }
+
     async GetMasterTable(master_id: string): Promise<MasterTable> {
         return await this.getSingle<MasterTable>(`/master-tables/${master_id}`)
     }
@@ -164,6 +172,11 @@ export default class Axios {
 
     async PaySelectedItem(table_id: number, item_ids: number[]): Promise<number> {
         return (await this.client.put(`/tables/${table_id}/payitems`, item_ids, this.config)).data
+    }
+
+    async InsertDiscount(event_id: number, table_id: number, discount: number): Promise<number> {
+        console.log(discount)
+        return (await this.client.post(`/events/${event_id}/tables/${table_id}/discount/${discount}`)).data
     }
 
     async DeleteItem(item_id: number) {

@@ -9,9 +9,11 @@ class EventAPI {
         return await db.query(`
             SELECT id, name, date, status,
             (SELECT count(tables.id) FROM tables WHERE event_id = events.id) tableCount,
-            (SELECT count(items.id) FROM items INNER JOIN master_items ON items.master_item_id = master_items.id WHERE event_id = events.id AND master_items.type = 'Bevanda') beverageCount,
-            (SELECT count(items.id) FROM items INNER JOIN master_items ON items.master_item_id = master_items.id WHERE event_id = events.id AND master_items.type IN ('Cibo')) foodCount,
-            (SELECT sum(items.price) FROM items WHERE items.event_id = events.id) revenue,
+            (SELECT count(items.id) FROM items WHERE event_id = events.id AND items.type = 'Bevanda') beverageCount,
+            (SELECT count(items.id) FROM items WHERE event_id = events.id AND items.type IN ('Cibo')) foodCount,
+            (SELECT sum(items.price) FROM items WHERE items.event_id = events.id AND type != 'Sconto') revenue,
+            (SELECT sum(items.price) FROM items WHERE items.event_id = events.id AND type = 'Sconto') discount,
+            (SELECT sum(items.price) FROM items WHERE items.event_id = events.id AND type != 'Sconto' AND items.paid = 1) currentPaid,
             (SELECT count(tables.id) FROM tables WHERE tables.event_id = events.id AND tables.status = 'ACTIVE') tablesOpen
             FROM events
             ORDER BY date DESC`
@@ -29,12 +31,11 @@ class EventAPI {
                     'quantity', grouped_items.quantity
                 )) 
                 FROM (
-                    SELECT items.name, master_items.type, master_items.sub_type, items.price, COUNT(items.id) quantity
+                    SELECT items.name, items.type, items.sub_type, items.price, COUNT(items.id) quantity
                     FROM items 
-                    INNER JOIN master_items ON master_items.id = items.master_item_id
                     WHERE items.event_id = events.id
-                    GROUP BY items.name, master_items.type, master_items.sub_type, items.price
-                    ORDER BY master_items.sub_type, master_items.type, items.name
+                    GROUP BY items.name, items.type, items.sub_type, items.price
+                    ORDER BY items.sub_type, items.type, items.name
                 ) grouped_items
                 ) items
             FROM events WHERE events.id = ?`

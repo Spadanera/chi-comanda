@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Order, type MasterItem, type Item, ItemTypes as types, type Type } from "../../../models/src"
+import { type Order, type MasterItem, type Item, ItemTypes as types, type Type, Destinations } from "../../../models/src"
 import { ref, onMounted, computed } from "vue"
 import router from '@/router'
 import Axios from '@/services/client'
@@ -18,9 +18,11 @@ const emit = defineEmits(['login', 'reload'])
 
 const props = defineProps(['event_id', 'table_id', 'master_table_id'])
 
+const open = ref(null)
 const loading = ref<boolean>(true)
 const dialog = ref<boolean>(false)
 const dialogTable = ref<boolean>(false)
+const dialogExtra = ref<boolean>(false)
 const tableName = ref<string>('')
 const dialogItem = ref<Item>()
 const master_items = ref<MasterItem[]>([])
@@ -28,6 +30,10 @@ const sheet = ref(false)
 const orderItems = ref<Item[]>([])
 const filter = ref<string>('')
 const table_name = ref<string>('')
+const form = ref(null)
+const formExtra = ref(null)
+const requiredRule = ref([(value: any) => !!value || 'Inserire un valore'])
+const extraItem = ref<Item>({} as Item)
 
 const orderTotal = computed(() => orderItems.value.reduce((a: number, i: Item) => a += i.price, 0))
 const foodTotal = computed(() => orderItems.value.filter((i: Item) => i.type === 'Cibo').length)
@@ -41,11 +47,22 @@ function filterItems(type: Type) {
   return computedItems.value.filter((i: MasterItem) => i.sub_type === type.name).sort(sortItem)
 }
 
-function addItemToOrder(item: Item) {
+async function addItemToOrder(item?: Item) {
+  if (!item) {
+    const { valid } = await formExtra.value?.validate()
+    if (valid) {
+      item = extraItem.value
+      item.price = parseInt(extraItem.value.price + '')
+    }
+    else {
+      return
+    }
+  }
   item.table_id = props.table_id
   item.master_item_id = item.id
   orderItems.value.push(copy<Item>(item))
   snackbarStore.show(`${item.name} aggiunto`, 2000, 'top')
+  dialogExtra.value = false
 }
 
 function addItemWithNote() {
@@ -80,6 +97,16 @@ function openNoteDialog(item: Item, premium: boolean = false) {
   dialog.value = true
 }
 
+function openExtraItemDialog() {
+  extraItem.value = {
+    id: 0,
+    destination_id: 1,
+    type: 'Bevanda',
+    sub_type: 'Fuori Menu'
+  } as Item
+  dialogExtra.value = true
+}
+
 async function sendOrder() {
   const _order: Order = {
     event_id: parseInt(props.event_id),
@@ -94,8 +121,11 @@ async function sendOrder() {
 }
 
 async function setTableName() {
-  table_name.value = tableName.value
-  dialogTable.value = false
+  const { valid } = await form.value?.validate()
+  if (valid) {
+    table_name.value = tableName.value
+    dialogTable.value = false
+  }
 }
 
 onMounted(async () => {
@@ -116,10 +146,36 @@ onMounted(async () => {
 <template>
   <v-skeleton-loader v-if="loading" type="list-item-three-line"></v-skeleton-loader>
   <div v-else>
-    <v-text-field :clearable="true" v-model="filter" label="Cerca"></v-text-field>
-    <v-list>
+    <v-text-field class="no-detail" :clearable="true" v-model="filter" label="Cerca"></v-text-field>
+    <v-list v-if="!filter" v-model:opened="open" open-strategy="single">
       <template v-for="type in types">
-        <v-list-subheader style="margin-top: 10px" inset>{{ type.name }}</v-list-subheader>
+        <v-list-group v-if="!(['Sconto', 'Fuori Menu'].includes(type.name))">
+          <template v-slot:activator="{ props }">
+            <v-list-item v-bind="props" :title="type.name"></v-list-item>
+          </template>
+          <template v-for="item in filterItems(type)">
+            <v-list-item>
+              <v-list-item-title>
+                {{ item.name }}
+              </v-list-item-title>
+              <template v-slot:append>
+                <v-btn icon="mdi-star-circle" v-if="item.sub_type === 'Cocktail'" variant="text"
+                  @click="openNoteDialog(item, true)"></v-btn>
+                <v-btn icon="mdi-pencil" variant="text" @click="openNoteDialog(item, false)"></v-btn>
+                <v-btn icon="mdi-plus" variant="text" @click="addItemToOrder(item)"></v-btn>
+              </template>
+            </v-list-item>
+            <v-divider></v-divider>
+          </template>
+        </v-list-group>
+        <v-divider></v-divider>
+      </template>
+      <v-container style="text-align: center;">
+        <v-btn @click="openExtraItemDialog">Agguinta fuori menu</v-btn>
+      </v-container>
+    </v-list>
+    <v-list v-else>
+      <template v-for="type in types">
         <template v-for="item in filterItems(type)">
           <v-list-item>
             <v-list-item-title>
@@ -162,11 +218,14 @@ onMounted(async () => {
         Indica il nome del tavolo
       </v-card-title>
       <v-card-text>
-        <v-row dense>
-          <v-col cols="12">
-            <v-text-field v-model="tableName" label="Nome Tavolo" required :autofocus="true"></v-text-field>
-          </v-col>
-        </v-row>
+        <v-form ref="form" @submit.prevent>
+          <v-row dense>
+            <v-col cols="12">
+              <v-text-field v-model="tableName" label="Nome Tavolo" :rules="requiredRule"
+                :autofocus="true"></v-text-field>
+            </v-col>
+          </v-row>
+        </v-form>
       </v-card-text>
 
       <v-divider></v-divider>
@@ -177,7 +236,7 @@ onMounted(async () => {
           <v-btn text="Annulla" variant="plain"></v-btn>
         </RouterLink>
 
-        <v-btn :disabled="tableName === ''" color="primary" text="Salva" variant="tonal" @click="setTableName"></v-btn>
+        <v-btn color="primary" text="Salva" variant="tonal" @click="setTableName"></v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -203,6 +262,38 @@ onMounted(async () => {
         <v-btn text="Annulla" variant="plain" @click="dialog = false"></v-btn>
 
         <v-btn color="primary" text="Aggiungi" variant="tonal" @click="addItemWithNote"></v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+  <v-dialog v-model="dialogExtra" width="400px">
+    <v-card>
+      <v-card-title>
+        Aggiungi fuori menu
+      </v-card-title>
+      <v-card-text>
+        <v-form ref="formExtra" @submit.prevent>
+          <v-row>
+            <v-col cols="12">
+              <v-text-field v-model="extraItem.name" label="Nome" :rules="requiredRule"></v-text-field>
+            </v-col>
+            <v-col cols="6">
+              <v-text-field v-model="extraItem.price" label="Prezzo" type="number" :rules="requiredRule"
+                append-inner-icon="mdi-currency-eur"></v-text-field>
+            </v-col>
+            <v-col cols="12">
+              <v-select :items="Destinations" label="Destinazione" item-value="id" item-title="name"
+                :rules="requiredRule" v-model="extraItem.destination_id">
+                <template v-slot:item="{ props, item }">
+                  <v-list-item v-bind="props" :subtitle="item.raw.location" :title="item.raw.name"></v-list-item>
+                </template>
+              </v-select>
+            </v-col>
+          </v-row>
+        </v-form>
+      </v-card-text>
+      <v-card-actions>
+        <v-btn variant="plain" @click="dialogExtra = false">ANNULLA</v-btn>
+        <v-btn variant="plain" @click="addItemToOrder()">CONFERMA</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Event, type Order, type Item, ItemTypes as types, type Type, Destinations, type Destination } from "../../../models/src"
+import { type Event, type Order, type Item, ItemTypes as types, type Type, Destinations, type Destination, type CompleteOrderInput } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import Axios from '@/services/client'
 import { SnackbarStore, type IUser } from '@/stores'
@@ -30,14 +30,21 @@ const audio = ref(null);
 const origin = props.destinations.includes(3) ? 'kitchen' : 'bartender'
 
 const pageTitle = computed(() => Destinations.find((d: Destination) => props.destinations.includes(d.id)).name)
-const computedSelectedOrder = computed(() => {
-  let result = copy<Order>((selectedOrder.value.length ? selectedOrder.value[0] : { items: [] }) as Order)
-  if (!result.items) {
-    result.items = []
+const itemsToDo = computed(() => {
+  if (selectedOrder.value.length) {
+    return groupItems(selectedOrder.value[0].items.filter((i: Item) => !i.done))
   }
-  result.itemsToDo = groupItems(result.items.filter((i: Item) => !i.done))
-  result.itemsDone = groupItems(result.items.filter((i: Item) => i.done))
-  return result
+  else {
+    return []
+  }
+})
+const itemsDone = computed(() => {
+  if (selectedOrder.value.length) {
+    return groupItems(selectedOrder.value[0].items.filter((i: Item) => i.done))
+  }
+  else {
+    return []
+  }
 })
 const subTypesCount = computed(() => {
   let result: any = []
@@ -59,33 +66,32 @@ function getSubTypeCount(order: Order, subtype: string[]) {
   return 0
 }
 
-async function doneItem(item: Item, multiple: boolean = false) {
+async function doneItem(item_ids: number[], multiple: boolean = false) {
   if (!multiple) {
-    const _item = copy<Item>(item)
+    const id = item_ids.pop()
+    const _item = selectedOrder.value[0].items.find((i:Item) => i.id === id)
     _item.done = true
     await axios.UpdateItem(_item)
-    selectedOrder.value[0].items.find((i: Item) => i.master_item_id === item.master_item_id && i.note === item.note && i.name === item.name && !i.done).done = true
   }
   else {
-    for (let j = 0; j < item.quantity; j++) {
-      const _item = copy<Item>(selectedOrder.value[0].items.find((i: Item) => i.master_item_id === item.master_item_id && i.note === item.note && i.name === item.name && !i.done))
+    for (let j = 0; j < item_ids.length; j++) {
+      const _item = copy<Item>(selectedOrder.value[0].items.find((i: Item) => i.id === item_ids[j]))
       _item.done = true
       await axios.UpdateItem(_item)
-      selectedOrder.value[0].items.find((i: Item) => i.id === _item.id).done = true
     }
   }
-
-  if (computedSelectedOrder.value.itemsToDo.length === 0) {
-    completeOrder()
+  if (itemsToDo.value.length === 0) {
+    await completeOrder()
+  }
+  else {
+    await getOrders()
   }
 }
 
 async function rollbackItem(item: Item) {
   item.done = false
   await axios.UpdateItem(item)
-  if (selectedOrder && selectedOrder.value && selectedOrder.value.length) {
-    selectedOrder.value[0].items.find((i: Item) => i.master_item_id === item.master_item_id && i.note === item.note && i.name === item.name && i.done).done = false
-  }
+  await getOrders()
 }
 
 async function deleteItemConfirm(item_id: number) {
@@ -119,16 +125,19 @@ async function completeOrder() {
 }
 
 async function getOrders() {
-  loading.value = true
   orders.value = await axios.GetOrdersInEvent(event.value?.id || 0, props.destinations)
   calculateMinPassed()
   if (orders.value.length && !orders.value[0].done) {
-    selectedOrder.value = [orders.value[0]]
+    if (selectedOrder.value.length === 0) {
+      selectedOrder.value = [orders.value[0]]
+    }
+    else {
+      selectedOrder.value = [orders.value.find((o:Order) => o.id === selectedOrder.value[0].id)]
+    }
   }
   else {
     selectedOrder.value = []
   }
-  loading.value = false
 }
 
 function getMinutesPassed(datetimeString:string):number {
@@ -158,65 +167,82 @@ function calculateMinPassed() {
 }
 
 onMounted(async () => {
+  loading.value = true
   audio.value = new Audio(fileAudio)
   event.value = await axios.GetOnGoingEvent()
-  await getOrders()
-
-  is = io(window.location.origin, {
-    path: "/socket/socket.io"
-  })
-
-  is.on('connect', () => {
-    is.emit('join', 'bar')
-  })
-
-  is.on('disconnect', () => {
-
-  })
-
-  is.on('connect_error', (err: any) => {
-    snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
-    is.emit('end')
-  })
-
-  is.on('new-order', (data: Order) => {
-    if (data.items.filter((i: Item) => props.destinations.includes(i.destination_id)).length) {
-      data.items = data.items?.filter((i: Item) => props.destinations.includes(i.destination_id))
-      if (data.items?.length) {
-        orders.value.push(data)
-        console.log(data)
-        calculateMinPassed()
-        if (!selectedOrder.value.length) {
-          selectedOrder.value.push(data)
+  if (event.value.id) {
+    await getOrders()
+  
+    is = io(window.location.origin, {
+      path: "/socket/socket.io"
+    })
+  
+    is.on('connect', () => {
+      is.emit('join', 'bar')
+    })
+  
+    is.on('disconnect', () => {
+  
+    })
+  
+    is.on('connect_error', (err: any) => {
+      snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
+      is.emit('end')
+    })
+  
+    is.on('new-order', (data: Order) => {
+      if (data.items.filter((i: Item) => props.destinations.includes(i.destination_id)).length) {
+        data.items = data.items?.filter((i: Item) => props.destinations.includes(i.destination_id))
+        if (data.items?.length) {
+          orders.value.push(data)
+          calculateMinPassed()
+          if (!selectedOrder.value.length) {
+            selectedOrder.value.push(data)
+          }
+          snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
+          audio.value.play();
         }
-        snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
-        audio.value.play();
-      }
-    }
-  })
-
-  is.on('item-removed', (data: number) => {
-    const order = orders.value.find((o: Order) => {
-      if (o.items.find((i: Item) => i.id === data)) {
-        return true
       }
     })
-    const _items = copy<Item[]>(order.items.filter((i: Item) => i.id !== data))
-    order.items = _items
-    if (_items.length === 0) {
-      if (order.id === selectedOrder.value[0].id) {
-        selectedOrder.value = []
-      }
-      orders.value = copy<Order[]>(orders.value.filter((o: Order) => o.id !== order.id))
-    }
-  })
 
-  interval = window.setTimeout(calculateMinPassed, 1000 * 60)
+    is.on('order-completed', () => {
+      getOrders()
+    })
+
+    is.on('item-updated', () => {
+      getOrders()
+    })
+
+    is.on('new-table-available', () => {
+      getOrders()
+    })
+  
+    is.on('item-removed', (data: number) => {
+      const order = orders.value.find((o: Order) => {
+        if (o.items.find((i: Item) => i.id === data)) {
+          return true
+        }
+      })
+      const _items = copy<Item[]>(order.items.filter((i: Item) => i.id !== data))
+      order.items = _items
+      if (_items.length === 0) {
+        if (order.id === selectedOrder.value[0].id) {
+          selectedOrder.value = []
+        }
+        orders.value = copy<Order[]>(orders.value.filter((o: Order) => o.id !== order.id))
+      }
+    })
+  
+    interval = window.setTimeout(calculateMinPassed, 1000 * 60)
+  }
+  loading.value = false
 })
 
 onBeforeUnmount(() => {
   window.clearInterval(interval)
-  is.emit('end')
+  if (is) {
+    is.emit('end')
+  }
 })
 </script>
 
@@ -248,22 +274,22 @@ onBeforeUnmount(() => {
     <p>Nessun evento attivo</p>
   </v-container>
   <template v-else>
-    <h3 style="padding-left: 15px; padding-top: 14px;">{{ pageTitle }}</h3>
-    <h5 style="padding-left: 15px; padding-top: 0;" v-if="selectedOrder.length">Tavolo {{ selectedOrder[0].table_name }}
-    </h5>
-    <ItemList :quantitybefore="true" :showtype="true" subheader="DA FARE" v-model="computedSelectedOrder.itemsToDo">
+    <v-container>
+      <h3>{{ pageTitle }} <span v-if="selectedOrder.length"> - Tavolo {{ selectedOrder[0].table_name }}</span></h3>
+    </v-container>
+    <ItemList :quantitybefore="true" :showtype="true" subheader="DA FARE" v-model="itemsToDo">
       <template v-slot:prequantity="slotProps">
         <v-btn icon="mdi-delete" v-if="!slotProps.item.paid" @click="deleteItemConfirm(slotProps.item.id)"
           variant="plain"></v-btn>
         <v-btn variant="plain" v-if="slotProps.item.quantity > 1" icon="mdi-check-all"
-          @click="doneItem(slotProps.item, true)"></v-btn>
-        <v-btn variant="plain" icon="mdi-check" @click="doneItem(slotProps.item)"></v-btn>
+          @click="doneItem(slotProps.item.grouped_ids, true)"></v-btn>
+        <v-btn variant="plain" icon="mdi-check" @click="doneItem(slotProps.item.grouped_ids)"></v-btn>
       </template>
       <template v-slot:postquantity="slotProps">
       </template>
     </ItemList>
     <v-divider></v-divider>
-    <ItemList subheader="COMPLETATI" v-model="computedSelectedOrder.itemsDone" :done="true">
+    <ItemList :quantitybefore="true" subheader="COMPLETATI" v-model="itemsDone" :done="true">
       <template v-slot:postquantity="slotProps">
         <v-btn variant="plain" icon="mdi-arrow-up-thin" @click="rollbackItem(slotProps.item)"></v-btn>
       </template>
@@ -272,8 +298,8 @@ onBeforeUnmount(() => {
       <v-btn icon="mdi-menu" @click="drawer = !drawer" id="drawer-button">
 
       </v-btn>
-      <template v-for="(type, i) in subTypesCount">
-        <v-btn min-width="50" readonly size="small" density="compact" variant="plain">
+      <template v-for="type in subTypesCount">
+        <v-btn v-if="type.type !== 'Fuori Menu'" min-width="50" readonly size="x-small" density="compact" variant="plain">
           <v-icon>{{ getIcon(type.type) }}</v-icon> {{ type.count }}
         </v-btn>
       </template>

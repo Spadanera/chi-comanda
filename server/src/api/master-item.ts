@@ -14,7 +14,8 @@ class MasterItemsApi {
     }
 
     async getAllAvailable(): Promise<Item[]> {
-        return await db.query('SELECT * FROM master_items WHERE available = TRUE AND status = "ACTIVE"', [])
+        return await db.query(`
+            SELECT * FROM master_items WHERE available = TRUE AND status = "ACTIVE"`, [])
     }
 
     async get(id: number): Promise<Item[]> {

@@ -102,7 +102,6 @@ SocketIOService.instance().initialize(server, {
 })
 
 SocketIOService.instance().getServer().on('connection', function (socket) {
-    console.log(socket.handshake)
     socket.on('end', function (room) {
         socket.disconnect()
     });
