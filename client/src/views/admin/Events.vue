@@ -42,6 +42,7 @@ function openDialog() {
 async function createEvent() {
   const { valid } = await form.value?.validate()
   if (valid) {
+    dialogEvent.value.date.setHours(dialogEvent.value.date.getHours() + 4)
     await axios.CreateEvent(dialogEvent.value)
     snackbarStore.show('Evento creato con successo', 3000, 'bottom', 'success')
     await load()

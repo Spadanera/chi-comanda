@@ -175,7 +175,6 @@ export default class Axios {
     }
 
     async InsertDiscount(event_id: number, table_id: number, discount: number): Promise<number> {
-        console.log(discount)
         return (await this.client.post(`/events/${event_id}/tables/${table_id}/discount/${discount}`)).data
     }
 
