@@ -1,0 +1,14 @@
+{
+    "build": {
+      "commands": [
+        "npm run build",
+        "ln -s server/dist/static public"
+      ]
+    },
+    "start": {
+      "commands": [
+        "cd server",
+        "node dist/index.js"
+      ]
+    }
+  }
