@@ -12,7 +12,7 @@
     "build-server": "cd server && npm install && npm run build",
     "build-client": "cd client && npm install && npm run build",
     "build": "npm run build-model && npm run build-server && npm run build-client",
-    "deploy": "npm run build && cd server && eb deploy"
+    "deploy": "npm run build && cd server && eb deploy && npm version path && git push --follow-tags"
   },
   "repository": {
     "type": "git",
