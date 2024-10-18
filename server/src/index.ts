@@ -10,15 +10,13 @@ import { createServer } from 'http'
 import { SocketIOService } from "./socket"
 import { User } from "../../models/src"
 import db from "./db"
+import connection from "./db/connection"
 
 const AUTH_COOKIE_NAME: string = 'lp-session'
 
 const MySQLStore = require('express-mysql-session')(session);
 const options = {
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE,
+    ...connection,
     createDatabaseTable: true
 }
 const sessionStore = new MySQLStore(options);

@@ -34,7 +34,7 @@ class ItemApi {
         SocketIOService.instance().sendMessage({
             rooms: ["bar"],
             event: "item-updated",
-            body: {}
+            body: item
         })
 
         return result

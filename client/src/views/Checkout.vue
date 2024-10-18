@@ -113,7 +113,7 @@ async function completeTable() {
       return
     }
     const discountAmout = tableTotalOrder.value - realPaid.value
-    axios.InsertDiscount(event.value.id, selectedTable.value[0].id, discountAmout)
+    await axios.InsertDiscount(event.value.id, selectedTable.value[0].id, discountAmout)
   }
   await axios.CompleteTable(selectedTable.value[0].id)
   await getTables()
@@ -133,7 +133,7 @@ async function paySelectedItem() {
       return
     }
     const discountAmout = itemToBePaidBill.value - realPaid.value
-    axios.InsertDiscount(event.value.id, selectedTable.value[0].id, discountAmout)
+    await axios.InsertDiscount(event.value.id, selectedTable.value[0].id, discountAmout)
   }
   await axios.PaySelectedItem(selectedTable.value[0].id, itemToBePaid.value)
   await getTables()

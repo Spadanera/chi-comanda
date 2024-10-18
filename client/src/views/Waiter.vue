@@ -41,9 +41,9 @@ onMounted(async () => {
       is.emit('end')
     })
 
-    is.on('new-table-available', async () => {
+    is.on('reload-table', async () => {
       tables.value = await axios.GetAvailableTables(event.value.id)
-      snackbarStore.show("Nuovo tavolo disponibile")
+      snackbarStore.show("Tavoli aggiornati")
     })
   }
   loading.value = false

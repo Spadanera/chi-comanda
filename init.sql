@@ -40,8 +40,7 @@ CREATE TABLE `tables` (
   `event_id` integer,
   `name` varchar(255),
   `paid` bool,
-  `status` varchar(255),
-  `order_date` datetime
+  `status` varchar(255)
 );
 
 CREATE TABLE `table_master_table` (
@@ -61,7 +60,8 @@ CREATE TABLE `orders` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `event_id` integer,
   `table_id` integer,
-  `done` bool
+  `done` bool,
+  `order_date` datetime
 );
 
 CREATE TABLE `destinations` (
@@ -237,6 +237,8 @@ INSERT INTO master_items (name, type, sub_type, price, destination_id, available
 INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Succo Pesca', 'Bevanda', 'Analcolico', 3, 1, true, 'ACTIVE');
 INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Succo ACE', 'Bevanda', 'Analcolico', 3, 1, true, 'ACTIVE');
 INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Succo Ananas', 'Bevanda', 'Analcolico', 3, 1, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Acqua Naturale', 'Bevanda', 'Analcolico', 2, 1, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Acqua Frizzante', 'Bevanda', 'Analcolico', 2, 1, true, 'ACTIVE');
 
 INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Cuba Libre', 'Bevanda', 'Cocktail', 5, 1, true, 'ACTIVE');
 INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Git Tonic', 'Bevanda', 'Cocktail', 5, 1, true, 'ACTIVE');

@@ -69,29 +69,38 @@ function getSubTypeCount(order: Order, subtype: string[]) {
 async function doneItem(item_ids: number[], multiple: boolean = false) {
   if (!multiple) {
     const id = item_ids.pop()
-    const _item = selectedOrder.value[0].items.find((i:Item) => i.id === id)
+    const _item = selectedOrder.value[0].items.find((i: Item) => i.id === id)
     _item.done = true
-    await axios.UpdateItem(_item)
+    try {
+      await axios.UpdateItem(_item)
+    } catch (error) {
+      _item.done = false
+    }
   }
   else {
     for (let j = 0; j < item_ids.length; j++) {
-      const _item = copy<Item>(selectedOrder.value[0].items.find((i: Item) => i.id === item_ids[j]))
+      const _item = selectedOrder.value[0].items.find((i: Item) => i.id === item_ids[j])
       _item.done = true
-      await axios.UpdateItem(_item)
+      try {
+        await axios.UpdateItem(_item)
+      } catch (error) {
+        _item.done = false
+      }
     }
   }
   if (itemsToDo.value.length === 0) {
     await completeOrder()
   }
-  else {
-    await getOrders()
-  }
 }
 
 async function rollbackItem(item: Item) {
   item.done = false
-  await axios.UpdateItem(item)
-  await getOrders()
+  try {
+    await axios.UpdateItem(item)
+  } catch (error) {
+    item.done = true
+  }
+  // await getOrders()
 }
 
 async function deleteItemConfirm(item_id: number) {
@@ -132,7 +141,7 @@ async function getOrders() {
       selectedOrder.value = [orders.value[0]]
     }
     else {
-      selectedOrder.value = [orders.value.find((o:Order) => o.id === selectedOrder.value[0].id)]
+      selectedOrder.value = [orders.value.find((o: Order) => o.id === selectedOrder.value[0].id)]
     }
   }
   else {
@@ -140,22 +149,22 @@ async function getOrders() {
   }
 }
 
-function getMinutesPassed(datetimeString:string):number {
+function getMinutesPassed(datetimeString: string): number {
   try {
     const [datePart, timePart] = datetimeString.split(/T| /);
     const [year, month, day] = datePart.split('-').map(Number);
-    const [hours, minutes, seconds] = timePart.split('.')[0].split(':').map(Number);   
-  
-  
+    const [hours, minutes, seconds] = timePart.split('.')[0].split(':').map(Number);
+
+
     const then = new Date(year, month - 1, day, hours, minutes, seconds);
-  
+
     const now = new Date().toLocaleString("en-US", { timeZone: "Europe/Rome" });
     const nowItaly = new Date(now);
-  
+
     const differenceMs = nowItaly.getTime() - then.getTime();
-  
+
     const minutesPassed = Math.floor(differenceMs / (1000 * 60));
-  
+
     return minutesPassed;
   } catch (error) {
     return 0
@@ -163,7 +172,11 @@ function getMinutesPassed(datetimeString:string):number {
 }
 
 function calculateMinPassed() {
-  orders.value.forEach((o: Order) => o.minPassed = getMinutesPassed(o.order_date))
+  orders.value.forEach((o: Order) => {
+    if (!o.done) {
+      o.minPassed = getMinutesPassed(o.order_date)
+    }
+  })
 }
 
 onMounted(async () => {
@@ -172,24 +185,24 @@ onMounted(async () => {
   event.value = await axios.GetOnGoingEvent()
   if (event.value.id) {
     await getOrders()
-  
+
     is = io(window.location.origin, {
       path: "/socket/socket.io"
     })
-  
+
     is.on('connect', () => {
       is.emit('join', 'bar')
     })
-  
+
     is.on('disconnect', () => {
-  
+
     })
-  
+
     is.on('connect_error', (err: any) => {
       snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
       is.emit('end')
     })
-  
+
     is.on('new-order', (data: Order) => {
       if (data.items.filter((i: Item) => props.destinations.includes(i.destination_id)).length) {
         data.items = data.items?.filter((i: Item) => props.destinations.includes(i.destination_id))
@@ -209,14 +222,20 @@ onMounted(async () => {
       getOrders()
     })
 
-    is.on('item-updated', () => {
+    is.on('item-updated', (data: Item) => {
+      const _order = orders.value.find((o: Order) => o.id = data.order_id)
+      if (_order) {
+        const _item = _order.items.find((i: Item) => i.id === data.id)
+        if (_item) {
+          _item.done = data.done
+        }
+      }
+    })
+
+    is.on('reload-table', () => {
       getOrders()
     })
 
-    is.on('new-table-available', () => {
-      getOrders()
-    })
-  
     is.on('item-removed', (data: number) => {
       const order = orders.value.find((o: Order) => {
         if (o.items.find((i: Item) => i.id === data)) {
@@ -232,7 +251,7 @@ onMounted(async () => {
         orders.value = copy<Order[]>(orders.value.filter((o: Order) => o.id !== order.id))
       }
     })
-  
+
     interval = window.setTimeout(calculateMinPassed, 1000 * 60)
   }
   loading.value = false
@@ -299,7 +318,8 @@ onBeforeUnmount(() => {
 
       </v-btn>
       <template v-for="type in subTypesCount">
-        <v-btn v-if="type.type !== 'Fuori Menu'" min-width="50" readonly size="x-small" density="compact" variant="plain">
+        <v-btn v-if="type.type !== 'Fuori Menu'" min-width="50" readonly size="x-small" density="compact"
+          variant="plain">
           <v-icon>{{ getIcon(type.type) }}</v-icon> {{ type.count }}
         </v-btn>
       </template>

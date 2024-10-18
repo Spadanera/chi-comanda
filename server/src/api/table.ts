@@ -33,7 +33,7 @@ class TableApi {
         ])
         SocketIOService.instance().sendMessage({
             rooms: ["waiter", "bar"],
-            event: "new-table-available",
+            event: "reload-table",
             body: {}
         })
         return result
@@ -153,7 +153,7 @@ class TableApi {
         ])
         SocketIOService.instance().sendMessage({
             room: "waiter",
-            event: "new-table-available",
+            event: "reload-table",
             body: {}
         })
         return result

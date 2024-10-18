@@ -27,8 +27,15 @@ services:
     environment:
       MYSQL_HOST: 'server-database'
       MYSQL_DATABASE: 'ebdb'
+      MYSQL_PORT: '3306'
       MYSQL_USER: 'user'
       MYSQL_PASSWORD: 'password'
+      MYSQL_ENV: 'STG'
+      MYSQL_HOST_STG: 'junction.proxy.rlwy.net'
+      MYSQL_PORT_STG: '22646'
+      MYSQL_DATABASE_STG: 'railway'
+      MYSQL_USER_STG: 'root'
+      MYSQL_PASSWORD_STG: 'qGGubxnjCXABVmTGXzhgYYOQGDMFxyUy'
       SECRET: 'pippopluto'
       PORT: 3000
     networks:

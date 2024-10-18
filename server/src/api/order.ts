@@ -112,6 +112,12 @@ class OrderAPI {
             body: table
         })
 
+        SocketIOService.instance().sendMessage({
+            room: "waiter",
+            event: "reload-table",
+            body: {}
+        })
+
         return order.table_id || 0
     }
 
