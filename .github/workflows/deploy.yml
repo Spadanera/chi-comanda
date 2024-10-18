@@ -1,0 +1,19 @@
+name: Deploy to Railway
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to Railway
+        uses: railwayapp/cli@v1.1.2
+        with:
+          project: ${{ secrets.RAILWAY_PROJECT_ID }}
+          token: ${{ secrets.RAILWAY_TOKEN }}
