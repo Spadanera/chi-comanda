@@ -13,11 +13,10 @@ class TableApi {
             master_tables.name table_name
             FROM master_tables
             WHERE id NOT IN (
-				SELECT id FROM table_master_table
-                WHERE master_table_id = master_tables.id
-                AND table_id IN (
-					SELECT id FROM tables WHERE event_id = ?
-                )
+				SELECT master_table_id from table_master_table
+				WHERE table_id IN (
+					SELECT id FROM TABLES WHERE event_id = 1 AND status = 'ACTIVE'
+				)
             )
             `, [eventId])
     }
