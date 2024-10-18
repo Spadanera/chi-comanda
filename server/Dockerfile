@@ -1,8 +1,14 @@
 FROM node:20-alpine AS build
 
-WORKDIR /app
+WORKDIR /models
 
-RUN ls
+COPY package*.json .
+
+RUN npm install
+
+COPY . .
+
+WORKDIR /app
 
 COPY package*.json .
 
