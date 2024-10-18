@@ -15,7 +15,7 @@ class TableApi {
             WHERE id NOT IN (
 				SELECT master_table_id from table_master_table
 				WHERE table_id IN (
-					SELECT id FROM TABLES WHERE event_id = 1 AND status = 'ACTIVE'
+					SELECT id FROM tables WHERE event_id = ? AND status = 'ACTIVE'
 				)
             )
             `, [eventId])
