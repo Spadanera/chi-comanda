@@ -12,7 +12,10 @@
     "build-server": "cd server && npm install && npm run build",
     "build-client": "cd client && npm install && npm run build",
     "build": "npm run build-model && npm run build-server && npm run build-client",
-    "deploy": "npm run build && cd server && eb deploy && npm version path && git push --follow-tags"
+    "deploy": "npm run build && cd server && eb deploy",
+    "patch": "npm version patch && git push --follow-tags",
+    "minor": "npm version minor && git push --follow-tags",
+    "major": "npm version major && git push --follow-tags"
   },
   "repository": {
     "type": "git",
