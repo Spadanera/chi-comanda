@@ -1,6 +1,6 @@
 {
-  "name": "ludo-project",
-  "version": "1.0.0",
+  "name": "chi-comanda",
+  "version": "1.1.3",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -12,7 +12,12 @@
     "build-server": "cd server && npm install && npm run build",
     "build-client": "cd client && npm install && npm run build",
     "build": "npm run build-model && npm run build-server && npm run build-client",
-    "deploy": "npm run build && cd server/dist"
+    "deploy-aws": "npm run build && cd server && eb deploy",
+    "patch": "npm version patch && git push --follow-tags",
+    "minor": "npm version minor && git push --follow-tags",
+    "major": "npm version major && git push --follow-tags",
+    "deploy-stage": "npm run patch && version=$(node -p \"require('./package.json').version\") && git checkout stage && git merge main -m \"New stage deploy: v$version\" && git push origin stage && git checkout main",
+    "deploy-production": "version=$(node -p \"require('./package.json').version\") && git checkout production && git merge stage -m \"New production deploy: v$version\" && git push origin production && git checkout main"
   },
   "repository": {
     "type": "git",

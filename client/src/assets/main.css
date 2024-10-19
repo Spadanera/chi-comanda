@@ -18,16 +18,20 @@ a:visited {
     text-decoration: line-through;
 }
 
-.v-checkbox > .v-input__details {
+.v-checkbox>.v-input__details {
     display: none !important;
 }
 
-.v-switch > .v-input__details {
+.v-switch>.v-input__details {
     display: none !important;
 }
 
 .v-list-item__spacer {
     width: 15px !important;
+}
+
+.no-detail>.v-input__details {
+    display: none !important;
 }
 
 @media screen and (max-width: 600px) {

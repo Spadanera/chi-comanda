@@ -20,25 +20,24 @@ class OrderAPI {
                     tables.name table_name,
                     (CASE WHEN (
                         SELECT COUNT(items.id) FROM items 
-                        INNER JOIN master_items ON master_items.id = items.master_item_id
-                        WHERE order_id = orders.id AND master_items.destination_id IN (${destinationIdsString}) AND IFNULL(done, FALSE) = FALSE
+                        WHERE order_id = orders.id AND items.destination_id IN (${destinationIdsString}) AND IFNULL(done, FALSE) = FALSE
                     ) > 0 THEN 0 ELSE 1 END) done,  
                     (
                         SELECT JSON_ARRAYAGG(JSON_OBJECT(
                             'id', items.id, 
-                            'master_item_id', master_items.id, 
+                            'master_item_id', items.master_item_id, 
                             'note', items.note, 
                             'name', items.name, 
-                            'type', master_items.type, 
-                            'sub_type', master_items.sub_type, 
+                            'order_id', items.order_id, 
+                            'type', items.type, 
+                            'sub_type', items.sub_type, 
                             'price', items.price,
-                            'destination_id', master_items.destination_id,
+                            'destination_id', items.destination_id,
                             'done', items.done,
                             'paid', items.paid
                         )) 
                         FROM items 
-                        INNER JOIN master_items ON master_items.id = items.master_item_id
-                        WHERE order_id = orders.id AND master_items.destination_id IN (${destinationIdsString})
+                        WHERE order_id = orders.id AND items.destination_id IN (${destinationIdsString})
                     ) items
                 FROM orders 
                 INNER JOIN tables ON orders.table_id = tables.id
@@ -64,8 +63,9 @@ class OrderAPI {
         if (order.items) {
             for (let i = 0; i < order.items.length; i++) {
                 let item = order.items[i]
-                order.items[i].id = await db.executeInsert('INSERT INTO items (event_id, order_id, table_id, master_item_id, name, price, note) VALUES (?,?,?,?,?,?,?)'
-                    , [order.event_id, order_id, order.table_id, item.master_item_id, item.name, item.price, item.note || ''])
+                order.items[i].id = await db.executeInsert(`INSERT INTO items (event_id, order_id, table_id, master_item_id, type, sub_type, name, price, note, destination_id) 
+                    VALUES (?,?,?,?,?,?,?,?,?,?)`
+                    , [order.event_id, order_id, order.table_id, item.master_item_id, item.type, item.sub_type, item.name, item.price, item.note || '', item.destination_id])
             }
         }
         order.id = order_id
@@ -80,6 +80,12 @@ class OrderAPI {
             room: "checkout",
             event: "new-order",
             body: table
+        })
+
+        SocketIOService.instance().sendMessage({
+            room: "waiter",
+            event: "reload-table",
+            body: {}
         })
 
         return order.table_id || 0
@@ -102,6 +108,12 @@ class OrderAPI {
             room: "checkout",
             event: "order-completed",
             body: { ...input, order_id }
+        })
+
+        SocketIOService.instance().sendMessage({
+            room: "bar",
+            event: "order-completed",
+            body: { }
         })
 
         return result

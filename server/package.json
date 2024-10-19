@@ -1,10 +1,11 @@
 {
-  "name": "ludo-project-server",
+  "name": "chi-comanda-server",
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --poll ./src/index.ts",
     "build": "rimraf ./dist && tsc --sourceMap false --removeComments true",
+    "build-main": "cd .. && npm run build",
     "start": "node dist/index.js",
     "version": "tsc -v"
   },

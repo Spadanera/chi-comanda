@@ -3,7 +3,7 @@ import { onMounted, ref, computed } from 'vue';
 import { type Event, type Item } from "../../../models/src"
 import Confirm from '@/components/Confirm.vue'
 import Axios from '@/services/client'
-import { groupItems, copy, sortItem } from "@/services/utils"
+import { copy } from "@/services/utils"
 import ItemList from '@/components/ItemList.vue'
 
 const emit = defineEmits(['reload'])
@@ -71,6 +71,19 @@ async function showEvent(event: Event) {
     }
 }
 
+function getExtendedDate(dateString: string): string {
+    const date = new Date(dateString);
+
+    const options: Intl.DateTimeFormatOptions = {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    };
+
+    return date.toLocaleDateString("it-IT", options);
+}
+
 onMounted(() => {
 
 })
@@ -79,7 +92,10 @@ onMounted(() => {
     <v-container>
         <v-row>
             <v-col v-for="event in events" sm="6" cols="12" lg="4">
-                <v-card :subtitle="event.name" :title="event.date.toString().split('T')[0]" @click="showEvent(event)">
+                <v-card :title="getExtendedDate(event.date.toString())" @click="showEvent(event)">
+                    <v-card-subtitle>{{ event.name }} <span v-if="event.status === 'ONGOING'"> - <span
+                                style="font-weight: bold">Incasso attuale: {{ event.currentPaid }}
+                                €</span></span></v-card-subtitle>
                     <v-card-text v-show="event.status !== 'PLANNED'">
                         <v-btn readonly size="small" density="compact" variant="plain">
                             <v-icon>mdi-table-furniture</v-icon> {{ event.tableCount }}
@@ -93,6 +109,9 @@ onMounted(() => {
                         <v-btn readonly size="small" density="compact" variant="plain">
                             <v-icon>mdi-currency-eur</v-icon> {{ event.revenue }}
                         </v-btn>
+                        <v-btn readonly size="small" density="compact" variant="plain">
+                            <v-icon>mdi-cart-percent</v-icon> {{ event.discount * -1 }} €
+                        </v-btn>
                     </v-card-text>
                     <v-card-actions v-if="event.status === 'ONGOING' || event.status === 'PLANNED'">
                         <v-btn text="APRI EVENTO" v-if="event.status === 'PLANNED' && !ongoing" size="small"
@@ -102,9 +121,9 @@ onMounted(() => {
                         <v-btn text="CHIUDI EVENTO" v-if="event.status === 'ONGOING' && event.tablesOpen === 0"
                             size="small" density="compact" variant="plain"
                             @click.stop="closeEventConfirm(event)"></v-btn>
-                        <v-btn text="SONO PRESENTI TAVOLI APERTI" v-if="event.status === 'ONGOING' && event.tablesOpen > 0"
-                            size="small" density="compact" variant="plain" :readonly="true"
-                            @click.stop="closeEventConfirm(event)"></v-btn>
+                        <v-btn text="SONO PRESENTI TAVOLI APERTI"
+                            v-if="event.status === 'ONGOING' && event.tablesOpen > 0" size="small" density="compact"
+                            variant="plain" :readonly="true" @click.stop="closeEventConfirm(event)"></v-btn>
                         <v-btn text="ANNULLA" v-if="event.status === 'ONGOING' && event.tableCount === 0" size="small"
                             density="compact" variant="plain" @click.stop="setEventStatus(event, 'PLANNED')"></v-btn>
                     </v-card-actions>
@@ -136,6 +155,9 @@ onMounted(() => {
                 </v-btn>
                 <v-btn readonly size="small" density="compact" variant="plain">
                     <v-icon>mdi-currency-eur</v-icon> {{ selectedEvent.revenue }}
+                </v-btn>
+                <v-btn readonly size="small" density="compact" variant="plain">
+                    <v-icon>mdi-cart-percent</v-icon> {{ selectedEvent.discount * -1 }} €
                 </v-btn>
 
                 <v-spacer></v-spacer>

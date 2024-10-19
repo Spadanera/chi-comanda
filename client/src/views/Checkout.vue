@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { type Event, type Table, type MasterItem, type Item, ItemTypes as types, type CompleteOrderInput } from "../../../models/src"
+import { type Event, type Table, type Item, ItemTypes as types, type CompleteOrderInput, type MasterTable } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
-import router from '@/router'
 import Axios from '@/services/client'
 import { SnackbarStore, type IUser } from '@/stores'
 import { copy, getIcon, sortItem, sortTables } from "@/services/utils"
@@ -21,11 +20,15 @@ const event = ref<Event>()
 const tables = ref<Table[]>([])
 const selectedTable = ref<Table[]>([])
 const confirm = ref<boolean>(false)
-const confirm2 = ref<boolean>(false)
-const confirm3 = ref<boolean>(false)
 const deleteItemId = ref<number>(0)
 const drawer = ref<boolean>(true)
 const itemToBePaid = ref<number[]>([])
+const tableSheet = ref<boolean>(false)
+const freeTables = ref<MasterTable[]>([])
+const discount = ref<boolean>(false)
+const realPaid = ref<number>(null)
+const partialPaid = ref<boolean>(false)
+const dialogPay = ref<boolean>(false)
 
 const computedSelectedTable = computed(() => {
   let result = copy<Table>((selectedTable.value.length ? selectedTable.value[0] : { items: [] }) as Table)
@@ -43,7 +46,7 @@ const tableTotalOrder = computed(() => {
   else return 0
 })
 const sortedTables = computed(() => tables.value.sort(sortTables))
-const itemToBePaidBill = computed(() => { 
+const itemToBePaidBill = computed(() => {
   if (selectedTable.value.length && selectedTable.value[0].items) {
     return selectedTable.value[0].items.filter((i: Item) => itemToBePaid.value.includes(i.id || 0)).reduce((a: number, i: Item) => a += i.price, 0)
   }
@@ -52,6 +55,30 @@ const itemToBePaidBill = computed(() => {
   }
 })
 const onGoing = computed(() => selectedTable.value[0].items.filter((i: Item) => !i.done).length ? true : false)
+const discounts = computed(() => {
+  return [
+    {
+      discount: "10%",
+      discountAmount: Math.round((partialPaid.value ? itemToBePaidBill.value : tableTotalOrder.value) * 0.9)
+    },
+    {
+      discount: "15%",
+      discountAmount: Math.round((partialPaid.value ? itemToBePaidBill.value : tableTotalOrder.value) * 0.85)
+    },
+    {
+      discount: "20%",
+      discountAmount: Math.round((partialPaid.value ? itemToBePaidBill.value : tableTotalOrder.value) * 0.8)
+    },
+    {
+      discount: "30%",
+      discountAmount: Math.round((partialPaid.value ? itemToBePaidBill.value : tableTotalOrder.value) * 0.7)
+    },
+    {
+      discount: "50%",
+      discountAmount: Math.round((partialPaid.value ? itemToBePaidBill.value : tableTotalOrder.value) * 0.5)
+    }
+  ]
+})
 
 function getSubTypeCount(table: Table, subtype: string[]) {
   if (table && table.items) {
@@ -68,7 +95,7 @@ async function rollbackItem(item: Item) {
 
 async function deleteItemConfirm(item_id: number) {
   deleteItemId.value = item_id;
-  confirm3.value = true
+  confirm.value = true
 }
 
 async function deleteItem() {
@@ -76,13 +103,19 @@ async function deleteItem() {
   tables.value.forEach((table: Table) => {
     table.items = table.items.filter((i: Item) => i.id !== deleteItemId.value)
   })
-  confirm3.value = false
+  confirm.value = false
 }
 
 
 async function completeTable() {
+  if (discount.value) {
+    if (!realPaid.value) {
+      return
+    }
+    const discountAmout = tableTotalOrder.value - realPaid.value
+    await axios.InsertDiscount(event.value.id, selectedTable.value[0].id, discountAmout)
+  }
   await axios.CompleteTable(selectedTable.value[0].id)
-  confirm.value = false
   await getTables()
   if (tables.value.length && tables.value[0].status === 'ACTIVE') {
     selectedTable.value = [tables.value[0]]
@@ -91,20 +124,25 @@ async function completeTable() {
     selectedTable.value = []
   }
   snackbarStore.show("Tavolo chiuso", 3000, 'bottom', 'success')
+  dialogPay.value = false
 }
 
 async function paySelectedItem() {
+  if (discount.value) {
+    if (!realPaid.value) {
+      return
+    }
+    const discountAmout = itemToBePaidBill.value - realPaid.value
+    await axios.InsertDiscount(event.value.id, selectedTable.value[0].id, discountAmout)
+  }
   await axios.PaySelectedItem(selectedTable.value[0].id, itemToBePaid.value)
-  itemToBePaid.value.forEach(i => {
-    selectedTable.value[0].items.find((_i: Item) => _i.id === i).paid = true
-  });
+  await getTables()
   itemToBePaid.value = []
 
-  confirm2.value = false
+  dialogPay.value = false
 }
 
 async function getTables() {
-  loading.value = true
   const _tables = await axios.GetTablesInEvent(event.value?.id || 0)
   _tables.forEach((t: Table) => {
     if (!t.items) {
@@ -113,72 +151,99 @@ async function getTables() {
   })
   tables.value = _tables
   if (tables.value.length && tables.value[0].status === 'ACTIVE') {
-    selectedTable.value = [tables.value[0]]
+    if (selectedTable.value.length === 0) {
+      selectedTable.value = [tables.value[0]]
+    } else {
+      selectedTable.value = [tables.value.find((t: Table) => t.id === selectedTable.value[0].id)]
+    }
   }
   else {
     selectedTable.value = []
   }
-  loading.value = false
+}
+
+async function changeTableSheet() {
+  freeTables.value = await axios.GetFreeTables(event.value.id)
+  tableSheet.value = true
+}
+
+async function changeTable(table_id: number) {
+  await axios.ChangeTable(selectedTable.value[0].id, table_id)
+  await getTables()
+  tableSheet.value = false
+}
+
+function pay(partial: boolean) {
+  partialPaid.value = partial
+  discount.value = false
+  realPaid.value = partial ? itemToBePaidBill.value : tableTotalOrder.value
+  dialogPay.value = true
 }
 
 onMounted(async () => {
+  loading.value = true
   event.value = await axios.GetOnGoingEvent()
-  await getTables()
+  if (event.value.id) {
+    await getTables()
 
-  is = io(window.location.origin, {
-    path: "/socket/socket.io"
-  })
+    is = io(window.location.origin, {
+      path: "/socket/socket.io"
+    })
 
-  is.on('connect', () => {
-    is.emit('join', 'checkout')
-  })
+    is.on('connect', () => {
+      is.emit('join', 'checkout')
+    })
 
-  is.on('disconnect', () => {
+    is.on('disconnect', () => {
 
-  })
+    })
 
-  is.on('connect_error', (err: any) => {
-    snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
-    is.emit('end')
-  })
+    is.on('connect_error', (err: any) => {
+      snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
+      is.emit('end')
+    })
 
-  is.on('new-order', (data: Table) => {
-    const table = tables.value.find((t: Table) => t.id === data.id)
-    if (table) {
-      data.items.forEach((item: Item) => {
-        if (!table.items.find((i: Item) => i.id === item.id)) {
-          table.items.push(item)
+    is.on('new-order', (data: Table) => {
+      const table = tables.value.find((t: Table) => t.id === data.id)
+      if (table) {
+        data.items.forEach((item: Item) => {
+          if (!table.items.find((i: Item) => i.id === item.id)) {
+            table.items.push(item)
+          }
+        });
+      }
+      else {
+        tables.value.push(data)
+        snackbarStore.show("Nuovo tavolo")
+      }
+    })
+
+    is.on('item-removed', (data: number) => {
+      const table = tables.value.find((o: Table) => {
+        if (o.items.find((i: Item) => i.id === data)) {
+          return true
         }
-      });
-    }
-    else {
-      tables.value.push(data)
-      snackbarStore.show("Nuovo tavolo")
-    }
-  })
-
-  is.on('item-removed', (data: number) => {
-    const table = tables.value.find((o: Table) => {
-      if (o.items.find((i: Item) => i.id === data)) {
-        return true
-      }
+      })
+      const _items = copy<Item[]>(table.items.filter((i: Item) => i.id !== data))
+      table.items = _items
     })
-    const _items = copy<Item[]>(table.items.filter((i: Item) => i.id !== data))
-    table.items = _items
-  })
 
-  is.on('order-completed', (data: CompleteOrderInput) => {
-    const table = tables.value.find((t: Table) => t.id === data.table_id)
-    table.items.forEach((i: Item) => {
-      if (data.order_id === i.order_id) {
-        i.done = true
-      }
+    is.on('order-completed', (data: CompleteOrderInput) => {
+      const table = tables.value.find((t: Table) => t.id === data.table_id)
+      table.items.forEach((i: Item) => {
+        if (data.order_id === i.order_id) {
+          i.done = true
+        }
+      })
     })
-  })
+  }
+  loading.value = false
 })
 
 onBeforeUnmount(() => {
-  is.emit('end')
+  if (is) {
+    is.emit('end')
+  }
 })
 </script>
 
@@ -207,9 +272,12 @@ onBeforeUnmount(() => {
     <p>Nessun evento attivo</p>
   </v-container>
   <div v-else>
-    <h3 style="padding-left: 15px; padding-top: 14px;">Cassa</h3>
-    <h5 style="padding-left: 15px; padding-top: 0;" v-if="selectedTable.length">Tavolo {{ selectedTable[0].name }}</h5>
-    <ItemList :showtype="true" subheader="DA PAGARE" v-model="computedSelectedTable.itemsToDo">
+    <v-container>
+      <h3>Cassa</h3>
+      <v-btn @click="changeTableSheet()" style="position: absolute; top: 74px; right: 25px;"
+        v-if="selectedTable.length">Tavolo {{ selectedTable[0].name }}</v-btn>
+    </v-container>
+    <ItemList style="margin-top: 2px;" :showtype="true" subheader="DA PAGARE" v-model="computedSelectedTable.itemsToDo">
       <template v-slot:prequantity="slotProps">
         <v-btn icon="mdi-delete" @click="deleteItemConfirm(slotProps.item.id)" variant="plain"></v-btn>
       </template>
@@ -220,7 +288,9 @@ onBeforeUnmount(() => {
     <v-divider></v-divider>
     <ItemList subheader="PAGATI" v-model="computedSelectedTable.itemsDone" :done="true">
       <template v-slot:postquantity="slotProps">
-        <v-btn variant="plain" icon="mdi-arrow-up-thin" @click="rollbackItem(slotProps.item)"></v-btn>
+        <v-btn variant="plain" v-if="slotProps.item.sub_type !== 'Sconto'" icon="mdi-arrow-up-thin"
+          @click="rollbackItem(slotProps.item)"></v-btn>
+        <v-btn variant="plain" v-else icon="mdi-window-close" @click="deleteItemConfirm(slotProps.item.id)"></v-btn>
       </template>
     </ItemList>
     <v-bottom-navigation>
@@ -229,34 +299,95 @@ onBeforeUnmount(() => {
         Totale: {{ tableTotalOrder }} €
       </v-btn>
       <v-spacer></v-spacer>
-      <v-btn variant="plain" @click="confirm2 = true" v-if="itemToBePaid.length">PARZIALE {{ itemToBePaidBill
+      <v-btn variant="plain" @click="pay(true)" v-if="itemToBePaid.length">PARZIALE {{ itemToBePaidBill
         }}
         €</v-btn>
-      <v-btn class="show-xs" variant="plain" @click="confirm = true"
-        v-if="selectedTable.length && !selectedTable[0].paid" :readonly="onGoing">
+      <v-btn class="show-xs" variant="plain" @click="pay(false)" v-if="selectedTable.length && !selectedTable[0].paid"
+        :readonly="onGoing">
         <span :style="{ opacity: onGoing ? 0.2 : 'inherit' }">CHIUDI TAVOLO</span>
       </v-btn>
-      <v-btn icon="mdi-close-box" class="hide-xs" variant="plain" @click="confirm = true" :readonly="onGoing"
-        v-if="selectedTable.length && !selectedTable[0].paid">
+      <v-btn :style="{ opacity: onGoing ? 0.2 : 'inherit' }" icon="mdi-close-box" class="hide-xs" variant="plain"
+        @click="pay(false)" :readonly="onGoing" v-if="selectedTable.length && !selectedTable[0].paid">
 
       </v-btn>
     </v-bottom-navigation>
-    <Confirm v-model="confirm" text="Sei sicuro chiudere il tavolo e pagare tutti gli elementi rimanenti?">
-      <template v-slot:action>
-        <v-btn text="Conferma" variant="plain" @click="completeTable"></v-btn>
-      </template>
-    </Confirm>
-    <Confirm v-model="confirm2" text="Sei sicuro di procedere con il pagamento degli elementi selezionati?">
-      <template v-slot:action>
-        <v-btn text="Conferma" variant="plain" @click="paySelectedItem"></v-btn>
-      </template>
-    </Confirm>
-    <Confirm v-model="confirm3">
+    <v-dialog v-model="dialogPay" width="400">
+      <v-card>
+        <v-card-title v-if="partialPaid">
+          Pagare elementi selezionati
+        </v-card-title>
+        <v-card-title v-else>
+          Paga l'intero conto
+        </v-card-title>
+        <v-card-subtitle v-if="!partialPaid">
+          A seguito del pagamento il tavolo verrà chiuso
+        </v-card-subtitle>
+        <v-card-text>
+          <v-row v-if="partialPaid">
+            <v-col style="font-size: x-large;">
+              Da pagare: {{ itemToBePaidBill }} €
+            </v-col>
+          </v-row>
+          <v-row v-else>
+            <v-col style="font-size: x-large;">
+              Da pagare: {{ tableTotalOrder }} €
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-checkbox v-model="discount" label="Applicare sconto"></v-checkbox>
+          </v-row>
+          <v-row v-if="discount">
+            <v-text-field :max="partialPaid ? itemToBePaidBill : tableTotalOrder" append-inner-icon="mdi-currency-eur" v-model.number="realPaid" label="Quanto vuoi far pagere" type="number"></v-text-field>
+          </v-row>
+          <v-row v-if="discount">
+            <v-table style="width: 100%;" density="compact">
+              <thead>
+                <td>Sconto</td>
+                <td>Da pagare</td>
+              </thead>
+              <tbody style="cursor: pointer">
+                <tr v-ripple @click="realPaid = disc.discountAmount" v-for="disc in discounts">
+                  <td>{{ disc.discount }}</td>
+                  <td>{{ disc.discountAmount }} €</td>
+                </tr>
+              </tbody>
+            </v-table>
+          </v-row>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn variant="plain" @click="dialogPay = false">ANNULLA</v-btn>
+          <v-spacer></v-spacer>
+          <v-btn v-if="partialPaid" variant="plain" @click="paySelectedItem">CONFERMA</v-btn>
+          <v-btn v-else variant="plain" @click="completeTable">CONFERMA</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <Confirm v-model="confirm">
       <template v-slot:action>
         <v-btn text="Conferma" variant="plain" @click="deleteItem"></v-btn>
       </template>
     </Confirm>
   </div>
+  <v-bottom-sheet scrollable v-model="tableSheet">
+    <v-card class="table-selection">
+      <v-card-title>
+        Seleziona il nuovo tavolo
+      </v-card-title>
+      <v-card-text>
+        <v-row>
+          <v-col v-for="table in freeTables" cols="4">
+            <v-card @click="changeTable(table.table_id)" height="50px" style="padding-top: 10px;">
+              {{ table.table_name }}
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn @click="tableSheet = false">ANNULLA</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-bottom-sheet>
 </template>
 
 <style scoped>
@@ -264,5 +395,10 @@ onBeforeUnmount(() => {
   #drawer-button {
     display: none;
   }
+}
+
+.table-selection .v-card {
+  text-align: center;
+  font-size: large;
 }
 </style>

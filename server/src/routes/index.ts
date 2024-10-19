@@ -86,9 +86,39 @@ apiRouter.get("/events/:id/tables/available", async (req: Request, res: Response
     }
 })
 
+apiRouter.get("/events/:id/tables/free", async (req: Request, res: Response) => {
+    try {
+        const result = await tableApi.getFreeTable(+req.params.id)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
 apiRouter.get("/events/:id/tables", async (req: Request, res: Response) => {
     try {
         const result = await tableApi.getActiveTable(+req.params.id)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.post("/events/:eventid/tables/:tableid/discount/:discount", async (req: Request, res: Response) => {
+    try {
+        const result = await tableApi.insertDiscount(+req.params.eventid, +req.params.tableid, +req.params.discount)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.put("/tables/:id/change/:masterid", async (req: Request, res: Response) => {
+    try {
+        const result = await tableApi.changeTable(+req.params.id, +req.params.masterid)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)

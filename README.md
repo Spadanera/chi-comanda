@@ -9,7 +9,7 @@ To run the application it is necessary docker and docker-compose installed on yo
 First of all, clone this repository. After that run the following command in the root folder:
 
 ```
-npm install
+npm build
 ```
 
 ```
@@ -28,5 +28,3 @@ There are 4 services defined in docker compose:
 2. server: node:20-alpine image that hosts the API 
 3. server-database: MySql image
 4. proxy: nginx image that works as proxy between client and server
-
-test

@@ -28,9 +28,11 @@ export function groupItems(orderItems: Item[]): Item[] {
             let found = a.find((_i: Item) => (i.master_item_id === _i.master_item_id && i.note === _i.note && i.name === _i.name))
             if (found) {
                 found.quantity++
+                found.grouped_ids.push(i.id)
             }
             else {
                 i.quantity = 1
+                i.grouped_ids = [i.id]
                 a.push(i)
             }
             return a
@@ -59,6 +61,10 @@ export function getIcon(key: string): string {
             return "mdi-taco"
         case "Panino":
             return "mdi-food-hot-dog"
+        case "Fuori Menu":
+            return "mdi-help-circle-outline"
+        case "Sconto":
+            return "mdi-cart-percent"
         default:
             return "mdi-plus"
     }
@@ -94,7 +100,7 @@ export function sortAvailableTable(a: AvailableTable, b: AvailableTable): number
 export function sortOrder(a: Order, b: Order): number {
     if (a.done) {
         if (b.done) {
-            return a.id - b.id
+            return b.id - a.id
         }
         else {
             return 1

@@ -60,7 +60,8 @@ CREATE TABLE `orders` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `event_id` integer,
   `table_id` integer,
-  `done` bool
+  `done` bool,
+  `order_date` datetime
 );
 
 CREATE TABLE `destinations` (
@@ -86,11 +87,14 @@ CREATE TABLE `items` (
   `table_id` integer,
   `order_id` integer,
   `master_item_id` integer,
+  `type` varchar(255),
+  `sub_type` varchar(255),
   `name` VARCHAR(255),
   `price` DOUBLE,
   `note` varchar(255),
   `done` bool,
-  `paid` bool
+  `paid` bool,
+  `destination_id` integer
 );
 
 CREATE TABLE `audit` (
@@ -121,8 +125,6 @@ ALTER TABLE `audit` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 ALTER TABLE `audit` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
 
 ALTER TABLE `audit` ADD FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`);
-
-ALTER TABLE `items` ADD FOREIGN KEY (`master_item_id`) REFERENCES `master_items` (`id`);
 
 ALTER TABLE `master_items` ADD FOREIGN KEY (`destination_id`) REFERENCES `destinations` (`id`);
 
@@ -235,6 +237,8 @@ INSERT INTO master_items (name, type, sub_type, price, destination_id, available
 INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Succo Pesca', 'Bevanda', 'Analcolico', 3, 1, true, 'ACTIVE');
 INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Succo ACE', 'Bevanda', 'Analcolico', 3, 1, true, 'ACTIVE');
 INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Succo Ananas', 'Bevanda', 'Analcolico', 3, 1, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Acqua Naturale', 'Bevanda', 'Analcolico', 2, 1, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Acqua Frizzante', 'Bevanda', 'Analcolico', 2, 1, true, 'ACTIVE');
 
 INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Cuba Libre', 'Bevanda', 'Cocktail', 5, 1, true, 'ACTIVE');
 INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Git Tonic', 'Bevanda', 'Cocktail', 5, 1, true, 'ACTIVE');

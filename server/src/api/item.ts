@@ -29,7 +29,15 @@ class ItemApi {
     }
 
     async update(item: Item): Promise<number> {
-        return await db.executeUpdate('UPDATE items SET DONE = ?, PAID = ? WHERE id = ?', [item.done, item.paid, item.id])
+        const result = await db.executeUpdate('UPDATE items SET DONE = ?, PAID = ? WHERE id = ?', [item.done, item.paid, item.id])
+
+        SocketIOService.instance().sendMessage({
+            rooms: ["bar"],
+            event: "item-updated",
+            body: item
+        })
+
+        return result
     }
 }
 

@@ -41,23 +41,27 @@ onMounted(async () => {
       is.emit('end')
     })
 
-    is.on('new-table-available', async () => {
+    is.on('reload-table', async () => {
       tables.value = await axios.GetAvailableTables(event.value.id)
-      snackbarStore.show("Nuovo tavolo disponibile")
+      snackbarStore.show("Tavoli aggiornati")
     })
   }
   loading.value = false
 })
 
 onBeforeUnmount(() => {
-  is.emit('end')
+  if (is) {
+    is.emit('end')
+  }
 })
 </script>
 
 <template>
   <main>
     <v-skeleton-loader v-if="loading" type="card"></v-skeleton-loader>
-    <p v-if="!event?.id">Nessun evento attivo</p>
+    <v-container v-else-if="!event?.id">
+      <p>Nessun evento attivo</p>
+    </v-container>
     <v-container v-else>
       <v-row>
         <v-col>

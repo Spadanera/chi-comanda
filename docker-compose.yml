@@ -5,6 +5,7 @@ services:
       - 8080:8080
     volumes:
       - ./client:/data
+      - /data/node_modules
       - ./models:/models
     environment:
       - VUE_APP_API=rest
@@ -27,8 +28,15 @@ services:
     environment:
       MYSQL_HOST: 'server-database'
       MYSQL_DATABASE: 'ebdb'
+      MYSQL_PORT: '3306'
       MYSQL_USER: 'user'
       MYSQL_PASSWORD: 'password'
+      MYSQL_ENV: 'PRD'
+      MYSQL_HOST_STG: ''
+      MYSQL_PORT_STG: ''
+      MYSQL_DATABASE_STG: ''
+      MYSQL_USER_STG: ''
+      MYSQL_PASSWORD_STG: ''
       SECRET: 'pippopluto'
       PORT: 3000
     networks:
