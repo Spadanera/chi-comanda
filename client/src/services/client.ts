@@ -64,7 +64,6 @@ export default class Axios {
                     userStore.logout()
                     router.push('/login')
                 } else {
-                    // Show a generic error message
                     const snackbar = SnackbarStore()
                     snackbar.show("Si è verificare un errore", 3000, 'top', 'error')
                 }

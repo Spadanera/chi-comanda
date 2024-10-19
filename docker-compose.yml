@@ -37,6 +37,9 @@ services:
       MYSQL_DATABASE_STG: ''
       MYSQL_USER_STG: ''
       MYSQL_PASSWORD_STG: ''
+      MAIL_USER: 'ziro84@gmail.com'
+      MAIL_FROM: 'info-dev@chicomanda.com'
+      MAIL_PASSWORD: 'xnlmzaztoswilvjh'
       SECRET: 'pippopluto'
       PORT: 3000
     networks:

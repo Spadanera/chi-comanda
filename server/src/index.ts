@@ -4,8 +4,8 @@ import path from "path"
 import passport from "passport"
 import history from "connect-history-api-fallback"
 import * as passportStrategy from "passport-local"
-import UserApi from "./api/user"
 import apiRouter from "./routes"
+import publicApiRouter from "./routes/public"
 import { createServer } from 'http'
 import { SocketIOService } from "./socket"
 import { User } from "../../models/src"
@@ -47,8 +47,10 @@ passport.use(new passportStrategy.Strategy(
             if (!email) { done(null, false) }
             const user = await userApi.getByEmailAndPassword(email, password)
             done(null, user)
-        } catch (e) {
-            done(e);
+        } catch (e:any) {
+            done(e, false, {
+                message: e.message
+            });
         }
     }));
 
@@ -63,7 +65,12 @@ passport.deserializeUser((user: User, done) => {
 
 
 app.post("/api/login", passport.authenticate('local'), async (req: Request, res: Response) => {
-    res.json(req.user)
+    console.log(req.isAuthenticated())
+    if (req.isAuthenticated()) {
+        res.json(req.user)
+    } else {
+        res.status(401).json("Credenziali non valide")
+    }
 })
 
 app.post("/api/logout", async (req: Request, res: Response) => {
@@ -88,6 +95,8 @@ app.use('/api', (req: Request, res: Response, next: any) => {
         res.status(401).json('Unauthorized')
     }
 }, apiRouter)
+
+app.use('public', publicApiRouter)
 
 app.use(express.static(path.join(__dirname, 'static')))
 

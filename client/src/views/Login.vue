@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import Axios from '@/services/client'
 import { UserStore } from '@/stores'
-import router from '@/router'
+import { SnackbarStore } from '@/stores';
 
 const userStore = UserStore()
 const axios: Axios = new Axios()
@@ -15,8 +15,12 @@ const credentials = ref({
 })
 
 async function login() {
-  await axios.Login(credentials.value.email, credentials.value.password)
-  emit("login")
+  try {
+    await axios.Login(credentials.value.email, credentials.value.password)
+    emit("login")
+  } catch (error) {
+    console.log(error)
+  }
 }
 </script>
 
@@ -24,7 +28,7 @@ async function login() {
   <main>
     <v-container>
       <v-row justify="center">
-        <v-col sm="8" cols="12" lg="4">
+        <v-col sm="8" cols="12" lg="3">
           <v-card>
             <v-card-text style="text-align: center;">
               <img alt="Chi Comanda" class="logo" src="@/assets/chicomanda.png"

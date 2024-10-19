@@ -4,6 +4,7 @@ import { User } from "../../../models/src"
 import { type Invitation } from '../../../models/src/index';
 import { getCurrentDateTimeInItaly } from "../utils/helper";
 import { v4 as uuidv4 } from 'uuid';
+import hashPassword from "../utils/crypt";
 
 class UserApi {
     constructor() {
@@ -14,9 +15,13 @@ class UserApi {
     }
 
     async getByEmailAndPassword(email: string, password: string): Promise<User> {
-        return await db.queryOne<User>(`SELECT id, email, username, (select json_arrayagg(name) FROM roles
+        const result = await db.queryOne<User>(`SELECT id, email, username, (select json_arrayagg(name) FROM roles
             INNER JOIN user_role on roles.id = user_role.role_id WHERE user_id = users.id) as roles
-            FROM users WHERE email = ? AND password = ?`, [email, password])
+            FROM users WHERE email = ? AND password = ?`, [email, await hashPassword(password)])
+        if (!result.email) {
+            throw new Error("Credenziali invalide")
+        }
+        return result
     }
 
     async getByEmail(email: string): Promise<User> {
@@ -32,7 +37,7 @@ class UserApi {
     }
 
     async update(user: User): Promise<number> {
-        return await db.executeUpdate('UPDATE users SET email = ?, username = ?, password = ? WHERE id = ?', [user.email, user.username, user.password])
+        return await db.executeUpdate('UPDATE users SET email = ?, username = ?, password = ? WHERE id = ?', [user.email, await hashPassword(user.username), user.password])
     }
 
     async inviteUser(user: User): Promise<number> {
@@ -68,19 +73,22 @@ class UserApi {
 
 
     async acceptInvitation(invitation: Invitation): Promise<number> {
-        const _invitation: Invitation = await db.queryOne("SELECT * FROM invitations WHERE token = ? AND email = ?", [invitation.token, invitation.email])
-        if (_invitation.id && invitation.email && !(await this.checkUserExists(invitation.email))) {
-            return await db.executeTransaction([
-                "INSERT INTO users (username, email, password, creation_date, status) VALUES (?,?,?,?,?)",
-                "DELETE FROM invitations WHERE id = ?"
-            ], [
-                [invitation.username, invitation.email, invitation.password, getCurrentDateTimeInItaly(), 'ACTIVE'],
-                [_invitation.id]
-            ])
+        if (invitation.password) {
+            const _invitation: Invitation = await db.queryOne("SELECT * FROM invitations WHERE token = ? AND email = ?", [invitation.token, invitation.email])
+            if (_invitation.id && invitation.email && !(await this.checkUserExists(invitation.email))) {
+                return await db.executeTransaction([
+                    "INSERT INTO users (username, email, password, creation_date, status) VALUES (?,?,?,?,?)",
+                    "DELETE FROM invitations WHERE id = ?"
+                ], [
+                    [invitation.username, invitation.email, await hashPassword(invitation.password), getCurrentDateTimeInItaly(), 'ACTIVE'],
+                    [_invitation.id]
+                ])
+            }
+            else {
+                return 0
+            }
         }
-        else {
-            return 0
-        }
+        throw new Error("Missing password")
     }
 
     async askResetPassword(invitation: Invitation): Promise<number> {
