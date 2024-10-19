@@ -89,6 +89,7 @@ class OrderAPI {
             }
         }
         order.order_date = getCurrentDateTimeInItaly()
+        order.order_date = order.order_date?.replace(' 24:', ' 00:') 
         const order_id = await db.executeInsert('INSERT INTO orders (event_id, table_id, order_date) VALUES (?,?,?)', [order.event_id, order.table_id, order.order_date])
         if (order.items) {
             for (let i = 0; i < order.items.length; i++) {
