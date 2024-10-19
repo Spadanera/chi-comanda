@@ -1,4 +1,4 @@
-import db from "../utils/db"
+import db from "../db"
 import { Event } from "../../../models/src"
 
 class EventAPI {

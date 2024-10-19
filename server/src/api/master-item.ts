@@ -1,4 +1,4 @@
-import db from "../utils/db"
+import db from "../db"
 import { Item, MasterItem } from "../../../models/src"
 
 class MasterItemsApi {

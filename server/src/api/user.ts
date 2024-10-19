@@ -1,4 +1,4 @@
-import db from "../utils/db"
+import db from "../db"
 import sendEmail from "../utils/mail"
 import { User } from "../../../models/src"
 import { type Invitation } from '../../../models/src/index';

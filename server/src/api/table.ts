@@ -1,4 +1,4 @@
-import db from "../utils/db"
+import db from "../db"
 import { MasterTable, Table } from "../../../models/src"
 import { SocketIOService } from "../socket"
 

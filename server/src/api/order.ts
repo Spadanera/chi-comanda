@@ -1,4 +1,4 @@
-import db from "../utils/db"
+import db from "../db"
 import { Item, Order, CompleteOrderInput } from "../../../models/src"
 import { SocketIOService } from "../socket"
 import tableApi from "./table"

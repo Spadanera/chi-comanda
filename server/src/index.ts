@@ -9,8 +9,8 @@ import apiRouter from "./routes"
 import { createServer } from 'http'
 import { SocketIOService } from "./socket"
 import { User } from "../../models/src"
-import db from "./utils/db"
-import connection from "./utils/connection"
+import db from "./db"
+import connection from "./db/connection"
 import userApi from "./api/user"
 
 const AUTH_COOKIE_NAME: string = 'lp-session'
