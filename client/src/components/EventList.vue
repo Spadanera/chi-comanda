@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
-import { type Event, type Item } from "../../../models/src"
+import { type Event, type Item, type Table, ItemTypes as types } from "../../../models/src"
 import Confirm from '@/components/Confirm.vue'
 import Axios from '@/services/client'
-import { copy } from "@/services/utils"
-import ItemList from '@/components/ItemList.vue'
+import { copy, sortItem, getIcon } from "@/services/utils"
+import EventDetails from '@/components/EventDetails.vue'
 
 const emit = defineEmits(['reload'])
 const props = defineProps(['ongoing'])
@@ -16,20 +16,19 @@ const events = defineModel<Event[]>({ default: [] })
 const confirmCloseEvent = ref<boolean>(false)
 const confirmDeleteEvent = ref<boolean>(false)
 const selectedEvent = ref<Event>(null)
+const selectedTable = ref<Table>(null)
 const bottomSheet = ref<boolean>(null)
+const tab = ref<number>(0)
+const drawer = ref<boolean>(true)
 
-const beverageItems = computed<Item[]>(() => {
-    if (selectedEvent.value) {
-        return selectedEvent.value.items.filter((i: Item) => i.type === 'Bevanda')
+const items = computed<Item[]>(() => {
+    const _items: Item[] = []
+    if (selectedEvent.value && selectedEvent.value.tables) {
+        selectedEvent.value.tables.forEach((t: Table) => {
+            _items.push(...t.items)
+        })
     }
-    return [] as Item[]
-})
-
-const foodItems = computed<Item[]>(() => {
-    if (selectedEvent.value) {
-        return selectedEvent.value.items.filter((i: Item) => i.type === 'Cibo')
-    }
-    return [] as Item[]
+    return _items
 })
 
 function closeEventConfirm(event: Event) {
@@ -66,7 +65,7 @@ async function showEvent(event: Event) {
     if (event.status !== 'PLANNED') {
         selectedEvent.value = copy<Event>(event)
         const _event: Event = await axios.GetEvent(event.id)
-        selectedEvent.value.items = _event.items
+        selectedEvent.value.tables = _event.tables
         bottomSheet.value = true
     }
 }
@@ -132,38 +131,7 @@ onMounted(() => {
         </v-row>
     </v-container>
     <v-bottom-sheet scrollable v-model="bottomSheet">
-        <v-card :title="selectedEvent.date.toString().split('T')[0]" :subtitle="selectedEvent.name">
-            <v-card-text>
-                <v-row>
-                    <v-col style="padding: 0" sm="6" cols="12">
-                        <ItemList v-model="beverageItems" subheader="Bevanda"></ItemList>
-                    </v-col>
-                    <v-col style="padding: 0;" sm="6" cols="12">
-                        <ItemList v-model="foodItems" subheader="Cibo"></ItemList>
-                    </v-col>
-                </v-row>
-            </v-card-text>
-            <v-card-actions>
-                <v-btn readonly size="small" density="compact" variant="plain">
-                    <v-icon>mdi-table-furniture</v-icon> {{ selectedEvent.tableCount }}
-                </v-btn>
-                <v-btn readonly size="small" density="compact" variant="plain">
-                    <v-icon>mdi-beer</v-icon> {{ selectedEvent.beverageCount }}
-                </v-btn>
-                <v-btn readonly size="small" density="compact" variant="plain">
-                    <v-icon>mdi-hamburger</v-icon> {{ selectedEvent.foodCount }}
-                </v-btn>
-                <v-btn readonly size="small" density="compact" variant="plain">
-                    <v-icon>mdi-currency-eur</v-icon> {{ selectedEvent.revenue }}
-                </v-btn>
-                <v-btn readonly size="small" density="compact" variant="plain">
-                    <v-icon>mdi-cart-percent</v-icon> {{ selectedEvent.discount * -1 }} €
-                </v-btn>
-
-                <v-spacer></v-spacer>
-                <v-btn text="Chiudi" variant="plain" @click="bottomSheet = false"></v-btn>
-            </v-card-actions>
-        </v-card>
+        <EventDetails v-model="selectedEvent" @close="bottomSheet = false"></EventDetails>
     </v-bottom-sheet>
     <Confirm v-model="confirmCloseEvent">
         <template v-slot:action>
