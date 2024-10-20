@@ -1,5 +1,5 @@
 import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance, type AxiosProgressEvent } from 'axios'
-import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput } from "../../../models/src"
+import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination } from "../../../models/src"
 import router from '@/router'
 import { UserStore, SnackbarStore, type IUser, ProgressStore } from '@/stores'
 import type { StoreDefinition } from 'pinia'
@@ -142,7 +142,7 @@ export default class Axios {
     }
 
     async GetOrdersInEvent(event_id: number, destinations_ids: string): Promise<Order[]> {
-        return await this.get<Order>(`/orders/${event_id}/${destinations_ids}`)
+        return await this.get<Order>(`/orders/${event_id}/[${destinations_ids}]`)
     }
 
     async GetTablesInEvent(event_id: number): Promise<Table[]> {
@@ -207,6 +207,18 @@ export default class Axios {
 
     async EditMasterItems(masterItem: MasterItem): Promise<number> {
         return await this.put<MasterItem>("/master-items", masterItem);
+    }
+
+    async GetDestinations(): Promise<Destination[]> {
+        return await this.get<Destination>("/destinations");
+    }
+
+    async CreateDestination(destination: Destination): Promise<number> {
+        return await this.post<Destination>("/destinations", destination);
+    }
+
+    async EditDestination(destination: Destination): Promise<number> {
+        return await this.put<Destination>("/destinations", destination);
     }
 
     async Login(email: string, password: string): Promise<void> {

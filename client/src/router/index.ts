@@ -61,6 +61,15 @@ const router = createRouter({
           meta: {
             allowedRole: 'admin'
           },
+        },
+        {
+          path: "destinations",
+          name: "destinations",
+          component: () => import('@/views/admin/Destinations.vue'),
+          props: true,
+          meta: {
+            allowedRole: 'admin'
+          },
         }
       ]
     },
@@ -83,25 +92,12 @@ const router = createRouter({
       }
     },
     {
-      path: '/bartender',
+      path: '/bartender/:destinations/:pagetitle',
       name: 'Bartender',
       component: () => import('@/views/BarTender.vue'),
-      props: {
-        destinations: '[1, 2]'
-      },
+      props: true,
       meta: {
         allowedRole: 'bartender'
-      }
-    },
-    {
-      path: '/kitchen',
-      name: 'Kitchen',
-      component: () => import('@/views/BarTender.vue'),
-      props: {
-        destinations: '[3]'
-      },
-      meta: {
-        allowedRole: 'kitchen'
       }
     },
     {
@@ -119,7 +115,8 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const snackbarStore = SnackbarStore()
   const userStore = UserStore()
-  const user = await userStore.checkAuthentication()
+  
+  const user = userStore.user.id ? userStore.user : await userStore.checkAuthentication()
   if (user.id && to.name === 'Login') {
     next({ name: "Home" })
   }

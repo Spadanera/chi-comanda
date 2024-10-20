@@ -146,7 +146,7 @@ onMounted(async () => {
                 <v-select :items="Destinations" label="Destinazione" item-value="id" item-title="name"
                   :rules="requiredRule" v-model="selectedItem.destination_id">
                   <template v-slot:item="{ props, item }">
-                    <v-list-item v-bind="props" :subtitle="item.raw.location" :title="item.raw.name"></v-list-item>
+                    <v-list-item v-bind="props" :title="item.raw.name"></v-list-item>
                   </template>
                 </v-select>
               </v-col>

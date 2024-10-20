@@ -6,6 +6,7 @@ import itemApi from "../api/item"
 import masterItemsApi from "../api/master-item"
 import masterTableApi from "../api/master-table"
 import userApi from "../api/user"
+import destinationApi from "../api/destination"
 import { CompleteOrderInput } from "../../../models/src"
 
 const apiRouter: Router = router()
@@ -414,6 +415,52 @@ apiRouter.post("/master-tables", async (req: Request, res: Response) => {
 apiRouter.put("/master-tables", async (req: Request, res: Response) => {
     try {
         const result = await masterTableApi.update(req.body)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+// destination API
+apiRouter.get("/destinations", async (req: Request, res: Response) => {
+    try {
+        const result = await destinationApi.getAll()
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.get("/destinations/:id", async (req: Request, res: Response) => {
+    try {
+        const result = await destinationApi.get(+req.params.id)
+        if (result && result.length) {
+            res.status(200).json(result[0])
+        }
+        else {
+            res.status(200).json(0)
+        }
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.post("/destinations", async (req: Request, res: Response) => {
+    try {
+        const result = await destinationApi.create(req.body)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.put("/destinations", async (req: Request, res: Response) => {
+    try {
+        const result = await destinationApi.update(req.body)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)

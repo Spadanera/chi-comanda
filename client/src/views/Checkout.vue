@@ -249,7 +249,7 @@ onBeforeUnmount(() => {
 
 <template>
   <v-navigation-drawer v-model="drawer" mobile-breakpoint="sm">
-    <RouterLink to="/waiter?origin=checkout">
+    <RouterLink to="/waiter?origin=/checkout">
       <v-btn style="margin-top: 8px; margin-left: 15px;">Nuovo Ordine</v-btn>
     </RouterLink>
     <v-list v-model:selected="selectedTable" lines="two">
