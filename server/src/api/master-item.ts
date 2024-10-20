@@ -9,7 +9,7 @@ class MasterItemsApi {
         return await db.query(`SELECT master_items.*, destinations.name destination
             FROM master_items
             INNER JOIN destinations ON master_items.destination_id = destinations.id
-            WHERE status = 'ACTIVE'`
+            WHERE master_items.status = 'ACTIVE'`
             , [])
     }
 

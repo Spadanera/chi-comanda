@@ -201,5 +201,6 @@ export interface MasterItem extends Repository {
 export interface Destination extends Repository {
   id?: number
   name?: string
-  location?: string
+  status?: string
+  canDelete?: number
 }

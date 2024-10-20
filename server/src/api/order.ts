@@ -21,16 +21,22 @@ function getCurrentDateTimeInItaly(): string {
     const month = parts.find(part => part.type === 'month')?.value;
     const day = parts.find(part => part.type === 'day')?.value;
 
-    const hour = parts.find(part => part.type === 'hour')?.value;
+    let hour = parts.find(part => part.type === 'hour')?.value;
     const minute = parts.find(part => part.type === 'minute')?.value;
     const second = parts.find(part => part.type === 'second')?.value;
 
+    if (hour === '24') {
+        hour = '00'
+    }
 
-    if (year && month && day && hour && minute && second) {
-        return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
-    } else {
-        // Handle the case where some parts are missing (e.g., throw an error or return a default value)
-        throw new Error("Failed to format date correctly.");
+    const dateRegex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) (0\d|1\d|2[0-3]):[0-5]\d:[0-5]\d$/;
+    const result = `${year}-${month}-${day} ${hour}:${minute}:${second}`
+
+    if (dateRegex.test(result)) {
+        return result
+    }
+    else {
+        return '2024-01-01 00:00:00'
     }
 }
 
@@ -89,7 +95,6 @@ class OrderAPI {
             }
         }
         order.order_date = getCurrentDateTimeInItaly()
-        order.order_date = order.order_date?.replace(' 24:', ' 00:') 
         const order_id = await db.executeInsert('INSERT INTO orders (event_id, table_id, order_date) VALUES (?,?,?)', [order.event_id, order.table_id, order.order_date])
         if (order.items) {
             for (let i = 0; i < order.items.length; i++) {

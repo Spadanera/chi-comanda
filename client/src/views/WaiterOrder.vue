@@ -9,7 +9,7 @@ import ItemList from "@/components/ItemList.vue"
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const origin = route.query.origin ? `/${route.query.origin}` : '/waiter'
+const origin = route.query.origin ? `${route.query.origin}` : '/waiter'
 const axios = new Axios()
 const user = defineModel<IUser>()
 const snackbarStore = SnackbarStore()
@@ -284,7 +284,7 @@ onMounted(async () => {
               <v-select :items="Destinations" label="Destinazione" item-value="id" item-title="name"
                 :rules="requiredRule" v-model="extraItem.destination_id">
                 <template v-slot:item="{ props, item }">
-                  <v-list-item v-bind="props" :subtitle="item.raw.location" :title="item.raw.name"></v-list-item>
+                  <v-list-item v-bind="props" :title="item.raw.name"></v-list-item>
                 </template>
               </v-select>
             </v-col>
