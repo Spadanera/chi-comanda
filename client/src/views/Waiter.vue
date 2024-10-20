@@ -37,7 +37,7 @@ onMounted(async () => {
     })
 
     is.on('connect_error', (err: any) => {
-      snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
+      // snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
       is.emit('end')
     })
 

@@ -16,7 +16,7 @@ const snackbarStore = SnackbarStore()
 
 const emit = defineEmits(['login', 'reload'])
 
-const props = defineProps(['destinations'])
+const props = defineProps(['destinations', 'pagetitle'])
 
 const loading = ref<boolean>(true)
 const event = ref<Event>()
@@ -27,9 +27,8 @@ const selectedOrder = ref<Order[]>([])
 const confirm2 = ref<boolean>(false)
 const drawer = ref<boolean>(true)
 const audio = ref(null);
-const origin = props.destinations.includes(3) ? 'kitchen' : 'bartender'
+const origin = window.location.pathname
 
-const pageTitle = computed(() => Destinations.find((d: Destination) => props.destinations.includes(d.id)).name)
 const itemsToDo = computed(() => {
   if (selectedOrder.value.length) {
     return groupItems(selectedOrder.value[0].items.filter((i: Item) => !i.done))
@@ -174,7 +173,12 @@ function getMinutesPassed(datetimeString: string): number {
 function calculateMinPassed() {
   orders.value.forEach((o: Order) => {
     if (!o.done) {
-      o.minPassed = getMinutesPassed(o.order_date)
+      if (o.order_date !== '2024-01-01T00:00:00.000Z') {
+        o.minPassed = getMinutesPassed(o.order_date)
+      }
+      else {
+        o.minPassed = -1
+      }
     }
   })
 }
@@ -204,8 +208,8 @@ onMounted(async () => {
     })
 
     is.on('new-order', (data: Order) => {
-      if (data.items.filter((i: Item) => props.destinations.includes(i.destination_id)).length) {
-        data.items = data.items?.filter((i: Item) => props.destinations.includes(i.destination_id))
+      if (data.items.filter((i: Item) => props.destinations === i.destination_id).length) {
+        data.items = data.items?.filter((i: Item) => props.destinations === i.destination_id)
         if (data.items?.length) {
           orders.value.push(data)
           calculateMinPassed()
@@ -275,7 +279,7 @@ onBeforeUnmount(() => {
         :style="{ opacity: !order.done ? 'inherit' : 0.3 }">
         <v-list-item-title>
           <span :class="{ done: order.done }">Tavolo {{ order.table_name }}</span>
-          <v-btn variant="plain" v-if="!order.done">
+          <v-btn variant="plain" v-if="!order.done && order.minPassed > 0">
             {{ order.minPassed }} <span style="text-transform: lowercase;">m</span>
           </v-btn>
         </v-list-item-title>
@@ -289,12 +293,12 @@ onBeforeUnmount(() => {
   </v-navigation-drawer>
   <v-skeleton-loader type="card" v-if="loading"></v-skeleton-loader>
   <v-container v-else-if="!event?.id">
-    <h3>{{ pageTitle }}</h3>
+    <h3>{{ props.pagetitle }}</h3>
     <p>Nessun evento attivo</p>
   </v-container>
   <template v-else>
     <v-container>
-      <h3>{{ pageTitle }} <span v-if="selectedOrder.length"> - Tavolo {{ selectedOrder[0].table_name }}</span></h3>
+      <h3>{{ props.pagetitle }} <span v-if="selectedOrder.length"> - Tavolo {{ selectedOrder[0].table_name }}</span></h3>
     </v-container>
     <ItemList :quantitybefore="true" :showtype="true" subheader="DA FARE" v-model="itemsToDo">
       <template v-slot:prequantity="slotProps">

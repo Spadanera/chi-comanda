@@ -26,19 +26,25 @@ const navigationItems = ref<NavigationItem[]>([
     title: "Tavoli",
     prependIcon: "mdi-table-furniture",
     to: "tables",
-    value: 2
+    value: 1
   },
   {
     title: "Menu",
     prependIcon: "mdi-menu",
     to: "items",
-    value: 3
+    value: 2
   },
   {
     title: "Utenti",
     prependIcon: "mdi-account-group",
     to: "users",
-    value: 1
+    value: 3
+  },
+  {
+    title: "Destinazioni",
+    prependIcon: "mdi-send-check",
+    to: "destinations",
+    value: 4
   },
 ])
 

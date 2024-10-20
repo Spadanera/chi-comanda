@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onBeforeMount } from 'vue';
-import { UserStore, type IUser } from '@/stores'
+import { ref, computed, onBeforeMount, onMounted } from 'vue';
+import { type IUser } from '@/stores'
+import { type Destination } from '../../../models/src';
+import Axios from '@/services/client'
 
 interface Role {
   title: string
@@ -9,7 +11,9 @@ interface Role {
   role: string
 }
 
-const roles:Role[] = [
+const axios = new Axios()
+
+const roles = ref<Role[]>([
   {
     title: 'Amministrazione',
     route: "/admin",
@@ -27,27 +31,27 @@ const roles:Role[] = [
     route: "/waiter",
     text: "Inviare ordini al bar e alla cucina",
     role: "waiter"
-  },
-  {
-    title: 'Bar',
-    route: "/bartender",
-    text: "Preparazione bevande e nachos",
-    role: "bartender"
-  },
-  {
-    title: 'Cucina',
-    route: "/kitchen",
-    text: "Preparazione piade e panini",
-    role: "kitchen"
-  },
-]
+  }
+])
 
 const emit = defineEmits(['login', 'reload'])
 
 const user = defineModel<IUser>()
 
 const filteredRole = computed(() => {
-  return roles.filter(r => user.value?.roles?.includes(r.role))
+  return roles.value.filter(r => user.value?.roles?.includes(r.role))
+})
+
+onMounted(async () => {
+  const destinations = await axios.GetDestinations()
+  roles.value.push(...(destinations.map((d:Destination) => {
+    return {
+      title: d.name,
+      route: `/bartender/${[d.id]}/${d.name}`,
+      text: "Preparazione delle comande",
+      role: "bartender"
+    } as Role
+  })))
 })
 
 onBeforeMount(() => {
