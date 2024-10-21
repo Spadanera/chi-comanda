@@ -1,5 +1,5 @@
 import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance, type AxiosProgressEvent } from 'axios'
-import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination } from "../../../models/src"
+import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation } from "../../../models/src"
 import router from '@/router'
 import { UserStore, SnackbarStore, type IUser, ProgressStore } from '@/stores'
 import type { StoreDefinition } from 'pinia'
@@ -219,6 +219,41 @@ export default class Axios {
 
     async EditDestination(destination: Destination): Promise<number> {
         return await this.put<Destination>("/destinations", destination);
+    }
+
+    async AskReset (email: string) {
+        await this.client.post("/public/askreset", {
+            email
+        })
+        this.snackbarStoreDef().show("Richiesta effettuata. Riceverai una mail con le istruzioni per reinpostare la tua password")
+    }
+
+    async Reset (invitation: Invitation) {
+        await this.client.post("/public/reset", invitation)
+        this.snackbarStoreDef().show("Password reimpostata con successo", 3000, 'top', 'success')
+        router.push("/login")
+    }
+
+    async GetUsers(): Promise<User[]> {
+        return await this.get("/users")
+    }
+
+    async UpdateUser(user:User): Promise<number> {
+        return await this.put("/users", user)
+    }
+
+    async UpdateUserRoles(user:User): Promise<number> {
+        return await this.put("/users/roles", user)
+    }
+
+    async InviteUser(user: User): Promise<number> {
+        return await this.post("/users/invite", user)
+    }
+
+    async AcceptInvitation(invitation: Invitation) {
+        await this.post("/public/invitation/accept", invitation)
+        this.snackbarStoreDef().show("Invito accettato con successo", 3000, 'top', 'success')
+        router.push("/login")
     }
 
     async Login(email: string, password: string): Promise<void> {

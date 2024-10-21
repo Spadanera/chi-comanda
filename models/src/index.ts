@@ -70,11 +70,11 @@ export interface CompleteOrderInput {
 }
 
 export enum Roles {
-  admin,
-  checkout,
-  waiter,
-  bertender,
-  kitchen
+  admin = 'admin',
+  checkout = 'checkout',
+  waiter = 'waiter',
+  bartender = 'bartender',
+  superuser = 'superuser'
 }
 
 export interface Message {
@@ -89,7 +89,6 @@ export interface Repository extends RowDataPacket {
 }
 
 export interface Invitation extends User {
-  id?: number,
   creation_date?: string
 }
 
@@ -183,7 +182,9 @@ export interface User extends Repository {
   username?: string
   email?: string
   password?: string
-  roles?: Roles[]
+  roles?: Roles[],
+  status?: string,
+  statusSwitch?: boolean
 }
 
 export interface Role extends Repository {

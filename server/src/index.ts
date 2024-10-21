@@ -65,7 +65,6 @@ passport.deserializeUser((user: User, done) => {
 
 
 app.post("/api/login", passport.authenticate('local'), async (req: Request, res: Response) => {
-    console.log(req.isAuthenticated())
     if (req.isAuthenticated()) {
         res.json(req.user)
     } else {
@@ -87,8 +86,10 @@ app.get("/api/checkauthentication", async (req: Request, res: Response) => {
     }
 })
 
+app.use('public', publicApiRouter)
+
 app.use('/api', (req: Request, res: Response, next: any) => {
-    if (req.isAuthenticated()) {
+    if (req.isAuthenticated() || /\/public\//.test(req.path)) {
         next()
     }
     else {
@@ -96,7 +97,6 @@ app.use('/api', (req: Request, res: Response, next: any) => {
     }
 }, apiRouter)
 
-app.use('public', publicApiRouter)
 
 app.use(express.static(path.join(__dirname, 'static')))
 

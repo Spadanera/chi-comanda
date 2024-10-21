@@ -14,7 +14,7 @@ const sendEmail = async (options: EmailOptions): Promise<void> => {
     service: 'gmail',
     auth: {
       user: process.env.MAIL_USER,
-      pass: process.env.MAIL_PASSSWORD,
+      pass: process.env.MAIL_PASSWORD,
     },
   });
 

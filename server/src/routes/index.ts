@@ -8,6 +8,7 @@ import masterTableApi from "../api/master-table"
 import userApi from "../api/user"
 import destinationApi from "../api/destination"
 import { CompleteOrderInput } from "../../../models/src"
+import publicApiRouter from "./public"
 
 const apiRouter: Router = router()
 
@@ -468,7 +469,37 @@ apiRouter.put("/destinations", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.post("/users/invitation", async (req: Request, res: Response) => {
+apiRouter.get("/users", async (req: Request, res: Response) => {
+    try {
+        const result = await userApi.getAll()
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.put("/users", async (req: Request, res: Response) => {
+    try {
+        const result = await userApi.update(req.body)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.put("/users/roles", async (req: Request, res: Response) => {
+    try {
+        const result = await userApi.updateRoles(req.body)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.post("/users/invite", async (req: Request, res: Response) => {
     try {
         const result = await userApi.inviteUser(req.body)
         res.status(200).json(result)
@@ -477,5 +508,7 @@ apiRouter.post("/users/invitation", async (req: Request, res: Response) => {
         res.status(500).json(error)
     }
 })
+
+apiRouter.use("/public", publicApiRouter)
 
 export default apiRouter

@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
 import { UserStore, SnackbarStore } from '@/stores'
+import { Roles } from '../../../models/src'
+
+const publicRoute:String[] = ['Login', 'Reset', 'Invitation', 'AskReset']
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -18,12 +21,30 @@ const router = createRouter({
       props: true
     },
     {
+      path: '/askreset',
+      name: 'AskReset',
+      component: () => import('@/views/AskReset.vue'),
+      props: true
+    },
+    {
+      path: '/reset/:token',
+      name: 'Reset',
+      component: () => import('@/views/Reset.vue'),
+      props: true
+    },
+    {
+      path: '/invitation/:token',
+      name: 'Invitation',
+      component: () => import('@/views/Invitation.vue'),
+      props: true
+    },
+    {
       path: '/admin',
       name: 'Admin',
       component: () => import('@/views/Admin.vue'),
       props: true,
       meta: {
-        allowedRole: 'admin'
+        allowedRole: Roles.admin
       },
       children: [
         {
@@ -32,7 +53,7 @@ const router = createRouter({
           component: () => import('@/views/admin/Events.vue'),
           props: true,
           meta: {
-            allowedRole: 'admin'
+            allowedRole: Roles.admin
           },
         },
         {
@@ -41,7 +62,7 @@ const router = createRouter({
           component: () => import('@/views/admin/Users.vue'),
           props: true,
           meta: {
-            allowedRole: 'admin'
+            allowedRole: Roles.superuser
           },
         },
         {
@@ -50,7 +71,7 @@ const router = createRouter({
           component: () => import('@/views/admin/Tables.vue'),
           props: true,
           meta: {
-            allowedRole: 'admin'
+            allowedRole: Roles.admin
           },
         },
         {
@@ -59,7 +80,7 @@ const router = createRouter({
           component: () => import('@/views/admin/Items.vue'),
           props: true,
           meta: {
-            allowedRole: 'admin'
+            allowedRole: Roles.admin
           },
         },
         {
@@ -68,7 +89,7 @@ const router = createRouter({
           component: () => import('@/views/admin/Destinations.vue'),
           props: true,
           meta: {
-            allowedRole: 'admin'
+            allowedRole: Roles.admin
           },
         }
       ]
@@ -79,7 +100,7 @@ const router = createRouter({
       component: () => import('@/views/Waiter.vue'),
       props: true,
       meta: {
-        allowedRole: 'waiter'
+        allowedRole: Roles.waiter
       }
     },
     {
@@ -88,7 +109,7 @@ const router = createRouter({
       component: () => import('@/views/WaiterOrder.vue'),
       props: true,
       meta: {
-        allowedRole: 'waiter'
+        allowedRole: Roles.waiter
       }
     },
     {
@@ -97,7 +118,7 @@ const router = createRouter({
       component: () => import('@/views/BarTender.vue'),
       props: true,
       meta: {
-        allowedRole: 'bartender'
+        allowedRole: Roles.bartender
       }
     },
     {
@@ -106,7 +127,7 @@ const router = createRouter({
       component: () => import('@/views/Checkout.vue'),
       props: true,
       meta: {
-        allowedRole: 'checkout'
+        allowedRole: Roles.checkout
       }
     },
   ]
@@ -120,7 +141,7 @@ router.beforeEach(async (to, from, next) => {
   if (user.id && to.name === 'Login') {
     next({ name: "Home" })
   }
-  else if (user.id || to.name === 'Login') {
+  else if (user.id || publicRoute.includes(to.name?.toString())) {
     if (to.meta.allowedRole) {
       if (user.roles.includes(to.meta.allowedRole)) {
         next()

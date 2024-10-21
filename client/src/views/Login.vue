@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import Axios from '@/services/client'
 import { UserStore } from '@/stores'
 import { SnackbarStore } from '@/stores';
+import { RouterLink } from 'vue-router';
 
 const userStore = UserStore()
 const axios: Axios = new Axios()
@@ -35,10 +36,11 @@ async function login() {
                 style="" width="240" height="240" />
               <v-form fast-fail @submit.prevent>
                 <v-text-field type="email" label="Email" v-model="credentials.email"></v-text-field>
-
                 <v-text-field type="password" label="Password" v-model="credentials.password"></v-text-field>
-
               </v-form>
+              <p>
+                <RouterLink to="/askreset">Password dimenticata</RouterLink>
+              </p>
             </v-card-text>
             <v-card-actions>
               <v-btn class="mt-2" type="submit" @click="login" block>LOG IN</v-btn>

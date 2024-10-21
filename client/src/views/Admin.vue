@@ -35,24 +35,27 @@ const navigationItems = ref<NavigationItem[]>([
     value: 2
   },
   {
-    title: "Utenti",
-    prependIcon: "mdi-account-group",
-    to: "users",
-    value: 3
-  },
-  {
     title: "Destinazioni",
     prependIcon: "mdi-send-check",
     to: "destinations",
     value: 4
-  },
+  }
+
 ])
 
 onMounted(() => {
   try {
+    if (user.value.roles.includes('superuser')) {
+      navigationItems.value.push({
+        title: "Utenti",
+        prependIcon: "mdi-account-group",
+        to: "users",
+        value: 3
+      })
+    }
     selectedItem.value = [navigationItems.value.find(n => n.to === /\/admin\/?(\w*)/.exec(window.location.pathname)[1]).value]
   } catch (error) {
-    
+
   }
 })
 
@@ -67,11 +70,12 @@ onMounted(() => {
     </v-list>
   </v-navigation-drawer>
   <RouterView></RouterView>
-  <v-fab v-show="!drawer" class="hide-xs" icon="mdi-menu" app style="position: fixed; left: 10px; bottom: 10px;" location="bottom left" @click="drawer = !drawer"></v-fab>
+  <v-fab v-show="!drawer" class="hide-xs" icon="mdi-menu" app style="position: fixed; left: 10px; bottom: 10px;"
+    location="bottom left" @click="drawer = !drawer"></v-fab>
 </template>
 
 <style scoped>
-  .v-list {
-    padding: 0 !important
-  }
+.v-list {
+  padding: 0 !important
+}
 </style>

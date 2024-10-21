@@ -10,7 +10,6 @@ const userStore = UserStore()
 const snackbarStore = SnackbarStore()
 const progressStore = ProgressStore()
 const user = ref({})
-const test = ref<boolean>(true)
 
 function login() {
   user.value = userStore.user
@@ -26,6 +25,7 @@ function reloadPage() {
 }
 
 onBeforeMount(async () => {
+  await userStore.checkAuthentication()
   user.value = userStore.user
 })
 

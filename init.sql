@@ -5,6 +5,13 @@ CREATE TABLE `invitations` (
   `creation_date` date
 );
 
+CREATE TABLE `reset` (
+  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
+  `email` varchar(255),
+  `token` varchar(255),
+  `creation_date` date
+);
+
 CREATE TABLE `users` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `username` varchar(255),
@@ -147,7 +154,7 @@ INSERT INTO roles (name) VALUES ('admin');
 INSERT INTO roles (name) VALUES ('checkout');
 INSERT INTO roles (name) VALUES ('waiter');
 INSERT INTO roles (name) VALUES ('bartender');
-INSERT INTO roles (name) VALUES ('kitchen');
+INSERT INTO roles (name) VALUES ('superuser');
 
 INSERT INTO user_role (user_id, role_id) VALUES (1, 1);
 INSERT INTO user_role (user_id, role_id) VALUES (1, 2);
@@ -157,13 +164,13 @@ INSERT INTO user_role (user_id, role_id) VALUES (1, 5);
 INSERT INTO user_role (user_id, role_id) VALUES (2, 1);
 INSERT INTO user_role (user_id, role_id) VALUES (2, 2);
 INSERT INTO user_role (user_id, role_id) VALUES (2, 3);
+INSERT INTO user_role (user_id, role_id) VALUES (1, 5);
 INSERT INTO user_role (user_id, role_id) VALUES (3, 1);
 INSERT INTO user_role (user_id, role_id) VALUES (3, 2);
 INSERT INTO user_role (user_id, role_id) VALUES (4, 1);
 INSERT INTO user_role (user_id, role_id) VALUES (4, 2);
 INSERT INTO user_role (user_id, role_id) VALUES (4, 3);
 INSERT INTO user_role (user_id, role_id) VALUES (5, 4);
-INSERT INTO user_role (user_id, role_id) VALUES (5, 5);
 INSERT INTO user_role (user_id, role_id) VALUES (6, 3);
 INSERT INTO user_role (user_id, role_id) VALUES (7, 3);
 INSERT INTO user_role (user_id, role_id) VALUES (8, 4);
