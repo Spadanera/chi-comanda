@@ -254,7 +254,7 @@ onMounted(async () => {
       }
     })
 
-    interval = window.setTimeout(calculateMinPassed, 1000 * 60)
+    interval = window.setInterval(calculateMinPassed, 1000 * 60)
   }
   loading.value = false
 })
@@ -277,7 +277,7 @@ onBeforeUnmount(() => {
         :style="{ opacity: !order.done ? 'inherit' : 0.3 }">
         <v-list-item-title>
           <span :class="{ done: order.done }">Tavolo {{ order.table_name }}</span>
-          <v-btn variant="plain" v-if="!order.done && order.minPassed > 0">
+          <v-btn variant="plain" v-if="!order.done && order.minPassed >= 0">
             {{ order.minPassed }} <span style="text-transform: lowercase;">m</span>
           </v-btn>
         </v-list-item-title>
