@@ -208,17 +208,15 @@ onMounted(async () => {
     })
 
     is.on('new-order', (data: Order) => {
-      if (data.items.filter((i: Item) => props.destinations === i.destination_id).length) {
-        data.items = data.items?.filter((i: Item) => props.destinations === i.destination_id)
-        if (data.items?.length) {
-          orders.value.push(data)
-          calculateMinPassed()
-          if (!selectedOrder.value.length) {
-            selectedOrder.value.push(data)
-          }
-          snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
-          audio.value.play();
+      data.items = data.items?.filter((i: Item) => parseInt(props.destinations) === i.destination_id)
+      if (data.items?.length) {
+        orders.value.push(data)
+        calculateMinPassed()
+        if (!selectedOrder.value.length) {
+          selectedOrder.value.push(data)
         }
+        snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
+        audio.value.play();
       }
     })
 
@@ -256,7 +254,7 @@ onMounted(async () => {
       }
     })
 
-    interval = window.setTimeout(calculateMinPassed, 1000 * 60)
+    interval = window.setInterval(calculateMinPassed, 1000 * 60)
   }
   loading.value = false
 })
@@ -279,7 +277,7 @@ onBeforeUnmount(() => {
         :style="{ opacity: !order.done ? 'inherit' : 0.3 }">
         <v-list-item-title>
           <span :class="{ done: order.done }">Tavolo {{ order.table_name }}</span>
-          <v-btn variant="plain" v-if="!order.done && order.minPassed > 0">
+          <v-btn variant="plain" v-if="!order.done && order.minPassed >= 0">
             {{ order.minPassed }} <span style="text-transform: lowercase;">m</span>
           </v-btn>
         </v-list-item-title>
@@ -298,7 +296,8 @@ onBeforeUnmount(() => {
   </v-container>
   <template v-else>
     <v-container>
-      <h3>{{ props.pagetitle }} <span v-if="selectedOrder.length"> - Tavolo {{ selectedOrder[0].table_name }}</span></h3>
+      <h3>{{ props.pagetitle }} <span v-if="selectedOrder.length"> - Tavolo {{ selectedOrder[0].table_name }}</span>
+      </h3>
     </v-container>
     <ItemList :quantitybefore="true" :showtype="true" subheader="DA FARE" v-model="itemsToDo">
       <template v-slot:prequantity="slotProps">
