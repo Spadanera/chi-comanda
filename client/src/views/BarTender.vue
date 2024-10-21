@@ -208,17 +208,15 @@ onMounted(async () => {
     })
 
     is.on('new-order', (data: Order) => {
-      if (data.items.filter((i: Item) => props.destinations === i.destination_id).length) {
-        data.items = data.items?.filter((i: Item) => props.destinations === i.destination_id)
-        if (data.items?.length) {
-          orders.value.push(data)
-          calculateMinPassed()
-          if (!selectedOrder.value.length) {
-            selectedOrder.value.push(data)
-          }
-          snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
-          audio.value.play();
+      data.items = data.items?.filter((i: Item) => parseInt(props.destinations) === i.destination_id)
+      if (data.items?.length) {
+        orders.value.push(data)
+        calculateMinPassed()
+        if (!selectedOrder.value.length) {
+          selectedOrder.value.push(data)
         }
+        snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
+        audio.value.play();
       }
     })
 
@@ -298,7 +296,8 @@ onBeforeUnmount(() => {
   </v-container>
   <template v-else>
     <v-container>
-      <h3>{{ props.pagetitle }} <span v-if="selectedOrder.length"> - Tavolo {{ selectedOrder[0].table_name }}</span></h3>
+      <h3>{{ props.pagetitle }} <span v-if="selectedOrder.length"> - Tavolo {{ selectedOrder[0].table_name }}</span>
+      </h3>
     </v-container>
     <ItemList :quantitybefore="true" :showtype="true" subheader="DA FARE" v-model="itemsToDo">
       <template v-slot:prequantity="slotProps">
