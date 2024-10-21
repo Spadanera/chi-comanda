@@ -193,27 +193,27 @@ INSERT INTO master_tables (name, default_seats, status) VALUES ('Cor 3', 8, 'ACT
 INSERT INTO destinations (name, status) VALUES ('Bar Ludoteca', 'ACTIVE');
 INSERT INTO destinations (name, status) VALUES ('Cucina Libra', 'ACTIVE');
 
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Valyria', 'Cibo', 'Piadina', 6, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Braavos', 'Cibo', 'Piadina', 6, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Moria', 'Cibo', 'Piadina', 6, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Rohan', 'Cibo', 'Piadina', 6, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Salem', 'Cibo', 'Piadina', 6, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Durmstrang', 'Cibo', 'Piadina', 6, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ("R'lyeh", 'Cibo', 'Piadina', 6, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Miskatonic', 'Cibo', 'Piadina', 6, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Arrakis', 'Cibo', 'Piadina', 6, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Caladan', 'Cibo', 'Piadina', 6, 3, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Valyria', 'Cibo', 'Piadina', 6, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Braavos', 'Cibo', 'Piadina', 6, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Moria', 'Cibo', 'Piadina', 6, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Rohan', 'Cibo', 'Piadina', 6, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Salem', 'Cibo', 'Piadina', 6, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Durmstrang', 'Cibo', 'Piadina', 6, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ("R'lyeh", 'Cibo', 'Piadina', 6, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Miskatonic', 'Cibo', 'Piadina', 6, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Arrakis', 'Cibo', 'Piadina', 6, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Caladan', 'Cibo', 'Piadina', 6, 2, true, 'ACTIVE');
 
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Valyria', 'Cibo', 'Panino', 5, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Braavos', 'Cibo', 'Panino', 5, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Moria', 'Cibo', 'Panino', 5, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Rohan', 'Cibo', 'Panino', 5, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Salem', 'Cibo', 'Panino', 5, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Durmstrang', 'Cibo', 'Panino', 5, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ("R'lyeh", 'Cibo', 'Panino', 5, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Miskatonic', 'Cibo', 'Panino', 5, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Arrakis', 'Cibo', 'Panino', 5, 3, true, 'ACTIVE');
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Caladan', 'Cibo', 'Panino', 5, 3, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Valyria', 'Cibo', 'Panino', 5, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Braavos', 'Cibo', 'Panino', 5, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Moria', 'Cibo', 'Panino', 5, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Rohan', 'Cibo', 'Panino', 5, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Salem', 'Cibo', 'Panino', 5, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Durmstrang', 'Cibo', 'Panino', 5, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ("R'lyeh", 'Cibo', 'Panino', 5, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Miskatonic', 'Cibo', 'Panino', 5, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Arrakis', 'Cibo', 'Panino', 5, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Caladan', 'Cibo', 'Panino', 5, 2, true, 'ACTIVE');
 
 INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Poretti 4 Luppoli', 'Bevanda', 'Birra', 5, 1, true, 'ACTIVE');
 INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Brooklyn IPA', 'Bevanda', 'Birra', 6, 1, true, 'ACTIVE');
@@ -265,7 +265,7 @@ INSERT INTO master_items (name, type, sub_type, price, destination_id, available
 INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Nerv', 'Bevanda', 'Cocktail', 5, 1, true, 'ACTIVE');
 INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Shield Temple', 'Bevanda', 'Cocktail', 5, 1, true, 'ACTIVE');
 
-INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Nachos', 'Cibo', 'Special', 5, 2, true, 'ACTIVE');
+INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Nachos', 'Cibo', 'Special', 5, 1, true, 'ACTIVE');
 
 INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Amari/Distillati', 'Bevanda', 'Extra', 3, 1, true, 'ACTIVE');
 INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES ('Whisky', 'Bevanda', 'Extra', 4, 1, true, 'ACTIVE');
