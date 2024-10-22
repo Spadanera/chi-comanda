@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import Axios from '@/services/client'
 import { RouterLink } from 'vue-router'
 import { requiredRule, emailRule } from '@/services/utils';
+import Logo from '@/components/Logo.vue';
 
 const axios: Axios = new Axios()
 const form = ref(null)
@@ -34,7 +35,7 @@ async function login() {
         <v-col sm="8" cols="12" lg="3">
           <v-card>
             <v-card-text style="text-align: center;">
-              <img alt="Chi Comanda" class="logo" src="@/assets/chicomanda.png" style="" width="240" height="240" />
+              <Logo></Logo>
               <v-form ref="form" fast-fail @submit.prevent>
                 <v-text-field :rules="[requiredRule, emailRule]" type="email" label="Email"
                   v-model="credentials.email"></v-text-field>
@@ -46,7 +47,7 @@ async function login() {
               </p>
             </v-card-text>
             <v-card-actions>
-              <v-btn class="mt-2" type="submit" @click="login" block>LOG IN</v-btn>
+              <v-btn class="mt-2" type="submit" @click="login" block>ACCEDI</v-btn>
             </v-card-actions>
           </v-card>
         </v-col>

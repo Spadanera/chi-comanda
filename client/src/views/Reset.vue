@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import Axios from '@/services/client'
 import type { Invitation } from '../../../models/src'
 import { requiredRule, passwordMatchRule } from '@/services/utils'
+import Logo from '@/components/Logo.vue'
 
 const props = defineProps(['token'])
 const axios: Axios = new Axios()
@@ -35,8 +36,7 @@ async function reset() {
                 <v-col sm="8" cols="12" lg="3">
                     <v-card>
                         <v-card-text style="text-align: center;">
-                            <img alt="Chi Comanda" class="logo" src="@/assets/chicomanda.png" style="" width="240"
-                                height="240" />
+                            <Logo></Logo>
                             <v-form fast-fail @submit.prevent ref="form">
                                 <v-text-field type="password" label="Password" v-model="credentials.password"
                                     :rules="[requiredRule]"></v-text-field>

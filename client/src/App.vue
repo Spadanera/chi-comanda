@@ -3,12 +3,13 @@ import { RouterLink, RouterView } from 'vue-router'
 import Axios from '@/services/client'
 import { ref, onBeforeMount } from 'vue'
 import router from '@/router'
-import { UserStore, SnackbarStore, ProgressStore, type IUser } from '@/stores'
+import { UserStore, SnackbarStore, ProgressStore, ThemeStore } from '@/stores'
 
 const axios: Axios = new Axios()
 const userStore = UserStore()
 const snackbarStore = SnackbarStore()
 const progressStore = ProgressStore()
+const themeStore = ThemeStore()
 const user = ref({})
 const theme = ref('light')
 
@@ -38,21 +39,20 @@ onBeforeMount(async () => {
 
 <template>
   <v-responsive class="" max-height="100%">
-    <v-app :theme="theme">
+    <v-app :theme="themeStore.theme">
       <v-app-bar>
         <template v-slot:prepend>
           <!-- <v-img scr="@/assets/chicomanda.png" alt="Chi Comanda"></v-img> -->
           <RouterLink to="/">
-            <img alt="Chi Comanda" class="logo" src="@/assets/chicomanda.png" style="margin-left: 8px; margin-top: 7px;"
+            <img alt="Chi Comanda" v-if="themeStore.theme === 'light'" class="logo" src="@/assets/chicomanda.png" style="margin-left: 8px; margin-top: 7px;"
+              width="40" height="40" />
+              <img alt="Chi Comanda" v-else class="logo" src="@/assets/chicomanda-invert.png" style="margin-left: 8px; margin-top: 7px;"
               width="40" height="40" />
           </RouterLink>
         </template>
         <v-app-bar-title>
           <RouterLink to="/">CHI COMANDA</RouterLink>
         </v-app-bar-title>
-        <!-- <v-btn @click="axios.Logout()" v-if="userStore.isLoggedIn">
-          LOG OUT
-        </v-btn> -->
         <v-menu v-if="userStore.isLoggedIn">
           <template v-slot:activator="{ props }">
             <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props"></v-btn>
@@ -61,7 +61,7 @@ onBeforeMount(async () => {
           <v-list>
             <v-list-item>
               <v-list-item-title>
-                <v-btn @click="toggleTheme" v-if="userStore.isLoggedIn" variant="text">
+                <v-btn @click="themeStore.toggle" v-if="userStore.isLoggedIn" variant="text">
                   INVERTI TEMA
                   <template v-slot:prepend>
                     <v-icon>{{ theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
@@ -72,7 +72,7 @@ onBeforeMount(async () => {
             <v-list-item>
               <v-list-item-title>
                 <v-btn @click="axios.Logout()" v-if="userStore.isLoggedIn" variant="text">
-                  LOG OUT
+                  ESCI
                   <template v-slot:prepend>
                     <v-icon>mdi-logout</v-icon>
                   </template>
@@ -82,7 +82,7 @@ onBeforeMount(async () => {
           </v-list>
         </v-menu>
         <v-btn v-else :prepend-icon="theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'" text="Inverti tema"
-          slim @click="toggleTheme"></v-btn>
+          slim @click="themeStore.toggle"></v-btn>
       </v-app-bar>
       <v-main>
         <RouterView v-model="user" @login="login" @reload="reload" />

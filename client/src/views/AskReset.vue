@@ -2,7 +2,8 @@
 import { ref } from 'vue'
 import Axios from '@/services/client'
 import { UserStore } from '@/stores'
-import { requiredRule, emailRule } from '@/services/utils';
+import { requiredRule, emailRule } from '@/services/utils'
+import Logo from '@/components/Logo.vue';
 
 const userStore = UserStore()
 const axios: Axios = new Axios()
@@ -30,8 +31,7 @@ async function askReset() {
                 <v-col sm="8" cols="12" lg="3">
                     <v-card>
                         <v-card-text style="text-align: center;">
-                            <img alt="Chi Comanda" class="logo" src="@/assets/chicomanda.png" style="" width="240"
-                                height="240" />
+                            <Logo></Logo>
                             <v-form fast-fail @submit.prevent ref="form" v-if="!asked">
                                 <v-text-field :rules="[requiredRule, emailRule]" type="email" label="Email" v-model="email"></v-text-field>
                             </v-form>
