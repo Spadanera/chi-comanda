@@ -227,3 +227,15 @@ export interface Destination extends Repository {
   status?: string
   canDelete?: number
 }
+
+export function hasMatchingRole(arr1: Roles[], arr2: Roles[]): boolean {
+  const set2 = new Set(arr2)
+
+  for (const element of arr1) {
+      if (set2.has(element)) {
+          return true
+      }
+  }
+
+  return false
+}

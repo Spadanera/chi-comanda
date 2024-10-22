@@ -30,7 +30,7 @@ const roles = ref<Role[]>([
     title: 'Cameriere',
     route: "/waiter",
     text: "Inviare ordini al bar e alla cucina",
-    role: Roles.bartender
+    role: Roles.waiter
   }
 ])
 

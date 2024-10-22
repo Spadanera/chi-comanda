@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
 import { UserStore, SnackbarStore } from '@/stores'
 import { Roles } from '../../../models/src'
+import { hasMatchingRole } from '../../../models/src';
 
 const publicRoute:String[] = ['Login', 'Reset', 'Invitation', 'AskReset']
 
@@ -100,7 +101,7 @@ const router = createRouter({
       component: () => import('@/views/Waiter.vue'),
       props: true,
       meta: {
-        allowedRole: Roles.waiter
+        allowedRole: [Roles.waiter, Roles.checkout, Roles.bartender]
       }
     },
     {
@@ -109,7 +110,7 @@ const router = createRouter({
       component: () => import('@/views/WaiterOrder.vue'),
       props: true,
       meta: {
-        allowedRole: Roles.waiter
+        allowedRole: [Roles.waiter, Roles.checkout, Roles.bartender]
       }
     },
     {
@@ -143,7 +144,7 @@ router.beforeEach(async (to, from, next) => {
   }
   else if (user.id || publicRoute.includes(to.name?.toString())) {
     if (to.meta.allowedRole) {
-      if (user.roles.includes(to.meta.allowedRole)) {
+      if ((Array.isArray(to.meta.allowedRole) && hasMatchingRole(to.meta.allowedRole, user.roles)) || user.roles.includes(to.meta.allowedRole)) {
         next()
       } else {
         snackbarStore.show("Non sei autorizzato a visualizzare questa sezione", 3000, 'top', 'error')

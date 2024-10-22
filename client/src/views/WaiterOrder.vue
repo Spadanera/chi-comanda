@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Order, type MasterItem, type Item, ItemTypes as types, type Type, Destinations } from "../../../models/src"
+import { type Order, type MasterItem, type Item, ItemTypes as types, type Type, type Destination } from "../../../models/src"
 import { ref, onMounted, computed } from "vue"
 import router from '@/router'
 import Axios from '@/services/client'
@@ -14,6 +14,7 @@ const origin = route.query.origin ? `${route.query.origin}` : '/waiter'
 const axios = new Axios()
 const user = defineModel<IUser>()
 const snackbarStore = SnackbarStore()
+const destinations = ref<Destination[]>([])
 
 const emit = defineEmits(['login', 'reload'])
 
@@ -129,6 +130,7 @@ async function setTableName() {
 }
 
 onMounted(async () => {
+  destinations.value = await axios.GetDestinations()
   master_items.value = await axios.GetAvailableMasterItems()
   if (parseInt(props.table_id)) {
     table_name.value = (await axios.GetTable(props.table_id)).name
@@ -281,7 +283,7 @@ onMounted(async () => {
                 append-inner-icon="mdi-currency-eur"></v-text-field>
             </v-col>
             <v-col cols="12">
-              <v-select :items="Destinations" label="Destinazione" item-value="id" item-title="name"
+              <v-select :items="destinations" label="Destinazione" item-value="id" item-title="name"
                 :rules="[requiredRule]" v-model="extraItem.destination_id">
                 <template v-slot:item="{ props, item }">
                   <v-list-item v-bind="props" :title="item.raw.name"></v-list-item>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Event, type Order, type Item, ItemTypes as types, type Type, Destinations, type Destination, type CompleteOrderInput } from "../../../models/src"
+import { type Event, type Order, type Item, ItemTypes as types, type Type } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import Axios from '@/services/client'
 import { SnackbarStore, type IUser } from '@/stores'

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { type MasterItem, type Type, ItemTypes, Destinations } from "../../../../models/src"
+import { type MasterItem, type Type, ItemTypes, type Destination } from "../../../../models/src"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { sortItem, copy, requiredRule } from '@/services/utils';
@@ -15,6 +15,7 @@ const selectedItem = ref<MasterItem>(null)
 const items = ref<MasterItem[]>([])
 const filter = ref<string>('')
 const form = ref(null)
+const destinations = ref<Destination[]>([])
 
 const filteredItems = computed(() => items.value.filter((i: MasterItem) => !filter.value || new RegExp(filter.value, 'i').test(i.name)).sort(sortItem))
 
@@ -66,6 +67,7 @@ function setType() {
 }
 
 onMounted(async () => {
+  destinations.value = await axios.GetDestinations()
   await getMasterItems()
 })
 </script>
@@ -142,7 +144,7 @@ onMounted(async () => {
                 </v-select>
               </v-col>
               <v-col cols="12">
-                <v-select :items="Destinations" label="Destinazione" item-value="id" item-title="name"
+                <v-select :items="destinations" label="Destinazione" item-value="id" item-title="name"
                   :rules="[requiredRule]" v-model="selectedItem.destination_id">
                   <template v-slot:item="{ props, item }">
                     <v-list-item v-bind="props" :title="item.raw.name"></v-list-item>

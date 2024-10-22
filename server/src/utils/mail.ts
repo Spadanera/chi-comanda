@@ -1,37 +1,47 @@
-import { MailerSend, EmailParams, Sender, Recipient } from "mailersend"
-import { Personalization } from "mailersend/lib/modules/Email.module";
+import Mailjet from "node-mailjet"
 
 interface EmailOptions {
   to: string
   subject: string
-  templateId: string
-  data: any
+  HTMLPart: string
 }
 
-const mailersend = new MailerSend({
-    apiKey: process.env.MAIL_API_KEY || '',
-})
+const mailjet = new Mailjet({
+  apiKey: process.env.MAIL_API_KEY || '',
+  apiSecret: process.env.MAIL_API_SECRET || ''
+});
 
-const sender = new Sender(process.env.MAIL_FROM || '', process.env.MAIL_FROM_NAME || '')
+const sendEmail = async (options: EmailOptions): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const request = mailjet
+      .post('send', { version: 'v3.1' })
+      .request({
+        Messages: [
+          {
+            From: {
+              Email: process.env.MAIL_FROM,
+              Name: process.env.MAIL_FROM_NAME
+            },
+            To: [
+              {
+                Email: options.to
+              }
+            ],
+            Subject: options.subject,
+            HTMLPart: options.HTMLPart
+          }
+        ]
+      })
 
-const sendEmail = async (options: EmailOptions) => {
-  const recipients = [new Recipient(options.to)]
-
-  const personalization: Personalization[] = [
-    {
-      email: options.to,
-      data: options.data,
-    }
-  ];
-  
-  const emailParams = new EmailParams()
-    .setFrom(sender)
-    .setTo(recipients)
-    .setSubject(options.subject)
-    .setTemplateId(options.templateId)
-    .setPersonalization(personalization)
-  
-  await mailersend.email.send(emailParams)
+    request
+      .then((result) => {
+        resolve()
+      })
+      .catch((err) => {
+        reject(err)
+      })
+  })
 }
+
 
 export default sendEmail;
