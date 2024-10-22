@@ -4,6 +4,7 @@ import EventList from "@/components/EventList.vue";
 import { type Event as EventType } from "../../../../models/src"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
+import { requiredRule } from "@/services/utils";
 
 const axios = new Axios()
 const snackbarStore = SnackbarStore()
@@ -13,7 +14,6 @@ const dialog = ref<boolean>(false)
 const dialogEvent = ref<EventType>(null)
 const loading = ref<boolean>(false)
 const form = ref(null)
-const requiredRule = ref([(value: any) => !!value || 'Inserire un valore'])
 
 const ongoingEvents = computed<EventType[]>(() => {
   return events.value.filter(e => e.status === 'ONGOING')
@@ -94,7 +94,7 @@ onMounted(async () => {
       </v-card-title>
       <v-card-text>
         <v-form @submit.prevent ref="form">
-          <v-text-field v-model="dialogEvent.name" label="Nome Evento" clearable :rules="requiredRule">
+          <v-text-field v-model="dialogEvent.name" label="Nome Evento" clearable :rules="[requiredRule]">
 
           </v-text-field>
           <v-date-picker locale="it" first-day-of-week="1" v-model:model-value="dialogEvent.date"></v-date-picker>

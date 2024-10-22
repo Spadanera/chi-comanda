@@ -74,7 +74,25 @@ export enum Roles {
   checkout = 'checkout',
   waiter = 'waiter',
   bartender = 'bartender',
-  superuser = 'superuser'
+  superuser = 'superuser',
+  client = 'client'
+}
+
+export function FormatedRole(role: Roles) {
+  switch (role) {
+    case Roles.admin:
+      return "Amministratore"
+    case Roles.waiter:
+      return "Cameriere"
+    case Roles.checkout:
+      return "Cassiere"
+    case Roles.bartender:
+      return "Barista"
+    case Roles.client:
+      return "Cliente Fedele"
+    case Roles.superuser:
+      return "Super User"
+  }
 }
 
 export interface Message {
@@ -89,17 +107,15 @@ export interface Repository extends RowDataPacket {
 }
 
 export interface Invitation extends User {
-  creation_date?: string
+  
 }
 
 export interface Audit extends Repository {
   id?: number,
   user_id?: number,
-  event_id?: number,
-  table_id?: number,
-  action?: string,
-  actionData?: any
-  actionDateTime?: Date
+  method?: string,
+  path?: string,
+  data?: any
 }
 
 export interface Event extends Repository {
@@ -184,7 +200,8 @@ export interface User extends Repository {
   password?: string
   roles?: Roles[],
   status?: string,
-  statusSwitch?: boolean
+  statusSwitch?: boolean,
+  creation_date?: string
 }
 
 export interface Role extends Repository {

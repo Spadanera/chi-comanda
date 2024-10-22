@@ -32,9 +32,9 @@ services:
       MYSQL_USER: 'user'
       MYSQL_PASSWORD: 'password'
       BASE_URL: 'http://localhost'
-      MAIL_USER: 'ziro84@gmail.com'
+      MAIL_API_KEY: 'mlsn.30c7862e31ea6cb015629db9283b718f65d256f839a5f20b3aa0032d1dd0220c'
       MAIL_FROM: 'info-dev@chicomanda.com'
-      MAIL_PASSWORD: 'xnlmzaztoswilvjh'
+      MAIL_FROM_NAME: 'Info-dev - Chi Comanda'
       SECRET: 'pippopluto'
       PORT: 3000
     networks:

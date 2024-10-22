@@ -8,10 +8,11 @@ import apiRouter from "./routes"
 import publicApiRouter from "./routes/public"
 import { createServer } from 'http'
 import { SocketIOService } from "./socket"
-import { User } from "../../models/src"
+import { Audit, User } from "../../models/src"
 import db from "./db"
 import connection from "./db/connection"
 import userApi from "./api/user"
+import auditApi from "./api/audit"
 
 const AUTH_COOKIE_NAME: string = 'lp-session'
 
@@ -95,6 +96,19 @@ app.use('/api', (req: Request, res: Response, next: any) => {
     else {
         res.status(401).json('Unauthorized')
     }
+}, (req: Request, res: Response, next: any) => {
+    if (req.isAuthenticated() && ['POST', 'PUT', 'DELETE'].includes(req.method)) {
+        auditApi.insert({
+            user_id: (req.user as any).id,
+            method: req.method,
+            path: req.path,
+            data: req.body,
+            event_id: req.body?.event_id,
+            table_id: req.body?.table_id,
+            order_id: req.body?.order_id
+        } as Audit)
+    }
+    next()
 }, apiRouter)
 
 

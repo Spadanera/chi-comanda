@@ -2,12 +2,11 @@
 import { ref } from 'vue'
 import Axios from '@/services/client'
 import { UserStore } from '@/stores'
-import { SnackbarStore } from '@/stores';
+import { requiredRule, emailRule } from '@/services/utils';
 
 const userStore = UserStore()
 const axios: Axios = new Axios()
 const form = ref(null)
-const requiredRule = ref([(value:any) => !!value || 'Inserire un indirizzo mail valido'])
 const asked = ref<boolean>(false)
 
 const email = ref('')
@@ -34,7 +33,7 @@ async function askReset() {
                             <img alt="Chi Comanda" class="logo" src="@/assets/chicomanda.png" style="" width="240"
                                 height="240" />
                             <v-form fast-fail @submit.prevent ref="form" v-if="!asked">
-                                <v-text-field :rules="requiredRule" type="email" label="Email" v-model="email"></v-text-field>
+                                <v-text-field :rules="[requiredRule, emailRule]" type="email" label="Email" v-model="email"></v-text-field>
                             </v-form>
                             <p v-else>
                                 Richiesta effettuata

@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import Axios from '@/services/client'
-import { SnackbarStore, UserStore } from '@/stores'
-import type { Invitation } from '../../../models/src';
+import type { Invitation } from '../../../models/src'
+import { requiredRule, passwordMatchRule } from '@/services/utils'
 
 const props = defineProps(['token'])
 const axios: Axios = new Axios()
 const form = ref(null)
-const requiredRule = ref([(value: any) => !!value || 'Campo obbligatorio'])
-const snackbarStore = SnackbarStore()
 
 const credentials = ref({
     password: '',
@@ -18,18 +16,13 @@ const credentials = ref({
 async function reset() {
     const { valid } = await form.value?.validate()
     if (valid) {
-        if (credentials.value.password !== credentials.value.confirmPassword) {
-            snackbarStore.show("Le password non coincidono", 3000, 'top', 'error')
-        }
-        else {
-            try {
-                await axios.Reset({
-                    token: props.token,
-                    password: credentials.value.password
-                } as Invitation)
-            } catch (error) {
-                console.log(error)
-            }
+        try {
+            await axios.Reset({
+                token: props.token,
+                password: credentials.value.password
+            } as Invitation)
+        } catch (error) {
+            console.log(error)
         }
     }
 }
@@ -46,8 +39,8 @@ async function reset() {
                                 height="240" />
                             <v-form fast-fail @submit.prevent ref="form">
                                 <v-text-field type="password" label="Password" v-model="credentials.password"
-                                    :rules="requiredRule"></v-text-field>
-                                <v-text-field type="password" label="Conferma Password" :rules="requiredRule"
+                                    :rules="[requiredRule]"></v-text-field>
+                                <v-text-field type="password" label="Conferma Password" :rules="[requiredRule, passwordMatchRule(credentials.password)]"
                                     v-model="credentials.confirmPassword"></v-text-field>
                             </v-form>
                         </v-card-text>

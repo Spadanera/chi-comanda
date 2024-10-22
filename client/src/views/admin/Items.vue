@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import { type MasterItem, type Type, ItemTypes, Destinations } from "../../../../models/src"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
-import { sortItem, copy } from '@/services/utils';
+import { sortItem, copy, requiredRule } from '@/services/utils';
 import Confirm from '@/components/Confirm.vue';
 const axios = new Axios()
 const snackbarStore = SnackbarStore()
@@ -15,7 +15,6 @@ const selectedItem = ref<MasterItem>(null)
 const items = ref<MasterItem[]>([])
 const filter = ref<string>('')
 const form = ref(null)
-const requiredRule = ref([(value: any) => !!value || 'Inserire un valore'])
 
 const filteredItems = computed(() => items.value.filter((i: MasterItem) => !filter.value || new RegExp(filter.value, 'i').test(i.name)).sort(sortItem))
 
@@ -124,10 +123,10 @@ onMounted(async () => {
           <v-form ref="form" @submit.prevent>
             <v-row>
               <v-col cols="12">
-                <v-text-field v-model="selectedItem.name" label="Nome" :rules="requiredRule"></v-text-field>
+                <v-text-field v-model="selectedItem.name" label="Nome" :rules="[requiredRule]"></v-text-field>
               </v-col>
               <v-col cols="6">
-                <v-text-field v-model="selectedItem.price" label="Prezzo" type="number" :rules="requiredRule"
+                <v-text-field v-model="selectedItem.price" label="Prezzo" type="number" :rules="[requiredRule]"
                   append-inner-icon="mdi-currency-eur"></v-text-field>
               </v-col>
               <v-col>
@@ -136,7 +135,7 @@ onMounted(async () => {
               </v-col>
               <v-col cols="12">
                 <v-select :items="ItemTypes" label="Tipologia" item-title="name" v-model="selectedItem.sub_type"
-                  :rules="requiredRule">
+                  :rules="[requiredRule]">
                   <template v-slot:item="{ props, item }">
                     <v-list-item v-bind="props" :subtitle="item.raw.type" :title="item.raw.name"></v-list-item>
                   </template>
@@ -144,7 +143,7 @@ onMounted(async () => {
               </v-col>
               <v-col cols="12">
                 <v-select :items="Destinations" label="Destinazione" item-value="id" item-title="name"
-                  :rules="requiredRule" v-model="selectedItem.destination_id">
+                  :rules="[requiredRule]" v-model="selectedItem.destination_id">
                   <template v-slot:item="{ props, item }">
                     <v-list-item v-bind="props" :title="item.raw.name"></v-list-item>
                   </template>

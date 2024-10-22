@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
-import { type Event, type Item, type Table, ItemTypes as types } from "../../../models/src"
+import { onMounted, ref } from 'vue';
+import { type Event } from "../../../models/src"
 import Confirm from '@/components/Confirm.vue'
 import Axios from '@/services/client'
-import { copy, sortItem, getIcon } from "@/services/utils"
+import { copy } from "@/services/utils"
 import EventDetails from '@/components/EventDetails.vue'
 
 const emit = defineEmits(['reload'])
@@ -16,20 +16,7 @@ const events = defineModel<Event[]>({ default: [] })
 const confirmCloseEvent = ref<boolean>(false)
 const confirmDeleteEvent = ref<boolean>(false)
 const selectedEvent = ref<Event>(null)
-const selectedTable = ref<Table>(null)
 const bottomSheet = ref<boolean>(null)
-const tab = ref<number>(0)
-const drawer = ref<boolean>(true)
-
-const items = computed<Item[]>(() => {
-    const _items: Item[] = []
-    if (selectedEvent.value && selectedEvent.value.tables) {
-        selectedEvent.value.tables.forEach((t: Table) => {
-            _items.push(...t.items)
-        })
-    }
-    return _items
-})
 
 function closeEventConfirm(event: Event) {
     selectedEvent.value = copy<Event>(event)

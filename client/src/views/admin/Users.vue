@@ -1,21 +1,29 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { Roles, type User } from '../../../../models/src'
-import { SnackbarStore } from '@/stores'
+import { Roles, type User, FormatedRole } from '../../../../models/src'
 import Axios from '@/services/client'
-import { copy } from '@/services/utils';
+import { copy, requiredRule, emailRule } from '@/services/utils'
 
 const axios = new Axios()
-const snackbarStore = SnackbarStore()
 const loading = ref<boolean>(null)
 const dialog = ref<boolean>(null)
 const filter = ref<string>(null)
 const confirm = ref<boolean>(null)
+const confirmDelete = ref<boolean>(null)
 const users = ref<User[]>([])
 const selectedUser = ref<User>(null)
 const form = ref(null)
-const requiredRule = ref([(value: any) => !!value || 'Inserire un valore'])
-const roleOptions = Object.values(Roles)
+const roleOptions = Object.values(Roles).filter((r: Roles) => r !== Roles.client)
+const fidelityClient = ref<boolean>(false)
+const selectedRoles = ref([])
+
+const customSelectRule = (value: any) => {
+  if (value?.length === 0 && !fidelityClient.value) {
+    return 'Inserire un valore'
+  } else {
+    return true
+  }
+}
 
 const filteredUsers = computed(() => {
   const reg = new RegExp(filter.value, "i")
@@ -27,15 +35,28 @@ const filteredUsers = computed(() => {
   })
 })
 
+function getColorByRole(role: Roles): string {
+  if (role === Roles.superuser) return 'primary'
+  if (role === Roles.client) return 'green'
+  return ''
+}
+
 function openDialog(user?: User) {
   if (user) {
     selectedUser.value = copy<User>(user)
   }
   else {
     selectedUser.value = {
-  
+
     } as User
   }
+  if (selectedUser.value.roles?.includes(Roles.client)) {
+    fidelityClient.value = true
+  }
+  else {
+    fidelityClient.value = false
+  }
+  selectedRoles.value = selectedUser.value.roles?.filter((r: Roles) => r !== Roles.client)
   dialog.value = true
 }
 
@@ -52,15 +73,41 @@ async function updateUserStatus() {
   confirm.value = false
 }
 
-async function updateUserRole() {
-  await axios.UpdateUserRoles(selectedUser.value)
+async function deleteConfirm() {
+  confirmDelete.value = true
+}
+
+async function deleteUser() {
+  await axios.DeleteUser(selectedUser.value.id)
   await getUsers()
+  confirmDelete.value = false
   dialog.value = false
+}
+
+async function updateUserRole() {
+  const { valid } = await form.value?.validate()
+  if (valid) {
+    if (fidelityClient.value) {
+      selectedUser.value.roles = [Roles.client]
+    }
+    else {
+      selectedUser.value.roles = selectedRoles.value
+    }
+    await axios.UpdateUserRoles(selectedUser.value)
+    await getUsers()
+    dialog.value = false
+  }
 }
 
 async function inviteUser() {
   const { valid } = await form.value?.validate()
   if (valid) {
+    if (fidelityClient.value) {
+      selectedUser.value.roles = [Roles.client]
+    }
+    else {
+      selectedUser.value.roles = selectedRoles.value
+    }
     await axios.InviteUser(selectedUser.value)
     await getUsers()
     dialog.value = false
@@ -103,7 +150,7 @@ onMounted(async () => {
           <td>{{ user.username }}</td>
           <td>{{ user.email }}</td>
           <td>
-            <v-chip v-for="role in user.roles">{{ role }}</v-chip>
+            <v-chip :color="getColorByRole(role)" v-for="role in user.roles">{{ FormatedRole(role) }}</v-chip>
           </td>
           <td>
             <v-switch v-if="['ACTIVE', 'BLOCKED'].includes(user.status)" color="green"
@@ -127,23 +174,39 @@ onMounted(async () => {
             <v-row>
               <v-col cols="12">
                 <v-text-field :readonly="selectedUser.id > 0" v-model="selectedUser.email" label="Email" type="email"
-                  :rules="requiredRule"></v-text-field>
+                  :rules="[requiredRule, emailRule]"></v-text-field>
               </v-col>
             </v-row>
-            <v-row>
+            <v-row v-show="!fidelityClient">
               <v-col>
-                <v-select chips label="Ruoli" v-model="selectedUser.roles"
-                  :items="roleOptions" multiple></v-select>
+                <v-select chips label="Ruoli" v-model="selectedRoles" :items="roleOptions" multiple
+                  :rules="[customSelectRule]">
+                  <template v-slot:item="{ props, item }">
+                    <v-list-item v-bind="props" :title="FormatedRole(item.raw)"></v-list-item>
+                  </template>
+                </v-select>
               </v-col>
             </v-row>
+            <!-- <v-row>
+              <v-col>
+                <v-switch color="green" label="Cliente Fidato" v-model="fidelityClient" :rules="[]"></v-switch>
+              </v-col>
+            </v-row> -->
           </v-form>
         </v-card-text>
         <v-card-actions>
           <v-btn variant="plain" @click="dialog = false">ANNULLA</v-btn>
+          <v-btn color="red" v-if="selectedUser.id && !selectedUser.roles?.includes(Roles.superuser)" variant="plain"
+            @click="deleteConfirm()">ELIMINA</v-btn>
           <v-btn v-if="selectedUser.id" variant="plain" @click="updateUserRole()">AGGIORNA RUOLI</v-btn>
           <v-btn v-else variant="plain" @click="inviteUser()">INVITA</v-btn>
         </v-card-actions>
       </v-card>
+      <Confirm v-model="confirmDelete">
+        <template v-slot:action>
+          <v-btn text="Conferma" variant="plain" @click="deleteUser()"></v-btn>
+        </template>
+      </Confirm>
     </v-dialog>
     <Confirm v-model="confirm">
       <template v-slot:action>

@@ -489,6 +489,16 @@ apiRouter.put("/users", async (req: Request, res: Response) => {
     }
 })
 
+apiRouter.delete("/users/:id", async (req: Request, res: Response) => {
+    try {
+        const result = await userApi.delete(+req.params.id)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
 apiRouter.put("/users/roles", async (req: Request, res: Response) => {
     try {
         const result = await userApi.updateRoles(req.body)

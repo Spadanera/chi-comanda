@@ -1,40 +1,37 @@
-// email.ts
-import nodemailer from 'nodemailer';
+import { MailerSend, EmailParams, Sender, Recipient } from "mailersend"
+import { Personalization } from "mailersend/lib/modules/Email.module";
 
 interface EmailOptions {
-  to: string;
-  subject: string;
-  text?: string;
-  html?: string;
+  to: string
+  subject: string
+  templateId: string
+  data: any
 }
 
-const sendEmail = async (options: EmailOptions): Promise<void> => {
-  // Create a transporter with your Gmail credentials
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.MAIL_USER,
-      pass: process.env.MAIL_PASSWORD,
-    },
-  });
+const mailersend = new MailerSend({
+    apiKey: process.env.MAIL_API_KEY || '',
+})
 
-  // Compose the email message
-  const mailOptions = {
-    from: process.env.MAIL_FROM,
-    to: options.to,
-    subject: options.subject,
-    text: options.text,
-    html: options.html,
-  };
+const sender = new Sender(process.env.MAIL_FROM || '', process.env.MAIL_FROM_NAME || '')
 
-  try {
-    // Send the email
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent:', info.messageId);
-  } catch (error) {
-    console.error('Error sending email:', error);
-    throw error; // Re-throw the error to be handled by the caller
-  }
-};
+const sendEmail = async (options: EmailOptions) => {
+  const recipients = [new Recipient(options.to)]
+
+  const personalization: Personalization[] = [
+    {
+      email: options.to,
+      data: options.data,
+    }
+  ];
+  
+  const emailParams = new EmailParams()
+    .setFrom(sender)
+    .setTo(recipients)
+    .setSubject(options.subject)
+    .setTemplateId(options.templateId)
+    .setPersonalization(personalization)
+  
+  await mailersend.email.send(emailParams)
+}
 
 export default sendEmail;

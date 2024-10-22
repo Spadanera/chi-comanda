@@ -21,6 +21,11 @@ class UserApi {
             FROM users WHERE email = ? AND status = 'ACTIVE'`, [email])
         if (result.id && (await checkPassword(password, result.password || ''))) {
             delete result.password
+            try {
+                await db.executeInsert("UPDATE users SET last_login_date = ? WHERE id = ?", [getCurrentDateTimeInItaly(), result.id])
+            } catch (error:any) {
+                console.log("Error setting last_login_date", error.message)
+            }
             return result
         }
         else {
@@ -36,8 +41,14 @@ class UserApi {
         return await db.query('SELECT * FROM users WHERE ID = ?', [id])
     }
 
-    async delete(id: number): Promise<number> {
-        return await db.executeUpdate('DELETE FROM users WHERE id = ?', [id])
+    async delete(id: number): Promise<void> {
+        await db.executeTransaction([
+            'DELETE FROM user_role WHERE user_id = ?',
+            'DELETE FROM users WHERE id = ?'
+        ], [
+            [id],
+            [id]
+        ])
     }
 
     async update(user: User): Promise<number> {
@@ -54,8 +65,7 @@ class UserApi {
         ])
     }
 
-    async inviteUser(user: User): Promise<number> {
-        console.log(user.roles?.join(','))
+    async inviteUser(user: User): Promise<void> {
         if (user && user.email && !(await this.checkUserExists(user.email))) {
             const invitation = {
                 email: user.email,
@@ -63,20 +73,21 @@ class UserApi {
                 token: uuidv4()
             } as Invitation
 
+            const result = await db.executeInsert("INSERT INTO users (email, token, creation_date) VALUES (?,?,?)", [invitation.email, invitation.token, invitation.creation_date])
+
+            await db.executeInsert(`INSERT INTO user_role (user_id, role_id) SELECT ?, id FROM roles WHERE name in (${user.roles?.map(value => `'${value}'`).join(',')})`, [result])
+            
             await sendEmail({
                 to: user.email,
-                subject: "Sei stato invitato a lavorare con Ludo Project su Chi Consegna!",
-                html: `
-                    Ciao, </br>
-                    al seguente link puoi accettare il tuo invito impostando la password:</ br></ br>
-                    <a href="${process.env.BASE_URL}/invitation/${invitation.token}">Accetta invito</a>
-                `
+                subject: "Unisciti a Chi Comanda",
+                templateId: 'z3m5jgrkdvdldpyo',
+                data: {
+                    invitationLink: `${process.env.BASE_URL}/invitation/${invitation.token}`
+                }
             })
-
-            const result = await db.executeInsert("INSERT INTO users (email, token, creation_date) VALUES (?,?,?)", [invitation.email, invitation.token, invitation.creation_date])
-            return await db.executeInsert(`INSERT INTO user_role (user_id, role_id) SELECT ?, id FROM roles WHERE name in (${user.roles?.map(value => `'${value}'`).join(',')})`, [result])
+        } else {
+            throw new Error("Missing Parameters")
         }
-        return 0
     }
 
     async checkUserExists(email: string): Promise<boolean> {
@@ -91,36 +102,35 @@ class UserApi {
     async acceptInvitation(invitation: Invitation): Promise<number> {
         if (invitation.password) {
             const _invitation: Invitation = await db.queryOne("SELECT * FROM users WHERE token = ?", [invitation.token])
-            if (_invitation.id && _invitation.email && !(await this.checkUserExists(_invitation.email))) {
+            if (_invitation.id && _invitation.email) {
                 return await db.executeUpdate("UPDATE users SET username = ?, password = ?, status =? WHERE id = ?",
                     [invitation.username, await hashPassword(invitation.password), 'ACTIVE', _invitation.id])
             }
             else {
-                return 0
+                throw new Error("Missing invitation")
             }
         }
         throw new Error("Missing password")
     }
 
-    async askResetPassword(invitation: Invitation): Promise<number> {
+    async askResetPassword(invitation: Invitation): Promise<void> {
         if (invitation.email && (await this.checkUserExists(invitation.email || ''))) {
             const id = uuidv4()
             const result = await db.executeInsert("INSERT INTO reset (email, token, creation_date) VALUES (?,?,?)", [
                 invitation.email, id, getCurrentDateTimeInItaly()
             ])
+
             await sendEmail({
                 to: invitation.email,
-                subject: "Chi Comanda - reimposta password!",
-                html: `
-                    Ciao, </br>
-                    al seguente link effettuare il reset della tua password:</ br></ br>
-                    <a href="${process.env.BASE_URL}/reset/${id}">Reimposta password</a>
-                `
+                subject: "Reimposta la password su Chi Comanda",
+                templateId: 'v69oxl571724785k',
+                data: {
+                    resetLink: `${process.env.BASE_URL}/reset/${id}`
+                }
             })
-            return result
         }
         else {
-            return 0
+            throw new Error("Missing Parameters")
         }
     }
 

@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue';
 import { type MasterTable } from "../../../../models/src"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
-import { sortAvailableTable, copy } from '@/services/utils';
+import { sortAvailableTable, copy, requiredRule } from '@/services/utils';
 import Confirm from '@/components/Confirm.vue';
 const axios = new Axios()
 const snackbarStore = SnackbarStore()
@@ -13,7 +13,6 @@ const dialog = ref<boolean>(false)
 const confirm = ref<boolean>(false)
 const selectedTable = ref<MasterTable>(null)
 const tables = ref<MasterTable[]>([])
-const requiredRule = ref([(value:any) => !!value || 'Inserire un nome'])
 const form = ref(null)
 
 function openDialog(table: MasterTable) {
@@ -82,7 +81,7 @@ onMounted(async () => {
         </v-card-title>
         <v-card-text>
           <v-form @submit.prevent ref="form">
-            <v-text-field v-model="selectedTable.name" label="Nome Tavolo" clearable :rules="requiredRule"></v-text-field>
+            <v-text-field v-model="selectedTable.name" label="Nome Tavolo" clearable :rules="[requiredRule]"></v-text-field>
           </v-form>
         </v-card-text>
         <v-card-actions>

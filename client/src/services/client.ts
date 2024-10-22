@@ -226,6 +226,7 @@ export default class Axios {
             email
         })
         this.snackbarStoreDef().show("Richiesta effettuata. Riceverai una mail con le istruzioni per reinpostare la tua password")
+        router.push("/login")
     }
 
     async Reset (invitation: Invitation) {
@@ -244,6 +245,10 @@ export default class Axios {
 
     async UpdateUserRoles(user:User): Promise<number> {
         return await this.put("/users/roles", user)
+    }
+
+    async DeleteUser(user_id:number): Promise<number> {
+        return await this.delete(`/users/${user_id}`)
     }
 
     async InviteUser(user: User): Promise<number> {

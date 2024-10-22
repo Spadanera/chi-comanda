@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import Axios from '@/services/client'
-import { UserStore } from '@/stores'
-import { SnackbarStore } from '@/stores';
-import { RouterLink } from 'vue-router';
+import { RouterLink } from 'vue-router'
+import { requiredRule, emailRule } from '@/services/utils';
 
-const userStore = UserStore()
 const axios: Axios = new Axios()
+const form = ref(null)
 
 const emit = defineEmits(['login'])
 
@@ -16,11 +15,14 @@ const credentials = ref({
 })
 
 async function login() {
-  try {
-    await axios.Login(credentials.value.email, credentials.value.password)
-    emit("login")
-  } catch (error) {
-    console.log(error)
+  const { valid } = await form.value?.validate()
+  if (valid) {
+    try {
+      await axios.Login(credentials.value.email, credentials.value.password)
+      emit("login")
+    } catch (error) {
+      console.log(error)
+    }
   }
 }
 </script>
@@ -32,11 +34,12 @@ async function login() {
         <v-col sm="8" cols="12" lg="3">
           <v-card>
             <v-card-text style="text-align: center;">
-              <img alt="Chi Comanda" class="logo" src="@/assets/chicomanda.png"
-                style="" width="240" height="240" />
-              <v-form fast-fail @submit.prevent>
-                <v-text-field type="email" label="Email" v-model="credentials.email"></v-text-field>
-                <v-text-field type="password" label="Password" v-model="credentials.password"></v-text-field>
+              <img alt="Chi Comanda" class="logo" src="@/assets/chicomanda.png" style="" width="240" height="240" />
+              <v-form ref="form" fast-fail @submit.prevent>
+                <v-text-field :rules="[requiredRule, emailRule]" type="email" label="Email"
+                  v-model="credentials.email"></v-text-field>
+                <v-text-field :rules="[requiredRule]" type="password" label="Password"
+                  v-model="credentials.password"></v-text-field>
               </v-form>
               <p>
                 <RouterLink to="/askreset">Password dimenticata</RouterLink>

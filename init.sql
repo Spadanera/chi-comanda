@@ -1,15 +1,8 @@
-CREATE TABLE `invitations` (
-  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
-  `email` varchar(255),
-  `token` varchar(255),
-  `creation_date` date
-);
-
 CREATE TABLE `reset` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `email` varchar(255),
   `token` varchar(255),
-  `creation_date` date
+  `creation_date` datetime
 );
 
 CREATE TABLE `users` (
@@ -17,8 +10,8 @@ CREATE TABLE `users` (
   `username` varchar(255),
   `email` varchar(255),
   `password` varchar(255),
-  `creation_date` date,
-  `last_login_date` date,
+  `creation_date` datetime,
+  `last_login_date` datetime,
   `status` varchar(255),
   `googleId` varchar(255),
   `token` varchar(255)
@@ -107,12 +100,12 @@ CREATE TABLE `items` (
 CREATE TABLE `audit` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `user_id` integer,
-  `event_id` integer,
-  `table_id` integer,
-  `action` varchar(255),
-  `actionData` JSON,
-  `actionDateTime` datetime
+  `method` varchar(255),
+  `path` varchar(255),
+  `data` JSON,
+  `dateTime` datetime
 );
+
 ALTER TABLE `user_role` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 
 ALTER TABLE `user_role` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`);
@@ -141,39 +134,22 @@ ALTER TABLE `items` ADD FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`);
 
 ALTER TABLE `items` ADD FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`);
 
-INSERT INTO users (email, username, password) VALUES ('dan@gmail.com', 'Dan', 'password');
-INSERT INTO users (email, username, password) VALUES ('ziro84@gmail.com', 'Nic', 'password');
-INSERT INTO users (email, username, password) VALUES ('vi@gmail.com', 'Vi', 'password');
-INSERT INTO users (email, username, password) VALUES ('elena@gmail.com', 'Elena', 'password');
-INSERT INTO users (email, username, password) VALUES ('led@gmail.com', 'Led', 'password');
-INSERT INTO users (email, username, password) VALUES ('ziofagiolo@gmail.com', 'Zio Fagiolo', 'password');
-INSERT INTO users (email, username, password) VALUES ('titta@gmail.com', 'Titta', 'password');
-INSERT INTO users (email, username, password) VALUES ('dani@gmail.com', 'Dani', 'password');
+INSERT INTO users (email, username, password) VALUES ('admin@gmail.com', 'Dan', 'password');
+INSERT INTO users (email, username, password) VALUES ('client@gmail.com', 'Dan', 'password');
 
 INSERT INTO roles (name) VALUES ('admin');
 INSERT INTO roles (name) VALUES ('checkout');
 INSERT INTO roles (name) VALUES ('waiter');
 INSERT INTO roles (name) VALUES ('bartender');
 INSERT INTO roles (name) VALUES ('superuser');
+INSERT INTO roles (name) VALUES ('client');
 
 INSERT INTO user_role (user_id, role_id) VALUES (1, 1);
 INSERT INTO user_role (user_id, role_id) VALUES (1, 2);
 INSERT INTO user_role (user_id, role_id) VALUES (1, 3);
 INSERT INTO user_role (user_id, role_id) VALUES (1, 4);
 INSERT INTO user_role (user_id, role_id) VALUES (1, 5);
-INSERT INTO user_role (user_id, role_id) VALUES (2, 1);
-INSERT INTO user_role (user_id, role_id) VALUES (2, 2);
-INSERT INTO user_role (user_id, role_id) VALUES (2, 3);
-INSERT INTO user_role (user_id, role_id) VALUES (1, 5);
-INSERT INTO user_role (user_id, role_id) VALUES (3, 1);
-INSERT INTO user_role (user_id, role_id) VALUES (3, 2);
-INSERT INTO user_role (user_id, role_id) VALUES (4, 1);
-INSERT INTO user_role (user_id, role_id) VALUES (4, 2);
-INSERT INTO user_role (user_id, role_id) VALUES (4, 3);
-INSERT INTO user_role (user_id, role_id) VALUES (5, 4);
-INSERT INTO user_role (user_id, role_id) VALUES (6, 3);
-INSERT INTO user_role (user_id, role_id) VALUES (7, 3);
-INSERT INTO user_role (user_id, role_id) VALUES (8, 4);
+INSERT INTO user_role (user_id, role_id) VALUES (2, 6);
 
 INSERT INTO master_tables (name, default_seats, status) VALUES ('1', 6, 'ACTIVE');
 INSERT INTO master_tables (name, default_seats, status) VALUES ('2', 6, 'ACTIVE');
