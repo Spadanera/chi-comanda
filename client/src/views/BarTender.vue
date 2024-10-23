@@ -10,6 +10,7 @@ import fileAudio from '@/assets/nuovo-ordine.wav'
 import fileAudio1 from '@/assets/nuovo-ordine-1.ogg'
 import fileAudio2 from '@/assets/nuovo-ordine-2.ogg'
 import fileAudio3 from '@/assets/nuovo-ordine-3.ogg'
+import fileAudio4 from '@/assets/nuovo-ordine-4.mp3'
 
 const axios = new Axios()
 var is: any
@@ -193,6 +194,7 @@ onMounted(async () => {
     new Audio(fileAudio1),
     new Audio(fileAudio2),
     new Audio(fileAudio3),
+    new Audio(fileAudio4),
   ]
   event.value = await axios.GetOnGoingEvent()
   if (event.value.id) {
