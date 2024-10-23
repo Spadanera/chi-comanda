@@ -227,7 +227,6 @@ onMounted(async () => {
         }
         snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
         let audioToPlay = audio.value[Math.floor(Math.random() * audio.value.length)]
-        console.log(audioToPlay)
         audioToPlay.play();
       }
     })
