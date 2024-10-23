@@ -7,6 +7,10 @@ import { groupItems, copy, getIcon, sortOrder } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
 import { io } from 'socket.io-client'
 import fileAudio from '@/assets/nuovo-ordine.wav'
+import fileAudio1 from '@/assets/nuovo-ordine-1.ogg'
+import fileAudio2 from '@/assets/nuovo-ordine-2.ogg'
+import fileAudio3 from '@/assets/nuovo-ordine-3.ogg'
+import fileAudio4 from '@/assets/nuovo-ordine-4.mp3'
 
 const axios = new Axios()
 var is: any
@@ -26,7 +30,7 @@ const deleteItemId = ref<number>(0)
 const selectedOrder = ref<Order[]>([])
 const confirm2 = ref<boolean>(false)
 const drawer = ref<boolean>(true)
-const audio = ref(null);
+const audio = ref([]);
 const origin = window.location.pathname
 
 const itemsToDo = computed(() => {
@@ -129,7 +133,7 @@ async function completeOrder() {
   else {
     selectedOrder.value = []
   }
-  snackbarStore.show("Ordine completato", 3000, 'bottom', 'success')
+  snackbarStore.show("Ordine completato", 3000, 'bottom')
 }
 
 async function getOrders() {
@@ -185,7 +189,13 @@ function calculateMinPassed() {
 
 onMounted(async () => {
   loading.value = true
-  audio.value = new Audio(fileAudio)
+  audio.value = [
+    new Audio(fileAudio),
+    new Audio(fileAudio1),
+    new Audio(fileAudio2),
+    new Audio(fileAudio3),
+    new Audio(fileAudio4),
+  ]
   event.value = await axios.GetOnGoingEvent()
   if (event.value.id) {
     await getOrders()
@@ -216,7 +226,8 @@ onMounted(async () => {
           selectedOrder.value.push(data)
         }
         snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
-        audio.value.play();
+        let audioToPlay = audio.value[Math.floor(Math.random() * audio.value.length)]
+        audioToPlay.play();
       }
     })
 
