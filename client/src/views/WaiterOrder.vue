@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Order, type MasterItem, type Item, ItemTypes as types, type Type, Destinations } from "../../../models/src"
+import { type Order, type MasterItem, type Item, ItemTypes as types, type Type } from "../../../models/src"
 import { ref, onMounted, computed } from "vue"
 import router from '@/router'
 import Axios from '@/services/client'
@@ -34,6 +34,7 @@ const form = ref(null)
 const formExtra = ref(null)
 const requiredRule = ref([(value: any) => !!value || 'Inserire un valore'])
 const extraItem = ref<Item>({} as Item)
+const destinations = ref([])
 
 const orderTotal = computed(() => orderItems.value.reduce((a: number, i: Item) => a += i.price, 0))
 const foodTotal = computed(() => orderItems.value.filter((i: Item) => i.type === 'Cibo').length)
@@ -130,6 +131,7 @@ async function setTableName() {
 
 onMounted(async () => {
   master_items.value = await axios.GetAvailableMasterItems()
+  destinations.value = await axios.GetDestinations()
   if (parseInt(props.table_id)) {
     table_name.value = (await axios.GetTable(props.table_id)).name
   }
@@ -281,7 +283,7 @@ onMounted(async () => {
                 append-inner-icon="mdi-currency-eur"></v-text-field>
             </v-col>
             <v-col cols="12">
-              <v-select :items="Destinations" label="Destinazione" item-value="id" item-title="name"
+              <v-select :items="destinations" label="Destinazione" item-value="id" item-title="name"
                 :rules="requiredRule" v-model="extraItem.destination_id">
                 <template v-slot:item="{ props, item }">
                   <v-list-item v-bind="props" :title="item.raw.name"></v-list-item>
