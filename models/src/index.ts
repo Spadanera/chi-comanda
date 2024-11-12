@@ -44,24 +44,6 @@ export const ItemTypes:Type[] = [
   }
 ]
 
-export const Destinations: Destination[] = [
-  {
-    id: 1,
-    name: "Bar Ludoteca",
-    location: 'sotto'
-  } as Destination,
-  {
-    id: 2,
-    name: "Cucina Ludoteca",
-    location: 'sotto'
-  } as Destination,
-  {
-    id: 3,
-    name: "Cucina Libra",
-    location: 'sopra'
-  } as Destination
-]
-
 export interface CompleteOrderInput {
   event_id: number,
   table_id: number,

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
 import { type Event, type Item, type Table, ItemTypes as types } from "../../../models/src"
-import { sortItem, getIcon } from "@/services/utils"
+import { sortItem, getIcon, groupItems } from "@/services/utils"
 import ItemList from '@/components/ItemList.vue'
 
 const selectedEvent = defineModel<Event>()
@@ -22,14 +22,14 @@ const items = computed<Item[]>(() => {
 })
 const beverageItems = computed<Item[]>(() => {
     if (selectedEvent.value) {
-        return items.value.filter((i: Item) => i.type === 'Bevanda').sort(sortItem)
+        return groupItems(items.value.filter((i: Item) => i.type === 'Bevanda'))
     }
     return [] as Item[]
 })
 
 const foodItems = computed<Item[]>(() => {
     if (selectedEvent.value) {
-        return items.value.filter((i: Item) => i.type === 'Cibo').sort(sortItem)
+        return groupItems(items.value.filter((i: Item) => i.type === 'Cibo'))
     }
     return [] as Item[]
 })

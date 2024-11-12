@@ -132,6 +132,7 @@ async function setTableName() {
 onMounted(async () => {
   destinations.value = await axios.GetDestinations()
   master_items.value = await axios.GetAvailableMasterItems()
+  destinations.value = await axios.GetDestinations()
   if (parseInt(props.table_id)) {
     table_name.value = (await axios.GetTable(props.table_id)).name
   }
@@ -284,7 +285,7 @@ onMounted(async () => {
             </v-col>
             <v-col cols="12">
               <v-select :items="destinations" label="Destinazione" item-value="id" item-title="name"
-                :rules="[requiredRule]" v-model="extraItem.destination_id">
+                :rules="requiredRule" v-model="extraItem.destination_id">
                 <template v-slot:item="{ props, item }">
                   <v-list-item v-bind="props" :title="item.raw.name"></v-list-item>
                 </template>

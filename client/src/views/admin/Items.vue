@@ -69,6 +69,7 @@ function setType() {
 onMounted(async () => {
   destinations.value = await axios.GetDestinations()
   await getMasterItems()
+  destinations.value = await axios.GetDestinations()
 })
 </script>
 
