@@ -106,6 +106,13 @@ CREATE TABLE `audit` (
   `dateTime` datetime
 );
 
+CREATE TABLE `sessions` (
+  `session_id` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `expires` int unsigned NOT NULL,
+  `data` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+  PRIMARY KEY (`session_id`)
+);
+
 ALTER TABLE `user_role` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 
 ALTER TABLE `user_role` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`);
@@ -122,10 +129,6 @@ ALTER TABLE `orders` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
 
 ALTER TABLE `audit` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 
-ALTER TABLE `audit` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
-
-ALTER TABLE `audit` ADD FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`);
-
 ALTER TABLE `master_items` ADD FOREIGN KEY (`destination_id`) REFERENCES `destinations` (`id`);
 
 ALTER TABLE `items` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
@@ -134,8 +137,7 @@ ALTER TABLE `items` ADD FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`);
 
 ALTER TABLE `items` ADD FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`);
 
-INSERT INTO users (email, username, password) VALUES ('admin@gmail.com', 'Dan', 'password');
-INSERT INTO users (email, username, password) VALUES ('client@gmail.com', 'Dan', 'password');
+INSERT INTO users (email, username) VALUES ('ziro84@gmail.com', 'Superuser');
 
 INSERT INTO roles (name) VALUES ('admin');
 INSERT INTO roles (name) VALUES ('checkout');
@@ -149,7 +151,6 @@ INSERT INTO user_role (user_id, role_id) VALUES (1, 2);
 INSERT INTO user_role (user_id, role_id) VALUES (1, 3);
 INSERT INTO user_role (user_id, role_id) VALUES (1, 4);
 INSERT INTO user_role (user_id, role_id) VALUES (1, 5);
-INSERT INTO user_role (user_id, role_id) VALUES (2, 6);
 
 INSERT INTO master_tables (name, default_seats, status) VALUES ('1', 6, 'ACTIVE');
 INSERT INTO master_tables (name, default_seats, status) VALUES ('2', 6, 'ACTIVE');
