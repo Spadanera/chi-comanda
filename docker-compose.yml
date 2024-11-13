@@ -27,13 +27,13 @@ services:
       - server-database
     environment:
       MYSQL_HOST: 'server-database'
-      MYSQL_DATABASE: 'ebdb'
+      MYSQL_DATABASE: 'railway'
       MYSQL_PORT: '3306'
       MYSQL_USER: 'user'
       MYSQL_PASSWORD: 'password'
       BASE_URL: 'http://localhost'
-      MAIL_API_KEY: '5f1bb047c4a4352c935325bb3097da52'
-      MAIL_API_SECRET: 'da3c1978d70a955e309564f22074bc3f'
+      MAIL_API_KEY: ${MAIL_API_KEY}
+      MAIL_API_SECRET: ${MAIL_API_SECRET}
       MAIL_FROM: 'info-dev@chicomanda.com'
       MAIL_FROM_NAME: 'Info-dev - Chi Comanda'
       SECRET: 'pippopluto'
@@ -50,10 +50,11 @@ services:
       - ./db:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
-      MYSQL_DATABASE: 'ebdb'
+      MYSQL_DATABASE: 'railway'
       MYSQL_USER: 'user'
       MYSQL_PASSWORD: 'password'
       MYSQL_ROOT_PASSWORD: 'password'
+      SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
     networks:
       - proxy_net
       
