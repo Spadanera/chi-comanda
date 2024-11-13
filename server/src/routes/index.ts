@@ -7,9 +7,21 @@ import masterItemsApi from "../api/master-item"
 import masterTableApi from "../api/master-table"
 import userApi from "../api/user"
 import destinationApi from "../api/destination"
-import { CompleteOrderInput, Roles } from "../../../models/src"
+import { CompleteOrderInput } from "../../../models/src"
 import publicApiRouter from "./public"
-import { hasMatchingRole } from "../../../models/src"
+import { Roles } from "../utils/helper"
+
+function hasMatchingRole(arr1: Roles[], arr2: Roles[]): boolean {
+    const set2 = new Set(arr2)
+  
+    for (const element of arr1) {
+        if (set2.has(element)) {
+            return true
+        }
+    }
+  
+    return false
+  }
 
 const apiRouter: Router = router()
 

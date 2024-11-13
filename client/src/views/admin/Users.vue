@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { Roles, type User, FormatedRole } from '../../../../models/src'
+import { type User } from '../../../../models/src'
 import Axios from '@/services/client'
-import { copy, requiredRule, emailRule } from '@/services/utils'
+import { copy, requiredRule, emailRule, Roles } from '@/services/utils'
 
 const axios = new Axios()
 const loading = ref<boolean>(null)
@@ -16,6 +16,23 @@ const form = ref(null)
 const roleOptions = Object.values(Roles).filter((r: Roles) => r !== Roles.client)
 const fidelityClient = ref<boolean>(false)
 const selectedRoles = ref([])
+
+function formatedRole(role: string) {
+  switch (role) {
+    case Roles.admin:
+      return "Amministratore"
+    case Roles.waiter:
+      return "Cameriere"
+    case Roles.checkout:
+      return "Cassiere"
+    case Roles.bartender:
+      return "Barista"
+    case Roles.client:
+      return "Cliente Fedele"
+    case Roles.superuser:
+      return "Super User"
+  }
+}
 
 const customSelectRule = (value: any) => {
   if (value?.length === 0 && !fidelityClient.value) {
@@ -35,7 +52,7 @@ const filteredUsers = computed(() => {
   })
 })
 
-function getColorByRole(role: Roles): string {
+function getColorByRole(role: string): string {
   if (role === Roles.superuser) return 'primary'
   if (role === Roles.client) return 'green'
   return ''
@@ -56,7 +73,7 @@ function openDialog(user?: User) {
   else {
     fidelityClient.value = false
   }
-  selectedRoles.value = selectedUser.value.roles?.filter((r: Roles) => r !== Roles.client)
+  selectedRoles.value = selectedUser.value.roles?.filter((r) => r !== Roles.client)
   dialog.value = true
 }
 
@@ -150,7 +167,7 @@ onMounted(async () => {
           <td>{{ user.username }}</td>
           <td>{{ user.email }}</td>
           <td>
-            <v-chip :color="getColorByRole(role)" v-for="role in user.roles">{{ FormatedRole(role) }}</v-chip>
+            <v-chip :color="getColorByRole(role)" v-for="role in user.roles">{{ formatedRole(role) }}</v-chip>
           </td>
           <td>
             <v-switch v-if="['ACTIVE', 'BLOCKED'].includes(user.status)" color="green"
@@ -182,7 +199,7 @@ onMounted(async () => {
                 <v-select chips label="Ruoli" v-model="selectedRoles" :items="roleOptions" multiple
                   :rules="[customSelectRule]">
                   <template v-slot:item="{ props, item }">
-                    <v-list-item v-bind="props" :title="FormatedRole(item.raw)"></v-list-item>
+                    <v-list-item v-bind="props" :title="formatedRole(item.raw)"></v-list-item>
                   </template>
                 </v-select>
               </v-col>
