@@ -285,7 +285,7 @@ onMounted(async () => {
             </v-col>
             <v-col cols="12">
               <v-select :items="destinations" label="Destinazione" item-value="id" item-title="name"
-                :rules="requiredRule" v-model="extraItem.destination_id">
+                :rules="[requiredRule]" v-model="extraItem.destination_id">
                 <template v-slot:item="{ props, item }">
                   <v-list-item v-bind="props" :title="item.raw.name"></v-list-item>
                 </template>
