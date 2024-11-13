@@ -137,7 +137,7 @@ ALTER TABLE `items` ADD FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`);
 
 ALTER TABLE `items` ADD FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`);
 
-INSERT INTO users (email, username) VALUES ('ziro84@gmail.com', 'Superuser');
+INSERT INTO users (email, username, status) VALUES ('ziro84@gmail.com', 'Superuser', 'ACTIVE');
 
 INSERT INTO roles (name) VALUES ('admin');
 INSERT INTO roles (name) VALUES ('checkout');
