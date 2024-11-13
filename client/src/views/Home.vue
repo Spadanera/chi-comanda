@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onBeforeMount, onMounted } from 'vue';
 import { type IUser } from '@/stores'
-import { Roles, type Destination } from '../../../models/src';
+import { type Destination } from '../../../models/src';
 import Axios from '@/services/client'
+import { Roles } from '@/services/utils';
 
 interface Role {
   title: string

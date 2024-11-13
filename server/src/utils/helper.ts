@@ -1,4 +1,11 @@
-import { Roles } from "../../../models/src";
+export enum Roles {
+    admin = 'admin',
+    checkout = 'checkout',
+    waiter = 'waiter',
+    bartender = 'bartender',
+    superuser = 'superuser',
+    client = 'client'
+  }
 
 export function getCurrentDateTimeInItaly(): string {
     const now = new Date();

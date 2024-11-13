@@ -1,8 +1,19 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
 import { UserStore, SnackbarStore } from '@/stores'
-import { Roles } from '../../../models/src'
-import { hasMatchingRole } from '../../../models/src';
+import { Roles } from '@/services/utils'
+
+function hasMatchingRole(arr1: Roles[], arr2: Roles[]): boolean {
+  const set2 = new Set(arr2)
+
+  for (const element of arr1) {
+      if (set2.has(element)) {
+          return true
+      }
+  }
+
+  return false
+}
 
 const publicRoute:String[] = ['Login', 'Reset', 'Invitation', 'AskReset']
 

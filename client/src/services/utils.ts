@@ -132,3 +132,12 @@ export const requiredRule = (value: any) => !!value || 'Inserire un valore'
 export const emailRule = (v: any) => /.+@.+\..+/.test(v) || 'Indirizzo email non valido'
 
 export const passwordMatchRule = (comparison: any) => (v:any) => v === comparison || 'Le password devono essere uguali'
+
+export enum Roles {
+    admin = 'admin',
+    checkout = 'checkout',
+    waiter = 'waiter',
+    bartender = 'bartender',
+    superuser = 'superuser',
+    client = 'client'
+  }
