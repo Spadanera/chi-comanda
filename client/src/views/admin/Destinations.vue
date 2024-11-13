@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { type Destination } from '../../../../models/src';
-import { copy } from '@/services/utils';
+import { copy, requiredRule } from '@/services/utils';
 import Axios from '@/services/client'
 
 const destinations = ref<Destination[]>([])
@@ -10,7 +10,6 @@ const confirmDeleteDestinatino = ref<boolean>(false)
 const selectedDestination = ref<Destination>(null)
 const dialog = ref<boolean>(null)
 const form = ref(null)
-const requiredRule = ref([(value: any) => !!value || 'Inserire un valore'])
 
 async function getDestinations() {
     destinations.value = await axios.GetDestinations()
@@ -90,7 +89,7 @@ onMounted(async () => {
             </v-card-title>
             <v-card-text>
                 <v-form @submit.prevent ref="form">
-                    <v-text-field label="Nome" :rules="requiredRule" v-model="selectedDestination.name"></v-text-field>
+                    <v-text-field label="Nome" :rules="[requiredRule]" v-model="selectedDestination.name"></v-text-field>
                 </v-form>
             </v-card-text>
             <v-card-actions>

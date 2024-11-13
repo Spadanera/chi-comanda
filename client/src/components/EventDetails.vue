@@ -98,7 +98,7 @@ onMounted(() => {
                 </v-tabs-window-item>
             </v-tabs-window>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="inner-elevation">
             <v-btn readonly size="small" density="compact" variant="plain">
                 <v-icon>mdi-table-furniture</v-icon> {{ selectedEvent.tableCount }}
             </v-btn>

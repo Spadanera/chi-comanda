@@ -52,11 +52,29 @@ export interface CompleteOrderInput {
 }
 
 export enum Roles {
-  admin,
-  checkout,
-  waiter,
-  bertender,
-  kitchen
+  admin = 'admin',
+  checkout = 'checkout',
+  waiter = 'waiter',
+  bartender = 'bartender',
+  superuser = 'superuser',
+  client = 'client'
+}
+
+export function FormatedRole(role: Roles) {
+  switch (role) {
+    case Roles.admin:
+      return "Amministratore"
+    case Roles.waiter:
+      return "Cameriere"
+    case Roles.checkout:
+      return "Cassiere"
+    case Roles.bartender:
+      return "Barista"
+    case Roles.client:
+      return "Cliente Fedele"
+    case Roles.superuser:
+      return "Super User"
+  }
 }
 
 export interface Message {
@@ -70,14 +88,16 @@ export interface Repository extends RowDataPacket {
 
 }
 
+export interface Invitation extends User {
+  
+}
+
 export interface Audit extends Repository {
   id?: number,
   user_id?: number,
-  event_id?: number,
-  table_id?: number,
-  action?: string,
-  actionData?: any
-  actionDateTime?: Date
+  method?: string,
+  path?: string,
+  data?: any
 }
 
 export interface Event extends Repository {
@@ -160,7 +180,10 @@ export interface User extends Repository {
   username?: string
   email?: string
   password?: string
-  roles?: Roles[]
+  roles?: Roles[],
+  status?: string,
+  statusSwitch?: boolean,
+  creation_date?: string
 }
 
 export interface Role extends Repository {
@@ -185,4 +208,16 @@ export interface Destination extends Repository {
   name?: string
   status?: string
   canDelete?: number
+}
+
+export function hasMatchingRole(arr1: Roles[], arr2: Roles[]): boolean {
+  const set2 = new Set(arr2)
+
+  for (const element of arr1) {
+      if (set2.has(element)) {
+          return true
+      }
+  }
+
+  return false
 }

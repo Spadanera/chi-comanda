@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Order, type MasterItem, type Item, ItemTypes as types, type Type } from "../../../models/src"
+import { type Order, type MasterItem, type Item, ItemTypes as types, type Type, type Destination } from "../../../models/src"
 import { ref, onMounted, computed } from "vue"
 import router from '@/router'
 import Axios from '@/services/client'
@@ -7,12 +7,14 @@ import { SnackbarStore, type IUser } from '@/stores'
 import { groupItems, copy, sortItem } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
 import { useRoute } from 'vue-router'
+import { requiredRule } from "@/services/utils"
 
 const route = useRoute()
 const origin = route.query.origin ? `${route.query.origin}` : '/waiter'
 const axios = new Axios()
 const user = defineModel<IUser>()
 const snackbarStore = SnackbarStore()
+const destinations = ref<Destination[]>([])
 
 const emit = defineEmits(['login', 'reload'])
 
@@ -32,9 +34,7 @@ const filter = ref<string>('')
 const table_name = ref<string>('')
 const form = ref(null)
 const formExtra = ref(null)
-const requiredRule = ref([(value: any) => !!value || 'Inserire un valore'])
 const extraItem = ref<Item>({} as Item)
-const destinations = ref([])
 
 const orderTotal = computed(() => orderItems.value.reduce((a: number, i: Item) => a += i.price, 0))
 const foodTotal = computed(() => orderItems.value.filter((i: Item) => i.type === 'Cibo').length)
@@ -130,6 +130,7 @@ async function setTableName() {
 }
 
 onMounted(async () => {
+  destinations.value = await axios.GetDestinations()
   master_items.value = await axios.GetAvailableMasterItems()
   destinations.value = await axios.GetDestinations()
   if (parseInt(props.table_id)) {
@@ -223,7 +224,7 @@ onMounted(async () => {
         <v-form ref="form" @submit.prevent>
           <v-row dense>
             <v-col cols="12">
-              <v-text-field v-model="tableName" label="Nome Tavolo" :rules="requiredRule"
+              <v-text-field v-model="tableName" label="Nome Tavolo" :rules="[requiredRule]"
                 :autofocus="true"></v-text-field>
             </v-col>
           </v-row>
@@ -276,10 +277,10 @@ onMounted(async () => {
         <v-form ref="formExtra" @submit.prevent>
           <v-row>
             <v-col cols="12">
-              <v-text-field v-model="extraItem.name" label="Nome" :rules="requiredRule"></v-text-field>
+              <v-text-field v-model="extraItem.name" label="Nome" :rules="[requiredRule]"></v-text-field>
             </v-col>
             <v-col cols="6">
-              <v-text-field v-model="extraItem.price" label="Prezzo" type="number" :rules="requiredRule"
+              <v-text-field v-model="extraItem.price" label="Prezzo" type="number" :rules="[requiredRule]"
                 append-inner-icon="mdi-currency-eur"></v-text-field>
             </v-col>
             <v-col cols="12">

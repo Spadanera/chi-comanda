@@ -31,12 +31,11 @@ services:
       MYSQL_PORT: '3306'
       MYSQL_USER: 'user'
       MYSQL_PASSWORD: 'password'
-      MYSQL_ENV: 'PRD'
-      MYSQL_HOST_STG: ''
-      MYSQL_PORT_STG: ''
-      MYSQL_DATABASE_STG: ''
-      MYSQL_USER_STG: ''
-      MYSQL_PASSWORD_STG: ''
+      BASE_URL: 'http://localhost'
+      MAIL_API_KEY: '5f1bb047c4a4352c935325bb3097da52'
+      MAIL_API_SECRET: 'da3c1978d70a955e309564f22074bc3f'
+      MAIL_FROM: 'info-dev@chicomanda.com'
+      MAIL_FROM_NAME: 'Info-dev - Chi Comanda'
       SECRET: 'pippopluto'
       PORT: 3000
     networks:

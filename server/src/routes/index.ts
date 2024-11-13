@@ -5,13 +5,33 @@ import tableApi from "../api/table"
 import itemApi from "../api/item"
 import masterItemsApi from "../api/master-item"
 import masterTableApi from "../api/master-table"
+import userApi from "../api/user"
 import destinationApi from "../api/destination"
-import { CompleteOrderInput } from "../../../models/src"
+import { CompleteOrderInput, Roles } from "../../../models/src"
+import publicApiRouter from "./public"
+import { hasMatchingRole } from "../../../models/src"
 
 const apiRouter: Router = router()
 
+export const authorizationMiddleware = (role: Roles | Roles[]) => (req: Request, res: Response, next: any) => { 
+    if (Array.isArray(role)) {
+        if (hasMatchingRole((req.user as any).roles, role)) {
+            next()
+        } else {
+            res.status(401).json('Unauthorized')
+        }
+    }
+    else {
+        if ((req.user as any).roles?.includes(role)) {
+            next()
+        } else {
+            res.status(401).json('Unauthorized')
+        }
+    }
+}
+
 // events API
-apiRouter.get("/events", async (req: Request, res: Response) => {
+apiRouter.get("/events", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
         const result = await eventAPI.getAll()
         res.status(200).json(result)
@@ -31,7 +51,7 @@ apiRouter.get("/events/ongoing", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.get("/events/:id", async (req: Request, res: Response) => {
+apiRouter.get("/events/:id", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
         const result = await eventAPI.get(+req.params.id)
         if (result.length) {
@@ -46,7 +66,7 @@ apiRouter.get("/events/:id", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.post("/events", async (req: Request, res: Response) => {
+apiRouter.post("/events", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
         const result = await eventAPI.create(req.body)
         res.status(200).json(result)
@@ -56,7 +76,7 @@ apiRouter.post("/events", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.put("/events/:id", async (req: Request, res: Response) => {
+apiRouter.put("/events/:id", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
         const result = await eventAPI.update(req.body, +req.params.id)
         res.status(200).json(result)
@@ -66,7 +86,7 @@ apiRouter.put("/events/:id", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.delete("/events/:id", async (req: Request, res: Response) => {
+apiRouter.delete("/events/:id", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
         const result = await eventAPI.delete(+req.params.id)
         res.status(200).json(result)
@@ -76,7 +96,7 @@ apiRouter.delete("/events/:id", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.get("/events/:id/tables/available", async (req: Request, res: Response) => {
+apiRouter.get("/events/:id/tables/available", authorizationMiddleware([Roles.waiter, Roles.bartender, Roles.checkout]), async (req: Request, res: Response) => {
     try {
         const result = await tableApi.getAvailableTable(+req.params.id)
         res.status(200).json(result)
@@ -86,7 +106,7 @@ apiRouter.get("/events/:id/tables/available", async (req: Request, res: Response
     }
 })
 
-apiRouter.get("/events/:id/tables/free", async (req: Request, res: Response) => {
+apiRouter.get("/events/:id/tables/free", authorizationMiddleware(Roles.checkout), async (req: Request, res: Response) => {
     try {
         const result = await tableApi.getFreeTable(+req.params.id)
         res.status(200).json(result)
@@ -106,7 +126,7 @@ apiRouter.get("/events/:id/tables", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.post("/events/:eventid/tables/:tableid/discount/:discount", async (req: Request, res: Response) => {
+apiRouter.post("/events/:eventid/tables/:tableid/discount/:discount", authorizationMiddleware(Roles.checkout), async (req: Request, res: Response) => {
     try {
         const result = await tableApi.insertDiscount(+req.params.eventid, +req.params.tableid, +req.params.discount)
         res.status(200).json(result)
@@ -116,7 +136,7 @@ apiRouter.post("/events/:eventid/tables/:tableid/discount/:discount", async (req
     }
 })
 
-apiRouter.put("/tables/:id/change/:masterid", async (req: Request, res: Response) => {
+apiRouter.put("/tables/:id/change/:masterid", authorizationMiddleware(Roles.checkout), async (req: Request, res: Response) => {
     try {
         const result = await tableApi.changeTable(+req.params.id, +req.params.masterid)
         res.status(200).json(result)
@@ -162,7 +182,7 @@ apiRouter.post("/tables", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.put("/tables/:id", async (req: Request, res: Response) => {
+apiRouter.put("/tables/:id", authorizationMiddleware([Roles.waiter, Roles.bartender, Roles.checkout]), async (req: Request, res: Response) => {
     try {
         const result = await tableApi.update(req.body, +req.params.id)
         res.status(200).json(result)
@@ -172,7 +192,7 @@ apiRouter.put("/tables/:id", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.put("/tables/:id/payitems", async (req: Request, res: Response) => {
+apiRouter.put("/tables/:id/payitems", authorizationMiddleware(Roles.checkout), async (req: Request, res: Response) => {
     try {
         const result = await tableApi.paySelectedItem(+req.params.id, req.body as number[])
         res.status(200).json(result)
@@ -182,28 +202,8 @@ apiRouter.put("/tables/:id/payitems", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.delete("/tables/:id", async (req: Request, res: Response) => {
-    try {
-        const result = await tableApi.delete(+req.params.id)
-        res.status(200).json(result)
-    } catch (error) {
-        console.log(error)
-        res.status(500).json(error)
-    }
-})
-
-apiRouter.post("/tables/:id/close", async (req: Request, res: Response) => {
-    try {
-        const result = await tableApi.closeTable(+req.params.id)
-        res.status(200).json(result)
-    } catch (error) {
-        console.log(error)
-        res.status(500).json(error)
-    }
-})
-
 // orders API
-apiRouter.get("/orders/:eventid/:destinationsids", async (req: Request, res: Response) => {
+apiRouter.get("/orders/:eventid/:destinationsids", authorizationMiddleware(Roles.bartender), async (req: Request, res: Response) => {
     try {
         const result = await orderAPI.getAll(+req.params.eventid, JSON.parse(req.params.destinationsids))
         res.status(200).json(result)
@@ -213,17 +213,7 @@ apiRouter.get("/orders/:eventid/:destinationsids", async (req: Request, res: Res
     }
 })
 
-apiRouter.get("/orders/:id", async (req: Request, res: Response) => {
-    try {
-        const result = await orderAPI.get(+req.params.id)
-        res.status(200).json(result)
-    } catch (error) {
-        console.log(error)
-        res.status(500).json(error)
-    }
-})
-
-apiRouter.post("/orders", async (req: Request, res: Response) => {
+apiRouter.post("/orders", authorizationMiddleware([Roles.waiter, Roles.bartender, Roles.checkout]), async (req: Request, res: Response) => {
     try {
         const result = await orderAPI.create(req.body)
         res.status(200).json(result)
@@ -233,28 +223,8 @@ apiRouter.post("/orders", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.put("/orders/:id", async (req: Request, res: Response) => {
-    try {
-        const result = await orderAPI.update(req.body, +req.params.id)
-        res.status(200).json(result)
-    } catch (error) {
-        console.log(error)
-        res.status(500).json(error)
-    }
-})
-
-apiRouter.delete("/orders/:id", async (req: Request, res: Response) => {
-    try {
-        const result = await orderAPI.delete(+req.params.id)
-        res.status(200).json(result)
-    } catch (error) {
-        console.log(error)
-        res.status(500).json(error)
-    }
-})
-
 // order items API
-apiRouter.get("/orders/:id/items", async (req: Request, res: Response) => {
+apiRouter.get("/orders/:id/items", authorizationMiddleware([Roles.bartender, Roles.checkout]), async (req: Request, res: Response) => {
     try {
         const result = await itemApi.getByOrderId(+req.params.id)
         res.status(200).json(result)
@@ -264,7 +234,7 @@ apiRouter.get("/orders/:id/items", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.put("/orders/:order_id/complete", async (req: Request, res: Response) => {
+apiRouter.put("/orders/:order_id/complete", authorizationMiddleware(Roles.bartender), async (req: Request, res: Response) => {
     try {
         const result = await orderAPI.completeOrder(+req.params.order_id, req.body as CompleteOrderInput)
         res.status(200).json(result)
@@ -274,17 +244,7 @@ apiRouter.put("/orders/:order_id/complete", async (req: Request, res: Response) 
     }
 })
 
-apiRouter.get("/tables/:id/items", async (req: Request, res: Response) => {
-    try {
-        const result = await itemApi.getByTableId(+req.params.id)
-        res.status(200).json(result)
-    } catch (error) {
-        console.log(error)
-        res.status(500).json(error)
-    }
-})
-
-apiRouter.put("/tables/:id/complete", async (req: Request, res: Response) => {
+apiRouter.put("/tables/:id/complete", authorizationMiddleware(Roles.checkout), async (req: Request, res: Response) => {
     try {
         const result = await tableApi.closeTable(+req.params.id)
         res.status(200).json(result)
@@ -294,7 +254,7 @@ apiRouter.put("/tables/:id/complete", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.delete("/items/:id", async (req: Request, res: Response) => {
+apiRouter.delete("/items/:id", authorizationMiddleware([Roles.bartender, Roles.checkout]), async (req: Request, res: Response) => {
     try {
         const result = await itemApi.delete(+req.params.id)
         res.status(200).json(result)
@@ -304,7 +264,7 @@ apiRouter.delete("/items/:id", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.put("/items", async (req: Request, res: Response) => {
+apiRouter.put("/items", authorizationMiddleware([Roles.bartender, Roles.checkout]), async (req: Request, res: Response) => {
     try {
         const result = await itemApi.update(req.body)
         res.status(200).json(result)
@@ -315,7 +275,7 @@ apiRouter.put("/items", async (req: Request, res: Response) => {
 })
 
 // master items API
-apiRouter.get("/master-items", async (req: Request, res: Response) => {
+apiRouter.get("/master-items", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
         const result = await masterItemsApi.getAll()
         res.status(200).json(result)
@@ -325,7 +285,7 @@ apiRouter.get("/master-items", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.get("/master-items/available", async (req: Request, res: Response) => {
+apiRouter.get("/master-items/available", authorizationMiddleware([Roles.waiter, Roles.bartender, Roles.checkout]), async (req: Request, res: Response) => {
     try {
         const result = await masterItemsApi.getAllAvailable()
         res.status(200).json(result)
@@ -335,17 +295,7 @@ apiRouter.get("/master-items/available", async (req: Request, res: Response) => 
     }
 })
 
-apiRouter.get("/master-items/:id", async (req: Request, res: Response) => {
-    try {
-        const result = await masterItemsApi.get(+req.params.id)
-        res.status(200).json(result[0])
-    } catch (error) {
-        console.log(error)
-        res.status(500).json(error)
-    }
-})
-
-apiRouter.post("/master-items", async (req: Request, res: Response) => {
+apiRouter.post("/master-items", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
         const result = await masterItemsApi.create(req.body)
         res.status(200).json(result)
@@ -355,7 +305,7 @@ apiRouter.post("/master-items", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.put("/master-items", async (req: Request, res: Response) => {
+apiRouter.put("/master-items", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
         const result = await masterItemsApi.update(req.body)
         res.status(200).json(result)
@@ -365,7 +315,7 @@ apiRouter.put("/master-items", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.delete("/master-items/:id", async (req: Request, res: Response) => {
+apiRouter.delete("/master-items/:id", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
         const result = await masterItemsApi.delete(+req.params.id)
         res.status(200).json(result)
@@ -376,7 +326,7 @@ apiRouter.delete("/master-items/:id", async (req: Request, res: Response) => {
 })
 
 // master tables API
-apiRouter.get("/master-tables", async (req: Request, res: Response) => {
+apiRouter.get("/master-tables", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
         const result = await masterTableApi.getAll()
         res.status(200).json(result)
@@ -386,7 +336,7 @@ apiRouter.get("/master-tables", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.get("/master-tables/:id", async (req: Request, res: Response) => {
+apiRouter.get("/master-tables/:id", authorizationMiddleware([Roles.waiter, Roles.bartender, Roles.checkout, Roles.admin]), async (req: Request, res: Response) => {
     try {
         const result = await masterTableApi.get(+req.params.id)
         if (result && result.length) {
@@ -401,7 +351,7 @@ apiRouter.get("/master-tables/:id", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.post("/master-tables", async (req: Request, res: Response) => {
+apiRouter.post("/master-tables", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
         const result = await masterTableApi.create(req.body)
         res.status(200).json(result)
@@ -411,7 +361,7 @@ apiRouter.post("/master-tables", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.put("/master-tables", async (req: Request, res: Response) => {
+apiRouter.put("/master-tables", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
         const result = await masterTableApi.update(req.body)
         res.status(200).json(result)
@@ -432,22 +382,7 @@ apiRouter.get("/destinations", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.get("/destinations/:id", async (req: Request, res: Response) => {
-    try {
-        const result = await destinationApi.get(+req.params.id)
-        if (result && result.length) {
-            res.status(200).json(result[0])
-        }
-        else {
-            res.status(200).json(0)
-        }
-    } catch (error) {
-        console.log(error)
-        res.status(500).json(error)
-    }
-})
-
-apiRouter.post("/destinations", async (req: Request, res: Response) => {
+apiRouter.post("/destinations", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
         const result = await destinationApi.create(req.body)
         res.status(200).json(result)
@@ -457,7 +392,7 @@ apiRouter.post("/destinations", async (req: Request, res: Response) => {
     }
 })
 
-apiRouter.put("/destinations", async (req: Request, res: Response) => {
+apiRouter.put("/destinations", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
         const result = await destinationApi.update(req.body)
         res.status(200).json(result)
@@ -466,5 +401,57 @@ apiRouter.put("/destinations", async (req: Request, res: Response) => {
         res.status(500).json(error)
     }
 })
+
+apiRouter.get("/users", authorizationMiddleware(Roles.superuser), async (req: Request, res: Response) => {
+    try {
+        const result = await userApi.getAll()
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.put("/users", authorizationMiddleware(Roles.superuser), async (req: Request, res: Response) => {
+    try {
+        const result = await userApi.update(req.body)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.delete("/users/:id", authorizationMiddleware(Roles.superuser), async (req: Request, res: Response) => {
+    try {
+        const result = await userApi.delete(+req.params.id)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.put("/users/roles", authorizationMiddleware(Roles.superuser), async (req: Request, res: Response) => {
+    try {
+        const result = await userApi.updateRoles(req.body)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.post("/users/invite", authorizationMiddleware(Roles.superuser), async (req: Request, res: Response) => {
+    try {
+        const result = await userApi.inviteUser(req.body)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.use("/public", publicApiRouter)
 
 export default apiRouter
