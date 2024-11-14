@@ -1,5 +1,5 @@
 import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance, type AxiosProgressEvent } from 'axios'
-import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation } from "../../../models/src"
+import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation, type Menu } from "../../../models/src"
 import router from '@/router'
 import { UserStore, SnackbarStore, type IUser, ProgressStore } from '@/stores'
 import type { StoreDefinition } from 'pinia'
@@ -193,12 +193,28 @@ export default class Axios {
         return await this.put<MasterItem>("/master-tables", masterTable);
     }
 
-    async GetAllMasterItems(): Promise<MasterItem[]> {
-        return await this.get<MasterItem>("/master-items");
+    async GetAllMenu(): Promise<Menu[]> {
+        return await this.get<MasterItem>(`/menu`);
     }
 
-    async GetAvailableMasterItems(): Promise<MasterItem[]> {
-        return await this.get<MasterItem>("/master-items/available");
+    async CreateMenu(menu: Menu): Promise<number> {
+        return await this.post<Menu>("/menu", menu);
+    }
+
+    async EditMenu(menu: Menu): Promise<number> {
+        return await this.put<Menu>("/menu", menu);
+    }
+
+    async DeleteMenu(id: number): Promise<number> {
+        return await this.delete(`/menu/${id}`);
+    }
+
+    async GetAllMasterItems(menu_id: number): Promise<MasterItem[]> {
+        return await this.get<MasterItem>(`/master-items/${menu_id}`);
+    }
+
+    async GetAvailableMasterItems(menu_id: number): Promise<MasterItem[]> {
+        return await this.get<MasterItem>(`/master-items/available/${menu_id}`);
     }
 
     async CreateMasterItems(masterItem: MasterItem): Promise<number> {

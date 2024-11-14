@@ -1,3 +1,5 @@
+import { Request, Response } from "express"
+
 export enum Roles {
     admin = 'admin',
     checkout = 'checkout',
@@ -5,7 +7,36 @@ export enum Roles {
     bartender = 'bartender',
     superuser = 'superuser',
     client = 'client'
-  }
+}
+
+export function hasMatchingRole(arr1: Roles[], arr2: Roles[]): boolean {
+    const set2 = new Set(arr2)
+
+    for (const element of arr1) {
+        if (set2.has(element)) {
+            return true
+        }
+    }
+
+    return false
+}
+
+export const authorizationMiddleware = (role: Roles | Roles[]) => (req: Request, res: Response, next: any) => { 
+    if (Array.isArray(role)) {
+        if (hasMatchingRole((req.user as any).roles, role)) {
+            next()
+        } else {
+            res.status(401).json('Unauthorized')
+        }
+    }
+    else {
+        if ((req.user as any).roles?.includes(role)) {
+            next()
+        } else {
+            res.status(401).json('Unauthorized')
+        }
+    }
+}
 
 export function getCurrentDateTimeInItaly(): string {
     const now = new Date();

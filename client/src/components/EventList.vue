@@ -81,7 +81,8 @@ onMounted(() => {
                 <v-card :title="getExtendedDate(event.date.toString())" @click="showEvent(event)">
                     <v-card-subtitle>{{ event.name }} <span v-if="event.status === 'ONGOING'"> - <span
                                 style="font-weight: bold">Incasso attuale: {{ event.currentPaid }}
-                                €</span></span></v-card-subtitle>
+                                €</span></span><span v-if="event.status === 'PLANNED'"> - {{ event.manu_name
+                            }}</span></v-card-subtitle>
                     <v-card-text v-show="event.status !== 'PLANNED'">
                         <v-btn readonly size="small" density="compact" variant="plain">
                             <v-icon>mdi-table-furniture</v-icon> {{ event.tableCount }}

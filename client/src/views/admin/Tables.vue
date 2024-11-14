@@ -54,7 +54,7 @@ onMounted(async () => {
 </script>
 <template>
   <v-container>
-    <h3>Elenco Tavoli</h3>
+    <h4>Elenco Tavoli</h4>
   </v-container>
   <v-container>
     <v-skeleton-loader v-if="loading" type="card"></v-skeleton-loader>

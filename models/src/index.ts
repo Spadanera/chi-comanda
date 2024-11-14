@@ -78,6 +78,7 @@ export interface Event extends Repository {
   id?: number
   name?: string
   date?: Date
+  menu_id?: number
   tables?: Table[]
   workers?: User[]
   orders?: Order[]
@@ -88,6 +89,7 @@ export interface Event extends Repository {
   discount?: number
   currentPaid?: number
   tablesOpen?: number
+  menu_name?: string
 }
 
 export interface Table extends Repository {
@@ -165,6 +167,15 @@ export interface Role extends Repository {
   name?: string
 }
 
+export interface Menu extends Repository {
+  id?: number
+  name?: string
+  status?: string
+  beverageCount?: number,
+  foodCount?: number
+  from_id?: number
+}
+
 export interface MasterItem extends Repository {
   id?: number
   name?: string
@@ -175,6 +186,7 @@ export interface MasterItem extends Repository {
   destination?: string
   available?: boolean
   status?: string
+  menu_id?: number
 }
 
 export interface Destination extends Repository {

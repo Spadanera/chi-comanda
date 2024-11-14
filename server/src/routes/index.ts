@@ -9,38 +9,9 @@ import userApi from "../api/user"
 import destinationApi from "../api/destination"
 import { CompleteOrderInput } from "../../../models/src"
 import publicApiRouter from "./public"
-import { Roles } from "../utils/helper"
-
-function hasMatchingRole(arr1: Roles[], arr2: Roles[]): boolean {
-    const set2 = new Set(arr2)
-  
-    for (const element of arr1) {
-        if (set2.has(element)) {
-            return true
-        }
-    }
-  
-    return false
-  }
+import { Roles, authorizationMiddleware } from "../utils/helper"
 
 const apiRouter: Router = router()
-
-export const authorizationMiddleware = (role: Roles | Roles[]) => (req: Request, res: Response, next: any) => { 
-    if (Array.isArray(role)) {
-        if (hasMatchingRole((req.user as any).roles, role)) {
-            next()
-        } else {
-            res.status(401).json('Unauthorized')
-        }
-    }
-    else {
-        if ((req.user as any).roles?.includes(role)) {
-            next()
-        } else {
-            res.status(401).json('Unauthorized')
-        }
-    }
-}
 
 // events API
 apiRouter.get("/events", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
@@ -287,9 +258,9 @@ apiRouter.put("/items", authorizationMiddleware([Roles.bartender, Roles.checkout
 })
 
 // master items API
-apiRouter.get("/master-items", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
+apiRouter.get("/menu", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
-        const result = await masterItemsApi.getAll()
+        const result = await masterItemsApi.getAllMenu()
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -297,9 +268,50 @@ apiRouter.get("/master-items", authorizationMiddleware(Roles.admin), async (req:
     }
 })
 
-apiRouter.get("/master-items/available", authorizationMiddleware([Roles.waiter, Roles.bartender, Roles.checkout]), async (req: Request, res: Response) => {
+apiRouter.post("/menu", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
-        const result = await masterItemsApi.getAllAvailable()
+        const result = await masterItemsApi.createMenu(req.body)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.put("/menu", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
+    try {
+        const result = await masterItemsApi.editMenu(req.body)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.delete("/menu/:id", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
+    try {
+        const result = await masterItemsApi.deleteMenu(+req.params.id)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+
+apiRouter.get("/master-items/:id", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
+    try {
+        const result = await masterItemsApi.getAll(+req.params.id)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+apiRouter.get("/master-items/available/:id", authorizationMiddleware([Roles.waiter, Roles.bartender, Roles.checkout]), async (req: Request, res: Response) => {
+    try {
+        const result = await masterItemsApi.getAllAvailable(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
