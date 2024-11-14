@@ -3,8 +3,7 @@ import { onMounted, ref } from 'vue';
 import { type MasterTable } from "../../../../models/src"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
-import { sortAvailableTable, copy, requiredRule } from '@/services/utils';
-import Confirm from '@/components/Confirm.vue';
+import { sortAvailableTable, copy, requiredRule } from '@/services/utils'
 const axios = new Axios()
 const snackbarStore = SnackbarStore()
 

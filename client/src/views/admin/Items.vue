@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, useAttrs } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { type MasterItem, type Type, ItemTypes, type Destination } from "../../../../models/src"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
-import { sortItem, copy, requiredRule } from '@/services/utils';
-import Confirm from '@/components/Confirm.vue';
-import { RouterLink } from 'vue-router';
+import { sortItem, copy, requiredRule } from '@/services/utils'
+import { RouterLink } from 'vue-router'
 const axios = new Axios()
 const snackbarStore = SnackbarStore()
 const props = defineProps(['menu_id', 'menu_name'])

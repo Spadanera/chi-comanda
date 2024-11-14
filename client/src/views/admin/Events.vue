@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue"
-import EventList from "@/components/EventList.vue";
 import { type Event as EventType } from "../../../../models/src"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { requiredRule } from "@/services/utils";
 
+const EventList  = () => import('@/components/EventList.vue')
 const axios = new Axios()
 const snackbarStore = SnackbarStore()
 const tab = ref<string>(null)
@@ -15,6 +15,7 @@ const dialogEvent = ref<EventType>(null)
 const loading = ref<boolean>(false)
 const form = ref(null)
 const menu = ref([])
+
 
 const ongoingEvents = computed<EventType[]>(() => {
   return events.value.filter(e => e.status === 'ONGOING')
