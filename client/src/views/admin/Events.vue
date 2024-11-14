@@ -3,9 +3,8 @@ import { ref, onMounted, computed } from "vue"
 import { type Event as EventType } from "../../../../models/src"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
-import { requiredRule } from "@/services/utils";
-
-const EventList  = () => import('@/components/EventList.vue')
+import { requiredRule } from "@/services/utils"
+import EventList from "@/components/EventList.vue"
 const axios = new Axios()
 const snackbarStore = SnackbarStore()
 const tab = ref<string>(null)
