@@ -3,6 +3,8 @@ import { ref, onMounted } from "vue"
 import { type IUser } from '@/stores'
 import { RouterLink, RouterView } from 'vue-router';
 
+defineOptions({ inheritAttrs: false })
+
 interface NavigationItem {
   title: string
   prependIcon: string
@@ -53,7 +55,12 @@ onMounted(() => {
         value: 3
       })
     }
-    selectedItem.value = [navigationItems.value.find(n => n.to === /\/admin\/?(\w*)/.exec(window.location.pathname)[1]).value]
+    if (/\/items\//.test(window.location.pathname)) {
+      selectedItem.value = [navigationItems.value[2].value]
+    }
+    else {
+      selectedItem.value = [navigationItems.value.find(n => n.to === /\/admin\/?(\w*)/.exec(window.location.pathname)[1]).value]
+    }
   } catch (error) {
 
   }
