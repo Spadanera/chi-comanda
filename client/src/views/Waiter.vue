@@ -71,7 +71,7 @@ onBeforeUnmount(() => {
       <v-row>
         <v-col v-for="table in activeTable" cols="4">
           <RouterLink
-            :to="`/waiter/${event?.id}/order/${table?.master_table_id ? table?.master_table_id : 0}/table/${table.table_id}${queryToPass}`">
+            :to="`/waiter/${event?.id}/mastertable/${table?.master_table_id ? table?.master_table_id : 0}/table/${table.table_id}/menu/${event.menu_id}${queryToPass}`">
             <v-card height="50px" style="padding-top: 10px;">
               {{ table.table_name }}
             </v-card>
@@ -85,14 +85,14 @@ onBeforeUnmount(() => {
       </v-row>
       <v-row>
         <v-col v-for="table in availableTable" cols="4">
-          <RouterLink :to="`/waiter/${event?.id}/order/${table?.master_table_id}/table/0${queryToPass}`">
+          <RouterLink :to="`/waiter/${event?.id}/mastertable/${table?.master_table_id}/table/0/menu/${event.menu_id}${queryToPass}`">
             <v-card height="50px" style="padding-top: 10px;">
               {{ table.master_table_name }}
             </v-card>
           </RouterLink>
         </v-col>
         <v-col cols="4">
-          <RouterLink :to="`/waiter/${event?.id}/order/0/table/0`">
+          <RouterLink :to="`/waiter/${event?.id}/mastertable/0/table/0/menu/${event.menu_id}`">
             <v-card height="50px" style="padding-top: 10px;">
               <v-icon>mdi-plus</v-icon>
             </v-card>

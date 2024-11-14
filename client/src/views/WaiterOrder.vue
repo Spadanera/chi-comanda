@@ -18,7 +18,7 @@ const destinations = ref<Destination[]>([])
 
 const emit = defineEmits(['login', 'reload'])
 
-const props = defineProps(['event_id', 'table_id', 'master_table_id'])
+const props = defineProps(['event_id', 'table_id', 'master_table_id', 'menu_id'])
 
 const open = ref(null)
 const loading = ref<boolean>(true)
@@ -131,7 +131,7 @@ async function setTableName() {
 
 onMounted(async () => {
   destinations.value = await axios.GetDestinations()
-  master_items.value = await axios.GetAvailableMasterItems()
+  master_items.value = await axios.GetAvailableMasterItems(props.menu_id)
   destinations.value = await axios.GetDestinations()
   if (parseInt(props.table_id)) {
     table_name.value = (await axios.GetTable(props.table_id)).name

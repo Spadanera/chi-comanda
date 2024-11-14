@@ -1,21 +1,57 @@
 import db from "../db"
-import { Item, MasterItem } from "../../../models/src"
+import { Item, MasterItem, Menu } from "../../../models/src"
 
 class MasterItemsApi {
     constructor() {
     }
 
-    async getAll(): Promise<Item[]> {
+    async getAllMenu(): Promise<Menu[]> {
+        return await db.query(`SELECT 
+            id, name, creation_date, 
+            (SELECT COUNT(id) FROM master_items WHERE menu_id = menu.id AND type = 'Bevanda') beverageCount,
+            (SELECT COUNT(id) FROM master_items WHERE menu_id = menu.id AND type = 'Cibo') foodCount,
+            (SELECT COUNT(id) FROM events WHERE events.menu_id = menu.id AND events.status IN ('PLANNED', 'ONGOING')) AS canDelete 
+            FROM menu`, [])
+    }
+
+    async createMenu(menu: Menu): Promise<number> {
+        const result = await db.executeInsert('INSERT INTO menu (name, creation_date, status) VALUES (?, NOW(), "ACTIVE")', [menu.name])
+        if (menu.from_id) {
+            await db.executeInsert(`INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status, menu_id)
+                SELECT name, type, sub_type, price, destination_id, available, status, ?
+                FROM master_items`, [result])
+        }
+        return result
+    }
+
+    async editMenu(menu: Menu): Promise<number> {
+        return await db.executeUpdate('UPDATE menu SET name = ? WHERE id = ?', [menu.name, menu.id])
+    }
+
+    async deleteMenu(menu_id: number): Promise<number> {
+        const events = await db.query("SELECT id FROM events WHERE menu_id = ? AND status IN ('ONGOING', 'PLANNED')", [menu_id])
+        if (events.length) {
+            throw new Error("Can't delete menu. Events connected")
+        }
+        return await db.executeTransaction([
+            "DELETE FROM master_items WHERE menu_id = ?",
+            "DELETE FROM menu WHERE id = ?"
+        ], [
+            [menu_id], [menu_id]
+        ])
+    }
+
+    async getAll(menu_id: number): Promise<Item[]> {
         return await db.query(`SELECT master_items.*, destinations.name destination
             FROM master_items
             INNER JOIN destinations ON master_items.destination_id = destinations.id
-            WHERE master_items.status = 'ACTIVE'`
-            , [])
+            WHERE master_items.status = 'ACTIVE' AND master_items.menu_id = ?`
+            , [menu_id])
     }
 
-    async getAllAvailable(): Promise<Item[]> {
+    async getAllAvailable(menu_id: number): Promise<Item[]> {
         return await db.query(`
-            SELECT * FROM master_items WHERE available = TRUE AND status = "ACTIVE"`, [])
+            SELECT * FROM master_items WHERE available = TRUE AND status = "ACTIVE" AND master_items.menu_id = ?`, [menu_id])
     }
 
     async get(id: number): Promise<Item[]> {
@@ -23,8 +59,8 @@ class MasterItemsApi {
     }
 
     async create(item: MasterItem): Promise<number> {
-        return await db.executeInsert('INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status) VALUES (?, ?, ?, ?, ?, ?, ?)'
-            , [item.name, item.type, item.sub_type, item.price, item.destination_id, item.available, item.status])
+        return await db.executeInsert('INSERT INTO master_items (name, type, sub_type, price, destination_id, available, status, menu_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+            , [item.name, item.type, item.sub_type, item.price, item.destination_id, item.available, item.status, item.menu_id])
     }
 
     async delete(id: number): Promise<number> {

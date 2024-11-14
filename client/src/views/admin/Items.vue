@@ -5,8 +5,10 @@ import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { sortItem, copy, requiredRule } from '@/services/utils';
 import Confirm from '@/components/Confirm.vue';
+import { RouterLink } from 'vue-router';
 const axios = new Axios()
 const snackbarStore = SnackbarStore()
+const props = defineProps(['menu_id', 'menu_name'])
 
 const loading = ref<boolean>(false)
 const dialog = ref<boolean>(false)
@@ -58,7 +60,7 @@ async function createItem() {
 
 async function getMasterItems() {
   loading.value = true
-  items.value = await axios.GetAllMasterItems()
+  items.value = await axios.GetAllMasterItems(props.menu_id)
   loading.value = false
 }
 
@@ -76,6 +78,15 @@ onMounted(async () => {
 <template>
   <v-skeleton-loader v-if="loading" type="list-item-three-line"></v-skeleton-loader>
   <div v-else>
+    <v-toolbar>
+      <v-toolbar-title>
+        {{ menu_name }}
+      </v-toolbar-title>
+      <v-spacer></v-spacer>
+      <RouterLink to="/admin/menu">
+        <v-btn icon="mdi-arrow-left"></v-btn>
+      </RouterLink>
+    </v-toolbar>
     <v-text-field :clearable="true" v-model="filter" label="Cerca"></v-text-field>
     <v-table density="compact">
       <thead>

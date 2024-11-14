@@ -87,9 +87,18 @@ const router = createRouter({
           },
         },
         {
-          path: "items",
+          path: "items/:menu_id/:menu_name",
           name: "items",
           component: () => import('@/views/admin/Items.vue'),
+          props: true,
+          meta: {
+            allowedRole: Roles.admin
+          },
+        },
+        {
+          path: "menu",
+          name: "menu",
+          component: () => import('@/views/admin/Menu.vue'),
           props: true,
           meta: {
             allowedRole: Roles.admin
@@ -116,7 +125,7 @@ const router = createRouter({
       }
     },
     {
-      path: '/waiter/:event_id/order/:master_table_id/table/:table_id',
+      path: '/waiter/:event_id/mastertable/:master_table_id/table/:table_id/menu/:menu_id',
       name: 'Waiter Order',
       component: () => import('@/views/WaiterOrder.vue'),
       props: true,

@@ -31,7 +31,7 @@ const navigationItems = ref<NavigationItem[]>([
   {
     title: "Menu",
     prependIcon: "mdi-menu",
-    to: "items",
+    to: "menu",
     value: 2
   },
   {
