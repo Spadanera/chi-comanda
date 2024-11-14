@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { type Event } from "../../../models/src"
-import Confirm from '@/components/Confirm.vue'
 import Axios from '@/services/client'
 import { copy } from "@/services/utils"
 import EventDetails from '@/components/EventDetails.vue'
