@@ -4,14 +4,13 @@ import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import Axios from '@/services/client'
 import { SnackbarStore, type IUser } from '@/stores'
 import { groupItems, copy, getIcon, sortOrder } from "@/services/utils"
+import ItemList from "@/components/ItemList.vue"
 import { io } from 'socket.io-client'
 import fileAudio from '@/assets/nuovo-ordine.wav'
 import fileAudio1 from '@/assets/nuovo-ordine-1.ogg'
 import fileAudio2 from '@/assets/nuovo-ordine-2.ogg'
 import fileAudio3 from '@/assets/nuovo-ordine-3.ogg'
 import fileAudio4 from '@/assets/nuovo-ordine-4.mp3'
-
-const ItemList = () => import("@/components/ItemList.vue")
 
 const axios = new Axios()
 var is: any

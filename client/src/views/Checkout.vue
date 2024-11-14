@@ -5,9 +5,8 @@ import Axios from '@/services/client'
 import { SnackbarStore, type IUser } from '@/stores'
 import { copy, getIcon, sortItem, sortTables } from "@/services/utils"
 import { io } from 'socket.io-client'
-import { RouterLink } from 'vue-router';
-
-const ItemList = () => import("@/components/ItemList.vue")
+import { RouterLink } from 'vue-router'
+import ItemList from "@/components/ItemList.vue"
 
 const axios = new Axios()
 var is: any

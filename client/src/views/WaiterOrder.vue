@@ -7,8 +7,7 @@ import { SnackbarStore, type IUser } from '@/stores'
 import { groupItems, copy, sortItem } from "@/services/utils"
 import { useRoute } from 'vue-router'
 import { requiredRule } from "@/services/utils"
-
-const ItemList = () => import("@/components/ItemList.vue")
+import ItemList from "@/components/ItemList.vue"
 
 const route = useRoute()
 const origin = route.query.origin ? `${route.query.origin}` : '/waiter'
