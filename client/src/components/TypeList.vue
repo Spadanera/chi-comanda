@@ -153,7 +153,7 @@ onMounted(async () => {
                     <v-text-field label="Nome" :rules="[requiredRule]" v-model="selectedType.name"></v-text-field>
                     <v-select label="Categoria" :items="types" item-value="id" item-title="name" :rules="[requiredRule]"
                         v-if="selectedType.isSub || selectedType.type_id" v-model="selectedType.type_id"></v-select>
-                    <v-select label="Icona" :items="icons" v-model="selectedType.icon" :rules="[requiredRule]">
+                    <v-select :append-inner-icon="selectedType.icon" label="Icona" :items="icons" v-model="selectedType.icon" :rules="[requiredRule]">
                         <template v-slot:item="{ props, item }">
                             <v-list-item v-bind="props" :title="item.raw">
                                 <template v-slot:prepend>
