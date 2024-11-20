@@ -242,7 +242,6 @@ export default class Axios {
     }
 
     async CreateType(type: Type): Promise<number> {
-        console.log(type)
         return await this.post("/types", type)
     }
 
