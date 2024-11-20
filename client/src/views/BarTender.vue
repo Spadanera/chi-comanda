@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type Event, type Order, type Item, ItemTypes as types, type Type } from "../../../models/src"
+import { type Event, type Order, type Item, type SubType } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import Axios from '@/services/client'
 import { SnackbarStore, type IUser } from '@/stores'
-import { groupItems, copy, getIcon, sortOrder } from "@/services/utils"
+import { groupItems, copy, sortOrder } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
 import { io } from 'socket.io-client'
 import fileAudio from '@/assets/nuovo-ordine.wav'
@@ -17,6 +17,7 @@ var is: any
 var interval: number
 const user = defineModel<IUser>()
 const snackbarStore = SnackbarStore()
+const types = ref<SubType[]>([])
 
 const emit = defineEmits(['login', 'reload'])
 
@@ -51,10 +52,11 @@ const itemsDone = computed(() => {
 })
 const subTypesCount = computed(() => {
   let result: any = []
-  types.forEach((type: Type) => {
+  types.value.forEach((type: SubType) => {
     let count = getSubTypeCount(selectedOrder.value[0], [type.name])
     if (count > 0) result.push({
       type: type.name,
+      icon: type.icon,
       count
     })
   })
@@ -196,6 +198,7 @@ onMounted(async () => {
     new Audio(fileAudio3),
     new Audio(fileAudio4),
   ]
+  types.value = await axios.GetSubTypes()
   event.value = await axios.GetOnGoingEvent()
   if (event.value.id) {
     await getOrders()
@@ -220,14 +223,18 @@ onMounted(async () => {
     is.on('new-order', (data: Order) => {
       data.items = data.items?.filter((i: Item) => parseInt(props.destinations) === i.destination_id)
       if (data.items?.length) {
+        console.log(data)
         orders.value.push(data)
         calculateMinPassed()
         if (!selectedOrder.value.length) {
           selectedOrder.value.push(data)
         }
-        snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
-        let audioToPlay = audio.value[Math.floor(Math.random() * audio.value.length)]
-        audioToPlay.play();
+
+        if (!data.items[0].done) {
+          snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
+          let audioToPlay = audio.value[Math.floor(Math.random() * audio.value.length)]
+          audioToPlay.play();
+        }
       }
     })
 
@@ -279,7 +286,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <v-navigation-drawer v-model="drawer" mobile-breakpoint="sm">
+  <v-navigation-drawer v-model="drawer" mobile-breakpoint="sm" v-if="event?.id">
     <RouterLink :to="`/waiter?origin=${origin}`">
       <v-btn style="margin-top: 8px; margin-left: 15px;">Nuovo Ordine</v-btn>
     </RouterLink>
@@ -288,13 +295,13 @@ onBeforeUnmount(() => {
         :style="{ opacity: !order.done ? 'inherit' : 0.3 }">
         <v-list-item-title>
           <span :class="{ done: order.done }">Tavolo {{ order.table_name }}</span>
-          <v-btn variant="plain" v-if="!order.done && order.minPassed >= 0">
+          <v-btn variant="plain" v-if="!order.done && order.minPassed >= 0" :class="{ 'text-danger': order.minPassed > 14, 'font-weight-bold': order.minPassed > 14}">
             {{ order.minPassed }} <span style="text-transform: lowercase;">m</span>
           </v-btn>
         </v-list-item-title>
         <template v-for="type in types">
           <v-btn readonly size="small" density="compact" variant="plain" v-if="getSubTypeCount(order, [type.name]) > 0">
-            <v-icon>{{ getIcon(type.name) }}</v-icon> {{ getSubTypeCount(order, [type.name]) }}
+            <v-icon>{{ type.icon }}</v-icon> {{ getSubTypeCount(order, [type.name]) }}
           </v-btn>
         </template>
       </v-list-item>
@@ -310,7 +317,7 @@ onBeforeUnmount(() => {
       <h3>{{ props.pagetitle }} <span v-if="selectedOrder.length"> - Tavolo {{ selectedOrder[0].table_name }}</span>
       </h3>
     </v-container>
-    <ItemList :quantitybefore="true" :showtype="true" subheader="DA FARE" v-model="itemsToDo">
+    <ItemList :quantitybefore="true" :showtype="true" subheader="DA FARE" v-model="itemsToDo" :shownote="true">
       <template v-slot:prequantity="slotProps">
         <v-btn icon="mdi-delete" v-if="!slotProps.item.paid" @click="deleteItemConfirm(slotProps.item.id)"
           variant="plain"></v-btn>
@@ -322,7 +329,7 @@ onBeforeUnmount(() => {
       </template>
     </ItemList>
     <v-divider></v-divider>
-    <ItemList :quantitybefore="true" subheader="COMPLETATI" v-model="itemsDone" :done="true">
+    <ItemList :quantitybefore="true" subheader="COMPLETATI" v-model="itemsDone" :done="true" shownote>
       <template v-slot:postquantity="slotProps">
         <v-btn variant="plain" icon="mdi-arrow-up-thin" @click="rollbackItem(slotProps.item)"></v-btn>
       </template>
@@ -334,7 +341,7 @@ onBeforeUnmount(() => {
       <template v-for="type in subTypesCount">
         <v-btn v-if="type.type !== 'Fuori Menu'" min-width="50" readonly size="x-small" density="compact"
           variant="plain">
-          <v-icon>{{ getIcon(type.type) }}</v-icon> {{ type.count }}
+          <v-icon>{{ type.icon }}</v-icon> {{ type.count }}
         </v-btn>
       </template>
       <v-spacer></v-spacer>

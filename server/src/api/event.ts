@@ -9,8 +9,6 @@ class EventAPI {
         return await db.query(`
             SELECT events.id, events.name name, events.date, events.status, menu.name manu_name,
             (SELECT count(tables.id) FROM tables WHERE event_id = events.id) tableCount,
-            (SELECT count(items.id) FROM items WHERE event_id = events.id AND items.type = 'Bevanda') beverageCount,
-            (SELECT count(items.id) FROM items WHERE event_id = events.id AND items.type IN ('Cibo')) foodCount,
             (SELECT sum(items.price) FROM items WHERE items.event_id = events.id AND type != 'Sconto') revenue,
             (SELECT sum(items.price) FROM items WHERE items.event_id = events.id AND type = 'Sconto') discount,
             (SELECT sum(items.price) FROM items WHERE items.event_id = events.id AND type != 'Sconto' AND items.paid = 1) currentPaid,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { type MasterItem, type Type, ItemTypes, type Destination } from "../../../../models/src"
+import { type MasterItem, type SubType, type Destination } from "../../../../models/src"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { sortItem, copy, requiredRule } from '@/services/utils'
@@ -17,6 +17,7 @@ const items = ref<MasterItem[]>([])
 const filter = ref<string>('')
 const form = ref(null)
 const destinations = ref<Destination[]>([])
+const types = ref<SubType[]>([])
 
 const filteredItems = computed(() => items.value.filter((i: MasterItem) => !filter.value || new RegExp(filter.value, 'i').test(i.name)).sort(sortItem))
 
@@ -64,10 +65,11 @@ async function getMasterItems() {
 }
 
 function setType() {
-  selectedItem.value.type = ItemTypes.find((t: Type) => t.name === selectedItem.value.sub_type).type
+  selectedItem.value.type = types.value.find((t: SubType) => t.id === selectedItem.value.sub_type_id).type
 }
 
 onMounted(async () => {
+  types.value = await axios.GetSubTypes()
   destinations.value = await axios.GetDestinations()
   await getMasterItems()
   destinations.value = await axios.GetDestinations()
@@ -95,10 +97,10 @@ onMounted(async () => {
               Nome
             </th>
             <th class="text-left">
-              Tipologia
+              Categoria
             </th>
             <th class="text-left">
-              Sottotipologia
+              Sottocategoria
             </th>
             <th class="text-left">
               Prezzo
@@ -148,7 +150,7 @@ onMounted(async () => {
                     v-model:model-value="selectedItem.available"></v-switch>
                 </v-col>
                 <v-col cols="12">
-                  <v-select :items="ItemTypes" label="Tipologia" item-title="name" v-model="selectedItem.sub_type"
+                  <v-select :items="types" label="Categoria" item-value="id" item-title="name" v-model="selectedItem.sub_type_id"
                     :rules="[requiredRule]">
                     <template v-slot:item="{ props, item }">
                       <v-list-item v-bind="props" :subtitle="item.raw.type" :title="item.raw.name"></v-list-item>
@@ -182,7 +184,8 @@ onMounted(async () => {
     </div>
     <v-fab icon="mdi-plus" app style="position: fixed; right: 10px; bottom: 10px;" location="bottom right" @click="openDialog({
       status: 'ACTIVE',
-      menu_id: menu_id
+      menu_id: menu_id,
+      available: 1
     } as MasterItem)"></v-fab>
   </div>
 </template>

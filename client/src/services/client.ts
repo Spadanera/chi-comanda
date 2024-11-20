@@ -1,5 +1,5 @@
 import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance, type AxiosProgressEvent } from 'axios'
-import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation, type Menu } from "../../../models/src"
+import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation, type Menu, type Type, type SubType } from "../../../models/src"
 import router from '@/router'
 import { UserStore, SnackbarStore, type IUser, ProgressStore } from '@/stores'
 import type { StoreDefinition } from 'pinia'
@@ -235,6 +235,39 @@ export default class Axios {
 
     async EditDestination(destination: Destination): Promise<number> {
         return await this.put<Destination>("/destinations", destination);
+    }
+
+    async GetTypes(): Promise<Type[]> {
+        return await this.get<Type>("/types")
+    }
+
+    async CreateType(type: Type): Promise<number> {
+        console.log(type)
+        return await this.post("/types", type)
+    }
+
+    async EditType(type: Type): Promise<number> {
+        return await this.put("/types", type)
+    }
+
+    async DeleteType(id: number): Promise<number> {
+        return await this.delete(`/types/${id}`)
+    }
+
+    async GetSubTypes(): Promise<SubType[]> {
+        return await this.get<SubType>("/subtypes")
+    }
+
+    async CreateSubType(subtypes: SubType): Promise<number> {
+        return await this.post("/subtypes", subtypes)
+    }
+
+    async EditSubType(subtypes: SubType): Promise<number> {
+        return await this.put("/subtypes", subtypes)
+    }
+
+    async DeleteSubType(id: number): Promise<number> {
+        return await this.delete(`/subtypes/${id}`)
     }
 
     async AskReset (email: string) {

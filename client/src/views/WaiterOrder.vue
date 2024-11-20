@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Order, type MasterItem, type Item, ItemTypes as types, type Type, type Destination } from "../../../models/src"
+import { type Order, type MasterItem, type Item, type SubType, type Type, type Destination } from "../../../models/src"
 import { ref, onMounted, computed } from "vue"
 import router from '@/router'
 import Axios from '@/services/client'
@@ -15,6 +15,9 @@ const axios = new Axios()
 const user = defineModel<IUser>()
 const snackbarStore = SnackbarStore()
 const destinations = ref<Destination[]>([])
+const types = ref<SubType[]>([])
+const alreadyDone = ref<boolean>(false)
+const alreadyPaid = ref<boolean>(false)
 
 const emit = defineEmits(['login', 'reload'])
 
@@ -44,8 +47,8 @@ const groupedOrderItems = computed(() => {
   return groupItems(orderItems.value)
 })
 
-function filterItems(type: Type) {
-  return computedItems.value.filter((i: MasterItem) => i.sub_type === type.name).sort(sortItem)
+function filterItems(type: SubType) {
+  return computedItems.value.filter((i: MasterItem) => i.sub_type_id === type.id).sort(sortItem)
 }
 
 async function addItemToOrder(item?: Item) {
@@ -53,6 +56,7 @@ async function addItemToOrder(item?: Item) {
     const { valid } = await formExtra.value?.validate()
     if (valid) {
       item = extraItem.value
+      item.icon = 'mdi-help-circle-outline'
       item.price = parseInt(extraItem.value.price + '')
     }
     else {
@@ -102,13 +106,18 @@ function openExtraItemDialog() {
   extraItem.value = {
     id: 0,
     destination_id: 1,
-    type: 'Bevanda',
     sub_type: 'Fuori Menu'
   } as Item
   dialogExtra.value = true
 }
 
 async function sendOrder() {
+  if (alreadyDone.value) {
+    orderItems.value.forEach((i:Item) => { i.done = true })
+  }
+  if (alreadyPaid.value) {
+    orderItems.value.forEach((i:Item) => { i.paid = true })
+  }
   const _order: Order = {
     event_id: parseInt(props.event_id),
     master_table_id: parseInt(props.master_table_id),
@@ -131,6 +140,7 @@ async function setTableName() {
 
 onMounted(async () => {
   destinations.value = await axios.GetDestinations()
+  types.value = await axios.GetSubTypes()
   master_items.value = await axios.GetAvailableMasterItems(props.menu_id)
   destinations.value = await axios.GetDestinations()
   if (parseInt(props.table_id)) {
@@ -154,7 +164,7 @@ onMounted(async () => {
       <template v-for="type in types">
         <v-list-group v-if="!(['Sconto', 'Fuori Menu'].includes(type.name))">
           <template v-slot:activator="{ props }">
-            <v-list-item v-bind="props" :title="type.name"></v-list-item>
+            <v-list-item v-bind="props" :title="type.name" :prepend-icon="type.icon"></v-list-item>
           </template>
           <template v-for="item in filterItems(type)">
             <v-list-item>
@@ -196,8 +206,17 @@ onMounted(async () => {
       </template>
     </v-list>
     <v-bottom-sheet v-model="sheet" scrollable>
-      <v-card :title="`Ordine Tavolo ${table_name}`" style="padding-bottom: 50px">
-        <ItemList v-model="groupedOrderItems">
+      <v-card style="padding-bottom: 50px">
+        <v-card-title>
+          Ordine Tavolo {{ table_name }}
+        </v-card-title>
+        <v-card-subtitle style="height: 50px;">
+          <v-row justify="space-between">
+            <v-col><v-switch v-model="alreadyDone" label="Servito" density="compact" color="success"></v-switch></v-col>
+            <v-col><v-switch v-model="alreadyPaid" label="Pagato" density="compact" color="success"></v-switch></v-col>
+          </v-row>
+        </v-card-subtitle>
+        <ItemList v-model="groupedOrderItems" class="elevation-2">
           <template v-slot:prequantity="slotProps">
             <v-btn variant="plain" icon="mdi-minus" @click="changeItemQuantity(slotProps.item, -1)"></v-btn>
           </template>

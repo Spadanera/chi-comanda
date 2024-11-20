@@ -87,12 +87,6 @@ onMounted(() => {
                             <v-icon>mdi-table-furniture</v-icon> {{ event.tableCount }}
                         </v-btn>
                         <v-btn readonly size="small" density="compact" variant="plain">
-                            <v-icon>mdi-beer</v-icon> {{ event.beverageCount }}
-                        </v-btn>
-                        <v-btn readonly size="small" density="compact" variant="plain">
-                            <v-icon>mdi-hamburger</v-icon> {{ event.foodCount }}
-                        </v-btn>
-                        <v-btn readonly size="small" density="compact" variant="plain">
                             <v-icon>mdi-currency-eur</v-icon> {{ event.revenue }}
                         </v-btn>
                         <v-btn readonly size="small" density="compact" variant="plain">
