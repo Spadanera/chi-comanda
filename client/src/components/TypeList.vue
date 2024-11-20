@@ -19,7 +19,6 @@ function openDialog(type?: Type | SubType) {
 
 async function createType() {
     const { valid } = await form.value?.validate()
-    console.log(selectedType.value)
     if (valid) {
         if (selectedType.value.type_id) {
             await axios.CreateSubType(selectedType.value)
