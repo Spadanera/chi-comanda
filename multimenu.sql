@@ -38,7 +38,7 @@ CREATE TABLE `sub_types` (
 
 ALTER TABLE `sub_types` ADD FOREIGN KEY (`type_id`) REFERENCES `types` (`id`);
 
-INSERT INTO `types` (name, icon) VALUES ('Bevenda', 'mdi-beer');
+INSERT INTO `types` (name, icon) VALUES ('Bevanda', 'mdi-beer');
 INSERT INTO `types` (name, icon) VALUES ('Cibo', 'mdi-hamburger');
 
 INSERT INTO `sub_types` (name, type_id, icon) VALUES ('Birra alla spina', 1, 'mdi-glass-mug-variant');
@@ -64,12 +64,15 @@ DROP COLUMN `sub_type`,
 DROP COLUMN `type`;
 
 ALTER TABLE `items` 
-ADD COLUMN `icon` VARCHAR(255) NULL AFTER `sub_type`;
+ADD COLUMN `icon` VARCHAR(255) NULL AFTER `sub_type`,
+ADD COLUMN `sub_type_id` VARCHAR(255) NULL AFTER `sub_type`;
 
 UPDATE items 
 INNER JOIN master_items ON master_items.id = items.master_item_id
 INNER JOIN sub_types ON master_items.sub_type_id = sub_types.id
-SET items.icon = sub_types.icon;
+SET items.icon = sub_types.icon, items.sub_type_id = sub_types.id;
+
+UPDATE items SET type = 'Bevanda', sub_type = 'Birra in bottiglia', sub_type_id = 2 WHERE name IN ('Bottiglia 5', 'Bottiglia 6');
 
 
 SET SQL_SAFE_UPDATES = 1;
