@@ -7,15 +7,14 @@ class EventAPI {
 
     async getAll(): Promise<Event[]> {
         return await db.query(`
-            SELECT id, name, date, status,
+            SELECT events.id, events.name name, events.date, events.status, menu.name manu_name,
             (SELECT count(tables.id) FROM tables WHERE event_id = events.id) tableCount,
-            (SELECT count(items.id) FROM items WHERE event_id = events.id AND items.type = 'Bevanda') beverageCount,
-            (SELECT count(items.id) FROM items WHERE event_id = events.id AND items.type IN ('Cibo')) foodCount,
             (SELECT sum(items.price) FROM items WHERE items.event_id = events.id AND type != 'Sconto') revenue,
             (SELECT sum(items.price) FROM items WHERE items.event_id = events.id AND type = 'Sconto') discount,
             (SELECT sum(items.price) FROM items WHERE items.event_id = events.id AND type != 'Sconto' AND items.paid = 1) currentPaid,
             (SELECT count(tables.id) FROM tables WHERE tables.event_id = events.id AND tables.status = 'ACTIVE') tablesOpen
             FROM events
+            INNER JOIN menu ON events.menu_id = menu.id
             ORDER BY date DESC`
             , [])
     }
@@ -42,11 +41,13 @@ class EventAPI {
                                     'quantity', grouped_items.quantity
                                 )) 
                                 FROM (
-                                    SELECT items.name, items.type, items.sub_type, items.price, COUNT(items.id) quantity
-                                    FROM items 
+                                    SELECT items.name, IFNULL(types.name, items.type) type, IFNULL(sub_types.name, items.sub_type) sub_type, items.price, COUNT(items.id) quantity
+                                    FROM items
+                                    LEFT JOIN sub_types ON sub_types.id = items.sub_type_id
+                                    LEFT JOIN types ON sub_types.type_id = types.id
                                     WHERE items.table_id = tables.id
-                                    GROUP BY items.name, items.type, items.sub_type, items.price
-                                    ORDER BY items.sub_type, items.type, items.name
+                                    GROUP BY items.name, IFNULL(types.name, items.type), IFNULL(sub_types.name, items.sub_type), items.price
+                                    ORDER BY IFNULL(types.name, items.type), IFNULL(sub_types.name, items.sub_type), items.name
                                 ) grouped_items
                             ) items
                         FROM tables 
@@ -67,10 +68,14 @@ class EventAPI {
     }
 
     async create(event: Event): Promise<number> {
-        return db.executeInsert('INSERT INTO events (name, date, status) VALUES (?,?,?)', [event.name, (event.date + "").split('T')[0], 'PLANNED'])
+        return db.executeInsert('INSERT INTO events (name, date, status, menu_id) VALUES (?,?,?,?)', [event.name, (event.date + "").split('T')[0], 'PLANNED', event.menu_id])
     }
 
     async delete(id: number): Promise<number> {
+        const tables = await db.query('SELECT id FROM tables WHERE event_id = ?', [id])
+        if (tables.length) {
+            throw new Error("Can't delete the event. Tables connected")
+        }
         return await db.executeUpdate('DELETE FROM events WHERE id = ?', [id])
     }
 

@@ -2,43 +2,7 @@ import db from "../db"
 import { Item, Order, CompleteOrderInput } from "../../../models/src"
 import { SocketIOService } from "../socket"
 import tableApi from "./table"
-
-function getCurrentDateTimeInItaly(): string {
-    const now = new Date();
-    const options: Intl.DateTimeFormatOptions = {
-        timeZone: 'Europe/Rome',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    };
-    const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(now);
-
-    const year = parts.find(part => part.type === 'year')?.value;
-    const month = parts.find(part => part.type === 'month')?.value;
-    const day = parts.find(part => part.type === 'day')?.value;
-
-    let hour = parts.find(part => part.type === 'hour')?.value;
-    const minute = parts.find(part => part.type === 'minute')?.value;
-    const second = parts.find(part => part.type === 'second')?.value;
-
-    if (hour === '24') {
-        hour = '00'
-    }
-
-    const dateRegex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) (0\d|1\d|2[0-3]):[0-5]\d:[0-5]\d$/;
-    const result = `${year}-${month}-${day} ${hour}:${minute}:${second}`
-
-    if (dateRegex.test(result)) {
-        return result
-    }
-    else {
-        return '2024-01-01 00:00:00'
-    }
-}
+import { getCurrentDateTimeInItaly } from "../utils/helper"
 
 class OrderAPI {
     constructor() {
@@ -65,14 +29,17 @@ class OrderAPI {
                             'note', items.note, 
                             'name', items.name, 
                             'order_id', items.order_id, 
-                            'type', items.type, 
-                            'sub_type', items.sub_type, 
+                            'type', IFNULL(types.name, items.type), 
+                            'icon', IFNULL(sub_types.icon, items.icon), 
+                            'sub_type', IFNULL(sub_types.name, items.sub_type), 
                             'price', items.price,
                             'destination_id', items.destination_id,
                             'done', items.done,
                             'paid', items.paid
                         )) 
                         FROM items 
+                        LEFT JOIN sub_types ON sub_types.id = items.sub_type_id
+                        LEFT JOIN types ON sub_types.type_id = types.id
                         WHERE order_id = orders.id AND items.destination_id IN (${destinationIdsString})
                     ) items
                 FROM orders 
@@ -99,9 +66,12 @@ class OrderAPI {
         if (order.items) {
             for (let i = 0; i < order.items.length; i++) {
                 let item = order.items[i]
-                order.items[i].id = await db.executeInsert(`INSERT INTO items (event_id, order_id, table_id, master_item_id, type, sub_type, name, price, note, destination_id) 
-                    VALUES (?,?,?,?,?,?,?,?,?,?)`
-                    , [order.event_id, order_id, order.table_id, item.master_item_id, item.type, item.sub_type, item.name, item.price, item.note || '', item.destination_id])
+                order.items[i].id = await db.executeInsert(`INSERT INTO items (event_id, order_id, table_id, master_item_id, type, sub_type, name, price, note, destination_id, icon, done, paid) 
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
+                    , [order.event_id, order_id, order.table_id, item.master_item_id, item.type, item.sub_type, item.name, item.price, item.note || '', item.destination_id, item.icon, item.done, item.paid])
+            }
+            if (order.items.length && order.items[0].done) {
+                await this.completeOrder(order_id, { item_ids: [] })
             }
         }
         order.id = order_id
@@ -149,7 +119,7 @@ class OrderAPI {
         SocketIOService.instance().sendMessage({
             room: "bar",
             event: "order-completed",
-            body: { }
+            body: {}
         })
 
         return result

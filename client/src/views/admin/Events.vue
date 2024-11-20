@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue"
-import EventList from "@/components/EventList.vue";
 import { type Event as EventType } from "../../../../models/src"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
-
+import { requiredRule } from "@/services/utils"
+import EventList from "@/components/EventList.vue"
 const axios = new Axios()
 const snackbarStore = SnackbarStore()
 const tab = ref<string>(null)
@@ -13,7 +13,8 @@ const dialog = ref<boolean>(false)
 const dialogEvent = ref<EventType>(null)
 const loading = ref<boolean>(false)
 const form = ref(null)
-const requiredRule = ref([(value: any) => !!value || 'Inserire un valore'])
+const menu = ref([])
+
 
 const ongoingEvents = computed<EventType[]>(() => {
   return events.value.filter(e => e.status === 'ONGOING')
@@ -31,11 +32,15 @@ async function getAllEvents() {
   events.value = await axios.GetAllEvents()
 }
 
-function openDialog() {
+async function openDialog() {
   dialogEvent.value = {
     name: 'Serata Standard',
     date: new Date()
   } as EventType
+  menu.value = await axios.GetAllMenu()
+  if (menu.value.length) {
+    dialogEvent.value.menu_id = menu.value[0].id  
+  }
   dialog.value = true
 }
 
@@ -94,10 +99,9 @@ onMounted(async () => {
       </v-card-title>
       <v-card-text>
         <v-form @submit.prevent ref="form">
-          <v-text-field v-model="dialogEvent.name" label="Nome Evento" clearable :rules="requiredRule">
-
-          </v-text-field>
-          <v-date-picker locale="it" first-day-of-week="1" v-model:model-value="dialogEvent.date"></v-date-picker>
+          <v-text-field v-model="dialogEvent.name" label="Nome Evento" clearable :rules="[requiredRule]"></v-text-field>
+          <v-select label="Menu" :items="menu" v-model="dialogEvent.menu_id" item-value="id" item-title="name" :rules="[requiredRule]"></v-select>
+          <v-date-picker hide-header locale="it" first-day-of-week="1" v-model:model-value="dialogEvent.date"></v-date-picker>
         </v-form>
       </v-card-text>
       <v-card-actions>

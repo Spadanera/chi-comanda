@@ -3,6 +3,7 @@ import { ref, computed, onBeforeMount, onMounted } from 'vue';
 import { type IUser } from '@/stores'
 import { type Destination } from '../../../models/src';
 import Axios from '@/services/client'
+import { Roles } from '@/services/utils';
 
 interface Role {
   title: string
@@ -18,19 +19,19 @@ const roles = ref<Role[]>([
     title: 'Amministrazione',
     route: "/admin",
     text: "Gestione eventi, tavoli, lavoranti",
-    role: "admin"
+    role: Roles.admin
   },
   {
     title: 'Cassa',
     route: "/checkout",
     text: "Gestione Cassa",
-    role: "checkout"
+    role: Roles.checkout
   },
   {
     title: 'Cameriere',
     route: "/waiter",
     text: "Inviare ordini al bar e alla cucina",
-    role: "waiter"
+    role: Roles.waiter
   }
 ])
 
@@ -49,7 +50,7 @@ onMounted(async () => {
       title: d.name,
       route: `/bartender/${[d.id]}/${d.name}`,
       text: "Preparazione delle comande",
-      role: "bartender"
+      role: Roles.bartender
     } as Role
   })))
 })

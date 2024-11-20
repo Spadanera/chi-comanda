@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { getIcon } from "@/services/utils"
-const props = defineProps(['subheader', 'done', 'delete', 'quantitybefore', 'showtype'])
+const props = defineProps(['subheader', 'done', 'delete', 'quantitybefore', 'showtype', 'shownote'])
 const items = defineModel({ default: [] })
 </script>
 
@@ -9,21 +8,23 @@ const items = defineModel({ default: [] })
         <v-list-subheader v-if="subheader">{{ subheader }}</v-list-subheader>
         <template v-for="(item, i) in items">
             <v-list-subheader v-if="props.showtype && i === 0">{{ item.sub_type }}</v-list-subheader>
-            <v-list-item :lines="item.note ? 'three' : 'one'" density="compact">
+            <v-list-item :lines="item.note ? 'two' : 'one'" density="compact">
                 <v-list-item-title>
                     <span :class="{ done: done && item.sub_type !== 'Sconto' }">{{ item.name }}</span>
                 </v-list-item-title>
-                <v-list-item-subtitle v-if="item.sub_type !== 'Sconto'">
-                    <span :class="{ done: done }">{{ item.type }} - {{ item.sub_type }}</span><br />
-                    <span :class="{ done: done }" v-if="item.note">{{ item.note }}</span>
+                <v-list-item-subtitle v-if="item.sub_type !== 'Sconto' && !props.showtype">
+                    <span :class="{ done: done }"><span v-if="item.type">{{ item.type }} - </span>{{ item.sub_type }}</span>
                 </v-list-item-subtitle>
-                <v-list-item-subtitle v-else>
+                <v-list-item-subtitle v-if="props.shownote && item.note" style="font-weight: bold; font-size: 400; color: red; opacity: 1; height: 20px;">
+                    <span :class="{ done: done }">{{ item.note }}</span>
+                </v-list-item-subtitle>
+                <v-list-item-subtitle v-if="item.sub_type === 'Sconto'">
                     {{ item.price * -1 }} €
                 </v-list-item-subtitle>
                 <template v-slot:prepend>
                     <v-btn min-width="12" variant="plain" v-if="quantitybefore" :class="{ done: done }">{{ item.quantity
                         }}</v-btn>
-                    <v-icon :icon="getIcon(item.sub_type)"></v-icon>
+                    <v-icon :icon="item.icon"></v-icon>
                 </template>
                 <template v-slot:append>
                     <slot :item="item" name="prequantity"></slot>
@@ -32,8 +33,9 @@ const items = defineModel({ default: [] })
                 </template>
             </v-list-item>
             <v-list-subheader
-                v-if="props.showtype && i < (items.length - 1) && item.sub_type !== items[i + 1].sub_type">{{ items[i
-                    + 1].sub_type }}</v-list-subheader>
+                v-if="props.showtype && i < (items.length - 1) && item.sub_type !== items[i + 1].sub_type"><v-icon
+                    style="margin-top: -6px; margin-right: 10px;">{{
+                        items[i + 1].icon }}</v-icon>{{ items[i + 1].sub_type }}</v-list-subheader>
         </template>
     </v-list>
 </template>

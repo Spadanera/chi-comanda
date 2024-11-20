@@ -3,6 +3,8 @@ import { ref, onMounted } from "vue"
 import { type IUser } from '@/stores'
 import { RouterLink, RouterView } from 'vue-router';
 
+defineOptions({ inheritAttrs: false })
+
 interface NavigationItem {
   title: string
   prependIcon: string
@@ -31,28 +33,36 @@ const navigationItems = ref<NavigationItem[]>([
   {
     title: "Menu",
     prependIcon: "mdi-menu",
-    to: "items",
+    to: "menu",
     value: 2
-  },
-  {
-    title: "Utenti",
-    prependIcon: "mdi-account-group",
-    to: "users",
-    value: 3
   },
   {
     title: "Destinazioni",
     prependIcon: "mdi-send-check",
     to: "destinations",
     value: 4
-  },
+  }
+
 ])
 
 onMounted(() => {
   try {
-    selectedItem.value = [navigationItems.value.find(n => n.to === /\/admin\/?(\w*)/.exec(window.location.pathname)[1]).value]
+    if (user.value.roles.includes('superuser')) {
+      navigationItems.value.push({
+        title: "Utenti",
+        prependIcon: "mdi-account-group",
+        to: "users",
+        value: 3
+      })
+    }
+    if (/\/items\//.test(window.location.pathname)) {
+      selectedItem.value = [navigationItems.value[2].value]
+    }
+    else {
+      selectedItem.value = [navigationItems.value.find(n => n.to === /\/admin\/?(\w*)/.exec(window.location.pathname)[1]).value]
+    }
   } catch (error) {
-    
+
   }
 })
 
@@ -67,11 +77,12 @@ onMounted(() => {
     </v-list>
   </v-navigation-drawer>
   <RouterView></RouterView>
-  <v-fab v-show="!drawer" class="hide-xs" icon="mdi-menu" app style="position: fixed; left: 10px; bottom: 10px;" location="bottom left" @click="drawer = !drawer"></v-fab>
+  <v-fab v-show="!drawer" class="hide-xs" icon="mdi-menu" app style="position: fixed; left: 10px; bottom: 10px;"
+    location="bottom left" @click="drawer = !drawer"></v-fab>
 </template>
 
 <style scoped>
-  .v-list {
-    padding: 0 !important
-  }
+.v-list {
+  padding: 0 !important
+}
 </style>

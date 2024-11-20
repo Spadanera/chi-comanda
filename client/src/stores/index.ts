@@ -83,3 +83,17 @@ export const SnackbarStore: StoreDefinition = defineStore('snackbar', {
 export const ProgressStore: StoreDefinition = defineStore('progress', {
     state: () => ({ loading: false, activeRequestCount: 0 })
 })
+
+export const ThemeStore: StoreDefinition = defineStore('theme', {
+    state: () => ({ theme: localStorage.getItem('theme') || 'light' }),
+    actions: {
+        toggle() {
+            this.theme = this.theme === 'light' ? 'dark' : 'light'
+            this.persistToLocalStorage()
+        },
+        persistToLocalStorage() {
+            localStorage.setItem("theme", this.theme);
+        }
+    },
+
+})

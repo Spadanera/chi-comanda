@@ -40,10 +40,10 @@ class TableApi {
 
     async insertDiscount(eventId: number, tableId: number, discount: number): Promise<number> {
         return await db.executeInsert(`INSERT INTO items (
-                name, event_id, table_id, order_id, type, sub_type, price, done, paid, destination_id
+                name, event_id, table_id, order_id, type, sub_type, price, done, paid, destination_id, icon
             ) VALUES (
-                ?,?,?,?,?,?,?,?,?,?
-            )`, ['Sconto', eventId, tableId, 0, 'Sconto', 'Sconto', discount * -1, true, true, 1])
+                ?,?,?,?,?,?,?,?,?,?,?
+            )`, ['Sconto', eventId, tableId, 0, 'Sconto', 'Sconto', discount * -1, true, true, 1, 'mdi-cart-percent'])
     }
 
     async getAvailableTable(eventId: number): Promise<MasterTable[]> {
@@ -86,14 +86,17 @@ class TableApi {
                     'order_id', items.order_id,
                     'note', items.note, 
                     'name', items.name, 
-                    'type', items.type, 
-                    'sub_type', items.sub_type, 
+                    'type', IFNULL(types.name, items.type), 
+                    'icon', IFNULL(sub_types.icon, items.icon), 
+                    'sub_type', IFNULL(sub_types.name, items.sub_type), 
                     'price', items.price,
                     'destination_id', items.destination_id,
                     'done', items.done,
                     'paid', items.paid
                 )) 
                 FROM items 
+                LEFT JOIN sub_types ON sub_types.id = items.sub_type_id
+                LEFT JOIN types ON sub_types.type_id = types.id
                 WHERE table_id = tables.id
             ) items
             FROM tables 
