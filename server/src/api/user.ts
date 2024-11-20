@@ -121,7 +121,7 @@ class UserApi {
                                 </p>
                                 <a href="${process.env.BASE_URL}/invitation/${invitation.token}" class="button">Reimposta Password</a>
                                 <p>
-                                    Questo link scadrà tra 24 ore, quindi assicurati di completare l'a registrazione'operazione entro tale data.
+                                    Questo link scadrà tra 24 ore, quindi assicurati di completare la registrazione entro tale data.
                                 </p>
                                 <p>
                                     A presto su Chi Comanda!
@@ -210,7 +210,7 @@ class UserApi {
                                 </p>
                                 <a href="${process.env.BASE_URL}/reset/${id}" class="button">Reimposta Password</a>
                                 <p>
-                                    Questo link scadrà tra 24 ore, quindi assicurati di completare l'a registrazione'operazione entro tale data.
+                                    Questo link scadrà tra 24 ore, quindi assicurati di completare la registrazione entro tale data.
                                 </p>
                                 <p>
                                     A presto su Chi Comanda!
