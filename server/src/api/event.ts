@@ -41,11 +41,13 @@ class EventAPI {
                                     'quantity', grouped_items.quantity
                                 )) 
                                 FROM (
-                                    SELECT items.name, items.type, items.sub_type, items.price, COUNT(items.id) quantity
-                                    FROM items 
+                                    SELECT items.name, IFNULL(types.name, items.type) type, IFNULL(sub_types.name, items.sub_type) sub_type, items.price, COUNT(items.id) quantity
+                                    FROM items
+                                    LEFT JOIN sub_types ON sub_types.id = items.sub_type_id
+                                    LEFT JOIN types ON sub_types.type_id = types.id
                                     WHERE items.table_id = tables.id
-                                    GROUP BY items.name, items.type, items.sub_type, items.price
-                                    ORDER BY items.sub_type, items.type, items.name
+                                    GROUP BY items.name, IFNULL(types.name, items.type), IFNULL(sub_types.name, items.sub_type), items.price
+                                    ORDER BY IFNULL(types.name, items.type), IFNULL(sub_types.name, items.sub_type), items.name
                                 ) grouped_items
                             ) items
                         FROM tables 
