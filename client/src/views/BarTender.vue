@@ -21,7 +21,7 @@ const types = ref<SubType[]>([])
 
 const emit = defineEmits(['login', 'reload'])
 
-const props = defineProps(['destinations', 'pagetitle'])
+const props = defineProps(['destinations', 'pagetitle', 'minutetoalert'])
 
 const loading = ref<boolean>(true)
 const event = ref<Event>()
@@ -295,7 +295,7 @@ onBeforeUnmount(() => {
         :style="{ opacity: !order.done ? 'inherit' : 0.3 }">
         <v-list-item-title>
           <span :class="{ done: order.done }">Tavolo {{ order.table_name }}</span>
-          <v-btn variant="plain" v-if="!order.done && order.minPassed >= 0" :class="{ 'text-danger': order.minPassed > 14, 'font-weight-bold': order.minPassed > 14}">
+          <v-btn variant="plain" v-if="!order.done && order.minPassed >= 0" :class="{ 'text-danger': order.minPassed >= minutetoalert, 'font-weight-bold': order.minPassed > 14}">
             {{ order.minPassed }} <span style="text-transform: lowercase;">m</span>
           </v-btn>
         </v-list-item-title>

@@ -48,7 +48,7 @@ onMounted(async () => {
   roles.value.push(...(destinations.map((d:Destination) => {
     return {
       title: d.name,
-      route: `/bartender/${[d.id]}/${d.name}`,
+      route: `/bartender/${[d.id]}/${d.name}/${d.minute_to_alert}`,
       text: "Preparazione delle comande",
       role: Roles.bartender
     } as Role
