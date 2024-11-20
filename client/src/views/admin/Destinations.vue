@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { type Destination } from '../../../../models/src';
-import { copy, requiredRule } from '@/services/utils';
+import { copy, requiredRule, positiveIntegerRule } from '@/services/utils';
 import Axios from '@/services/client'
 
 const destinations = ref<Destination[]>([])
@@ -51,7 +51,8 @@ function openDialog(destination?: Destination) {
     }
     else {
         selectedDestination.value = {
-            status: 'ACTIVE'
+            status: 'ACTIVE',
+            minute_to_alert: 15
         } as Destination
     }
     dialog.value = true
@@ -66,6 +67,9 @@ onMounted(async () => {
         <v-row>
             <v-col v-for="destination in destinations" sm="6" cols="12" lg="4">
                 <v-card :title="destination.name">
+                    <v-card-subtitle>
+                        Minuti attesa servizio: <span class="font-weight-bold">{{ destination.minute_to_alert }}</span>
+                    </v-card-subtitle>
                     <v-card-text v-if="destination.canDelete > 0">
                         Sono presenti elementi del menu collegati a questa destinazione
                     </v-card-text>
@@ -90,6 +94,7 @@ onMounted(async () => {
             <v-card-text>
                 <v-form @submit.prevent ref="form">
                     <v-text-field label="Nome" :rules="[requiredRule]" v-model="selectedDestination.name"></v-text-field>
+                    <v-text-field label="Minuti attesa servizio" type="number" :rules="[requiredRule, positiveIntegerRule]" v-model="selectedDestination.minute_to_alert"></v-text-field>
                 </v-form>
             </v-card-text>
             <v-card-actions>

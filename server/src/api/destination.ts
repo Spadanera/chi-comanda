@@ -6,7 +6,7 @@ class DestinationApi {
     }
 
     async getAll(): Promise<Destination[]> {
-        return await db.query(`SELECT id, name, status,
+        return await db.query(`SELECT id, name, status, minute_to_alert,
             (SELECT COUNT(id) FROM master_items WHERE destination_id = destinations.id) AS canDelete 
             FROM destinations WHERE status = "ACTIVE"`
         , [])
@@ -17,13 +17,13 @@ class DestinationApi {
     }
 
     async create(destination: Destination): Promise<number> {
-        return await db.executeUpdate('INSERT INTO destinations (name, status) VALUES (?, "ACTIVE")'
-            , [destination.name])
+        return await db.executeUpdate('INSERT INTO destinations (name, status, minute_to_alert) VALUES (?, "ACTIVE", ?)'
+            , [destination.name, destination.minute_to_alert])
     }
 
     async update(destination: Destination): Promise<number> {
-        return await db.executeUpdate('UPDATE destinations SET name = ?, status = ? WHERE id = ?'
-            , [destination.name, destination.status, destination.id])
+        return await db.executeUpdate('UPDATE destinations SET name = ?, status = ?, minute_to_alert = ? WHERE id = ?'
+            , [destination.name, destination.status, destination.minute_to_alert, destination.id])
     }
 }
 
