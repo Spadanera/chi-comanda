@@ -1,5 +1,5 @@
 import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance, type AxiosProgressEvent } from 'axios'
-import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination } from "../../../models/src"
+import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation, type Menu, type Type, type SubType } from "../../../models/src"
 import router from '@/router'
 import { UserStore, SnackbarStore, type IUser, ProgressStore } from '@/stores'
 import type { StoreDefinition } from 'pinia'
@@ -64,7 +64,6 @@ export default class Axios {
                     userStore.logout()
                     router.push('/login')
                 } else {
-                    // Show a generic error message
                     const snackbar = SnackbarStore()
                     snackbar.show("Si è verificare un errore", 3000, 'top', 'error')
                 }
@@ -194,12 +193,28 @@ export default class Axios {
         return await this.put<MasterItem>("/master-tables", masterTable);
     }
 
-    async GetAllMasterItems(): Promise<MasterItem[]> {
-        return await this.get<MasterItem>("/master-items");
+    async GetAllMenu(): Promise<Menu[]> {
+        return await this.get<MasterItem>(`/menu`);
     }
 
-    async GetAvailableMasterItems(): Promise<MasterItem[]> {
-        return await this.get<MasterItem>("/master-items/available");
+    async CreateMenu(menu: Menu): Promise<number> {
+        return await this.post<Menu>("/menu", menu);
+    }
+
+    async EditMenu(menu: Menu): Promise<number> {
+        return await this.put<Menu>("/menu", menu);
+    }
+
+    async DeleteMenu(id: number): Promise<number> {
+        return await this.delete(`/menu/${id}`);
+    }
+
+    async GetAllMasterItems(menu_id: number): Promise<MasterItem[]> {
+        return await this.get<MasterItem>(`/master-items/${menu_id}`);
+    }
+
+    async GetAvailableMasterItems(menu_id: number): Promise<MasterItem[]> {
+        return await this.get<MasterItem>(`/master-items/available/${menu_id}`);
     }
 
     async CreateMasterItems(masterItem: MasterItem): Promise<number> {
@@ -220,6 +235,79 @@ export default class Axios {
 
     async EditDestination(destination: Destination): Promise<number> {
         return await this.put<Destination>("/destinations", destination);
+    }
+
+    async GetTypes(): Promise<Type[]> {
+        return await this.get<Type>("/types")
+    }
+
+    async CreateType(type: Type): Promise<number> {
+        console.log(type)
+        return await this.post("/types", type)
+    }
+
+    async EditType(type: Type): Promise<number> {
+        return await this.put("/types", type)
+    }
+
+    async DeleteType(id: number): Promise<number> {
+        return await this.delete(`/types/${id}`)
+    }
+
+    async GetSubTypes(): Promise<SubType[]> {
+        return await this.get<SubType>("/subtypes")
+    }
+
+    async CreateSubType(subtypes: SubType): Promise<number> {
+        return await this.post("/subtypes", subtypes)
+    }
+
+    async EditSubType(subtypes: SubType): Promise<number> {
+        return await this.put("/subtypes", subtypes)
+    }
+
+    async DeleteSubType(id: number): Promise<number> {
+        return await this.delete(`/subtypes/${id}`)
+    }
+
+    async AskReset (email: string) {
+        await this.client.post("/public/askreset", {
+            email
+        })
+        this.snackbarStoreDef().show("Richiesta effettuata. Riceverai una mail con le istruzioni per reinpostare la tua password")
+        router.push("/login")
+    }
+
+    async Reset (invitation: Invitation) {
+        await this.client.post("/public/reset", invitation)
+        this.snackbarStoreDef().show("Password reimpostata con successo", 3000, 'top', 'success')
+        router.push("/login")
+    }
+
+    async GetUsers(): Promise<User[]> {
+        return await this.get("/users")
+    }
+
+    async UpdateUser(user:User): Promise<number> {
+        return await this.put("/users", user)
+    }
+
+    async UpdateUserRoles(user:User): Promise<number> {
+        return await this.put("/users/roles", user)
+    }
+
+    async DeleteUser(user_id:number): Promise<number> {
+        return await this.delete(`/users/${user_id}`)
+    }
+
+    async InviteUser(user: User): Promise<number> {
+        return await this.post("/users/invite", user)
+    }
+
+    async AcceptInvitation(invitation: Invitation) {
+        await this.post("/public/invitation/accept", invitation)
+        this.snackbarStoreDef().show("Invito accettato con successo", 3000, 'top', 'success')
+        router.push("/login")
     }
 
     async Login(email: string, password: string): Promise<void> {

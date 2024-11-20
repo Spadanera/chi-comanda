@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
-import { type Event, type Item, type Table, ItemTypes as types } from "../../../models/src"
-import { sortItem, getIcon, groupItems } from "@/services/utils"
+import { type Event, type Item, type Table, type SubType, type Type } from "../../../models/src"
+import { groupItems } from "@/services/utils"
+import Axios from '@/services/client'
 import ItemList from '@/components/ItemList.vue'
 
 const selectedEvent = defineModel<Event>()
+const axios = new Axios()
 const emit = defineEmits(['close'])
 const selectedTable = ref<Table[]>([{
     items: []
 }] as Table[])
 const tab = ref<number>(0)
+const subTypes = ref<SubType[]>([])
+const types = ref<Type[]>([])
 
 const items = computed<Item[]>(() => {
     const _items: Item[] = []
@@ -20,18 +24,16 @@ const items = computed<Item[]>(() => {
     }
     return _items
 })
-const beverageItems = computed<Item[]>(() => {
-    if (selectedEvent.value) {
-        return groupItems(items.value.filter((i: Item) => i.type === 'Bevanda'))
-    }
-    return [] as Item[]
-})
 
-const foodItems = computed<Item[]>(() => {
-    if (selectedEvent.value) {
-        return groupItems(items.value.filter((i: Item) => i.type === 'Cibo'))
-    }
-    return [] as Item[]
+const typeItems = computed<{ subheader: string, items: Item[] }[]>(() => {
+    let result: { subheader: string, items: Item[] }[] = []
+    types.value.forEach((t: Type) => {
+        result.push({
+            subheader: t.name,
+            items: groupItems(items.value.filter((i: Item) => i.type === t.name))
+        })
+    })
+    return result
 })
 
 function getSubTypeCount(table: Table, subtype: string[]) {
@@ -41,7 +43,9 @@ function getSubTypeCount(table: Table, subtype: string[]) {
     return 0
 }
 
-onMounted(() => {
+onMounted(async () => {
+    subTypes.value = await axios.GetSubTypes()
+    types.value = await axios.GetTypes()
     if (selectedEvent.value && selectedEvent.value.tables && selectedEvent.value.tables.length) {
         selectedTable.value[0] = selectedEvent.value.tables[0]
     }
@@ -63,11 +67,9 @@ onMounted(() => {
             <v-tabs-window v-model="tab">
                 <v-tabs-window-item>
                     <v-row>
-                        <v-col style="padding: 0" sm="6" cols="12">
-                            <ItemList :quantitybefore="true" v-model="beverageItems" subheader="Bevanda"></ItemList>
-                        </v-col>
-                        <v-col style="padding: 0;" sm="6" cols="12">
-                            <ItemList :quantitybefore="true" v-model="foodItems" subheader="Cibo"></ItemList>
+                        <v-col style="padding: 0" sm="6" cols="12" v-for="typeItem in typeItems">
+                            <ItemList v-if="typeItem.items.length" :quantitybefore="true" v-model="typeItem.items"
+                                :subheader="typeItem.subheader"></ItemList>
                         </v-col>
                     </v-row>
                 </v-tabs-window-item>
@@ -80,10 +82,10 @@ onMounted(() => {
                                     <v-list-item-title>
                                         <span :class="{ done: table.paid }">Tavolo {{ table.name }}</span>
                                     </v-list-item-title>
-                                    <template v-for="type in types">
+                                    <template v-for="type in subTypes">
                                         <v-btn readonly size="small" density="compact" variant="plain"
                                             v-if="getSubTypeCount(table, [type.name]) > 0">
-                                            <v-icon>{{ getIcon(type.name) }}</v-icon> {{ getSubTypeCount(table,
+                                            <v-icon>{{ type.icon }}</v-icon> {{ getSubTypeCount(table,
                                                 [type.name])
                                             }}
                                         </v-btn>
@@ -92,21 +94,16 @@ onMounted(() => {
                             </v-list>
                         </v-col>
                         <v-col cols="7" class="scroll-col">
-                            <ItemList :subheader="`Totale: ${selectedTable[0].revenue} €`" :quantitybefore="true" v-model="selectedTable[0].items"></ItemList>
+                            <ItemList :subheader="`Totale: ${selectedTable[0].revenue} €`" :quantitybefore="true"
+                                v-model="selectedTable[0].items"></ItemList>
                         </v-col>
                     </v-row>
                 </v-tabs-window-item>
             </v-tabs-window>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="inner-elevation">
             <v-btn readonly size="small" density="compact" variant="plain">
                 <v-icon>mdi-table-furniture</v-icon> {{ selectedEvent.tableCount }}
-            </v-btn>
-            <v-btn readonly size="small" density="compact" variant="plain">
-                <v-icon>mdi-beer</v-icon> {{ selectedEvent.beverageCount }}
-            </v-btn>
-            <v-btn readonly size="small" density="compact" variant="plain">
-                <v-icon>mdi-hamburger</v-icon> {{ selectedEvent.foodCount }}
             </v-btn>
             <v-btn readonly size="small" density="compact" variant="plain">
                 <v-icon>mdi-currency-eur</v-icon> {{ selectedEvent.revenue }}

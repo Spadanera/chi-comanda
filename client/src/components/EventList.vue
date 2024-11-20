@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
-import { type Event, type Item, type Table, ItemTypes as types } from "../../../models/src"
-import Confirm from '@/components/Confirm.vue'
+import { onMounted, ref } from 'vue';
+import { type Event } from "../../../models/src"
 import Axios from '@/services/client'
-import { copy, sortItem, getIcon } from "@/services/utils"
+import { copy } from "@/services/utils"
 import EventDetails from '@/components/EventDetails.vue'
 
 const emit = defineEmits(['reload'])
@@ -16,20 +15,7 @@ const events = defineModel<Event[]>({ default: [] })
 const confirmCloseEvent = ref<boolean>(false)
 const confirmDeleteEvent = ref<boolean>(false)
 const selectedEvent = ref<Event>(null)
-const selectedTable = ref<Table>(null)
 const bottomSheet = ref<boolean>(null)
-const tab = ref<number>(0)
-const drawer = ref<boolean>(true)
-
-const items = computed<Item[]>(() => {
-    const _items: Item[] = []
-    if (selectedEvent.value && selectedEvent.value.tables) {
-        selectedEvent.value.tables.forEach((t: Table) => {
-            _items.push(...t.items)
-        })
-    }
-    return _items
-})
 
 function closeEventConfirm(event: Event) {
     selectedEvent.value = copy<Event>(event)
@@ -94,16 +80,11 @@ onMounted(() => {
                 <v-card :title="getExtendedDate(event.date.toString())" @click="showEvent(event)">
                     <v-card-subtitle>{{ event.name }} <span v-if="event.status === 'ONGOING'"> - <span
                                 style="font-weight: bold">Incasso attuale: {{ event.currentPaid }}
-                                €</span></span></v-card-subtitle>
+                                €</span></span><span v-if="event.status === 'PLANNED'"> - {{ event.manu_name
+                            }}</span></v-card-subtitle>
                     <v-card-text v-show="event.status !== 'PLANNED'">
                         <v-btn readonly size="small" density="compact" variant="plain">
                             <v-icon>mdi-table-furniture</v-icon> {{ event.tableCount }}
-                        </v-btn>
-                        <v-btn readonly size="small" density="compact" variant="plain">
-                            <v-icon>mdi-beer</v-icon> {{ event.beverageCount }}
-                        </v-btn>
-                        <v-btn readonly size="small" density="compact" variant="plain">
-                            <v-icon>mdi-hamburger</v-icon> {{ event.foodCount }}
                         </v-btn>
                         <v-btn readonly size="small" density="compact" variant="plain">
                             <v-icon>mdi-currency-eur</v-icon> {{ event.revenue }}

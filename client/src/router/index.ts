@@ -1,6 +1,21 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
 import { UserStore, SnackbarStore } from '@/stores'
+import { Roles } from '@/services/utils'
+
+function hasMatchingRole(arr1: Roles[], arr2: Roles[]): boolean {
+  const set2 = new Set(arr2)
+
+  for (const element of arr1) {
+      if (set2.has(element)) {
+          return true
+      }
+  }
+
+  return false
+}
+
+const publicRoute:String[] = ['Login', 'Reset', 'Invitation', 'AskReset']
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -18,12 +33,30 @@ const router = createRouter({
       props: true
     },
     {
+      path: '/askreset',
+      name: 'AskReset',
+      component: () => import('@/views/AskReset.vue'),
+      props: true
+    },
+    {
+      path: '/reset/:token',
+      name: 'Reset',
+      component: () => import('@/views/Reset.vue'),
+      props: true
+    },
+    {
+      path: '/invitation/:token',
+      name: 'Invitation',
+      component: () => import('@/views/Invitation.vue'),
+      props: true
+    },
+    {
       path: '/admin',
       name: 'Admin',
       component: () => import('@/views/Admin.vue'),
       props: true,
       meta: {
-        allowedRole: 'admin'
+        allowedRole: Roles.admin
       },
       children: [
         {
@@ -32,7 +65,7 @@ const router = createRouter({
           component: () => import('@/views/admin/Events.vue'),
           props: true,
           meta: {
-            allowedRole: 'admin'
+            allowedRole: Roles.admin
           },
         },
         {
@@ -41,7 +74,7 @@ const router = createRouter({
           component: () => import('@/views/admin/Users.vue'),
           props: true,
           meta: {
-            allowedRole: 'admin'
+            allowedRole: Roles.superuser
           },
         },
         {
@@ -50,16 +83,25 @@ const router = createRouter({
           component: () => import('@/views/admin/Tables.vue'),
           props: true,
           meta: {
-            allowedRole: 'admin'
+            allowedRole: Roles.admin
           },
         },
         {
-          path: "items",
+          path: "items/:menu_id/:menu_name",
           name: "items",
           component: () => import('@/views/admin/Items.vue'),
           props: true,
           meta: {
-            allowedRole: 'admin'
+            allowedRole: Roles.admin
+          },
+        },
+        {
+          path: "menu",
+          name: "menu",
+          component: () => import('@/views/admin/Menu.vue'),
+          props: true,
+          meta: {
+            allowedRole: Roles.admin
           },
         },
         {
@@ -68,7 +110,7 @@ const router = createRouter({
           component: () => import('@/views/admin/Destinations.vue'),
           props: true,
           meta: {
-            allowedRole: 'admin'
+            allowedRole: Roles.admin
           },
         }
       ]
@@ -79,16 +121,16 @@ const router = createRouter({
       component: () => import('@/views/Waiter.vue'),
       props: true,
       meta: {
-        allowedRole: 'waiter'
+        allowedRole: [Roles.waiter, Roles.checkout, Roles.bartender]
       }
     },
     {
-      path: '/waiter/:event_id/order/:master_table_id/table/:table_id',
+      path: '/waiter/:event_id/mastertable/:master_table_id/table/:table_id/menu/:menu_id',
       name: 'Waiter Order',
       component: () => import('@/views/WaiterOrder.vue'),
       props: true,
       meta: {
-        allowedRole: 'waiter'
+        allowedRole: [Roles.waiter, Roles.checkout, Roles.bartender]
       }
     },
     {
@@ -97,7 +139,7 @@ const router = createRouter({
       component: () => import('@/views/BarTender.vue'),
       props: true,
       meta: {
-        allowedRole: 'bartender'
+        allowedRole: Roles.bartender
       }
     },
     {
@@ -106,7 +148,7 @@ const router = createRouter({
       component: () => import('@/views/Checkout.vue'),
       props: true,
       meta: {
-        allowedRole: 'checkout'
+        allowedRole: Roles.checkout
       }
     },
   ]
@@ -120,9 +162,9 @@ router.beforeEach(async (to, from, next) => {
   if (user.id && to.name === 'Login') {
     next({ name: "Home" })
   }
-  else if (user.id || to.name === 'Login') {
+  else if (user.id || publicRoute.includes(to.name?.toString())) {
     if (to.meta.allowedRole) {
-      if (user.roles.includes(to.meta.allowedRole)) {
+      if ((Array.isArray(to.meta.allowedRole) && hasMatchingRole(to.meta.allowedRole, user.roles)) || user.roles.includes(to.meta.allowedRole)) {
         next()
       } else {
         snackbarStore.show("Non sei autorizzato a visualizzare questa sezione", 3000, 'top', 'error')

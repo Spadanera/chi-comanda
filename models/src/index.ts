@@ -1,62 +1,26 @@
 import { RowDataPacket } from "mysql2"
 
-export interface Type {
+export interface Type extends RowDataPacket {
+  id?: number
   name: string
-  type: string
+  icon?: string
+  numProducts?: number
 }
 
-export const ItemTypes:Type[] = [
-  {
-    name: "Birra",
-    type: "Bevanda"
-  },
-  {
-    name: "Cocktail",
-    type: "Bevanda"
-  },
-  {
-    name: "Analcolico",
-    type: "Bevanda"
-  },
-  {
-    name: "Extra",
-    type: "Bevanda"
-  },
-  {
-    name: "Special",
-    type: "Cibo"
-  },
-  {
-    name: "Piadina",
-    type: "Cibo"
-  },
-  {
-    name: "Panino",
-    type: "Cibo"
-  },
-  {
-    name: "Fuori Menu",
-    type: "Bevanda"
-  },
-  {
-    name: "Sconto",
-    type: ""
-  }
-]
+export interface SubType extends RowDataPacket {
+  id?: number
+  name: string
+  type_id?: number
+  icon?: string
+  type?: string
+  numProducts?: number
+}
 
 export interface CompleteOrderInput {
-  event_id: number,
-  table_id: number,
+  event_id?: number,
+  table_id?: number,
   order_id?: number,
   item_ids: number[]
-}
-
-export enum Roles {
-  admin,
-  checkout,
-  waiter,
-  bertender,
-  kitchen
 }
 
 export interface Message {
@@ -70,30 +34,32 @@ export interface Repository extends RowDataPacket {
 
 }
 
+export interface Invitation extends User {
+  
+}
+
 export interface Audit extends Repository {
   id?: number,
   user_id?: number,
-  event_id?: number,
-  table_id?: number,
-  action?: string,
-  actionData?: any
-  actionDateTime?: Date
+  method?: string,
+  path?: string,
+  data?: any
 }
 
 export interface Event extends Repository {
   id?: number
   name?: string
   date?: Date
+  menu_id?: number
   tables?: Table[]
   workers?: User[]
   orders?: Order[]
   tableCount?: number
-  foodCount?: number
-  beverageCount?: number
   revenue?: number
   discount?: number
   currentPaid?: number
   tablesOpen?: number
+  menu_name?: string
 }
 
 export interface Table extends Repository {
@@ -139,6 +105,7 @@ export interface Item extends Repository {
   master_item_id?: number
   type?: string
   sub_type?: string
+  icon?: string
   note?: string
   done?: boolean
   paid?: boolean
@@ -160,12 +127,22 @@ export interface User extends Repository {
   username?: string
   email?: string
   password?: string
-  roles?: Roles[]
+  roles?: string[],
+  status?: string,
+  statusSwitch?: boolean,
+  creation_date?: string
 }
 
 export interface Role extends Repository {
   id?: number
-  name?: Roles
+  name?: string
+}
+
+export interface Menu extends Repository {
+  id?: number
+  name?: string
+  status?: string
+  from_id?: number
 }
 
 export interface MasterItem extends Repository {
@@ -176,8 +153,9 @@ export interface MasterItem extends Repository {
   price?: number
   destination_id?: number
   destination?: string
-  available?: boolean
+  available?: boolean | number
   status?: string
+  menu_id?: number
 }
 
 export interface Destination extends Repository {

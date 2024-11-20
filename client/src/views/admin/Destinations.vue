@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { type Destination } from '../../../../models/src';
-import { copy } from '@/services/utils';
+import { copy, requiredRule } from '@/services/utils';
 import Axios from '@/services/client'
 
 const destinations = ref<Destination[]>([])
 const axios = new Axios()
-const confirmDeleteDestinatino = ref<boolean>(false)
+const confirmDeleteDestination = ref<boolean>(false)
 const selectedDestination = ref<Destination>(null)
 const dialog = ref<boolean>(null)
 const form = ref(null)
-const requiredRule = ref([(value: any) => !!value || 'Inserire un valore'])
 
 async function getDestinations() {
     destinations.value = await axios.GetDestinations()
@@ -18,14 +17,14 @@ async function getDestinations() {
 
 async function deleteDestinationConfirm(destination: Destination) {
     selectedDestination.value = destination
-    confirmDeleteDestinatino.value = true
+    confirmDeleteDestination.value = true
 }
 
 async function deleteDestination() {
     selectedDestination.value.status = 'DELETED'
     await axios.EditDestination(selectedDestination.value)
     await getDestinations()
-    confirmDeleteDestinatino.value = false
+    confirmDeleteDestination.value = false
 }
 
 async function createDestination() {
@@ -80,7 +79,7 @@ onMounted(async () => {
         </v-row>
     </v-container>
     <v-fab @click="openDialog()" icon="mdi-plus" app style="position: fixed; right: 15px; bottom: 15px;" location="bottom right"></v-fab>
-    <v-dialog v-model="dialog">
+    <v-dialog v-model="dialog" width="380px">
         <v-card>
             <v-card-title v-if="selectedDestination.id">
                 Modifica destinazione
@@ -90,7 +89,7 @@ onMounted(async () => {
             </v-card-title>
             <v-card-text>
                 <v-form @submit.prevent ref="form">
-                    <v-text-field label="Nome" :rules="requiredRule" v-model="selectedDestination.name"></v-text-field>
+                    <v-text-field label="Nome" :rules="[requiredRule]" v-model="selectedDestination.name"></v-text-field>
                 </v-form>
             </v-card-text>
             <v-card-actions>
@@ -100,7 +99,7 @@ onMounted(async () => {
             </v-card-actions>
         </v-card>
     </v-dialog>
-    <Confirm v-model="confirmDeleteDestinatino">
+    <Confirm v-model="confirmDeleteDestination">
         <template v-slot:action>
             <v-btn text="Conferma" variant="plain" @click="deleteDestination"></v-btn>
         </template>
