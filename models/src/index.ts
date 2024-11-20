@@ -163,4 +163,5 @@ export interface Destination extends Repository {
   name?: string
   status?: string
   canDelete?: number
+  minute_to_alert?: number
 }

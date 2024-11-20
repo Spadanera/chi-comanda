@@ -75,7 +75,8 @@ CREATE TABLE `orders` (
 CREATE TABLE `destinations` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `name` varchar(255),
-  `status` varchar(255)
+  `status` varchar(255),
+  `minute_to_alert` INT
 );
 
 CREATE TABLE `master_items` (
@@ -203,8 +204,8 @@ INSERT INTO master_tables (name, default_seats, status) VALUES ('Cor 1', 8, 'ACT
 INSERT INTO master_tables (name, default_seats, status) VALUES ('Cor 2', 8, 'ACTIVE');
 INSERT INTO master_tables (name, default_seats, status) VALUES ('Cor 3', 8, 'ACTIVE');
 
-INSERT INTO destinations (name, status) VALUES ('Bar Ludoteca', 'ACTIVE');
-INSERT INTO destinations (name, status) VALUES ('Cucina Libra', 'ACTIVE');
+INSERT INTO destinations (name, status, minute_to_alert) VALUES ('Bar Ludoteca', 'ACTIVE', 15);
+INSERT INTO destinations (name, status, minute_to_alert) VALUES ('Cucina Libra', 'ACTIVE', 15);
 
 INSERT INTO master_items (name, sub_type_id, price, destination_id, menu_id, available, status) VALUES ('Valyria', 7, 6, 2, 1, true, 'ACTIVE');
 INSERT INTO master_items (name, sub_type_id, price, destination_id, menu_id, available, status) VALUES ('Braavos', 7, 6, 2, 1, true, 'ACTIVE');

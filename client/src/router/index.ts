@@ -134,7 +134,7 @@ const router = createRouter({
       }
     },
     {
-      path: '/bartender/:destinations/:pagetitle',
+      path: '/bartender/:destinations/:pagetitle/:minutetoalert',
       name: 'Bartender',
       component: () => import('@/views/BarTender.vue'),
       props: true,
