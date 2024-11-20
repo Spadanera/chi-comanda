@@ -10,6 +10,8 @@ import destinationsRouter from "./destinations-router"
 import masterItemsRouter from "./master-items-router"
 import masterTableRouter from "./master-tables-router"
 import menuRouter from "./menu-router"
+import typesRouter from "./types-router"
+import subTypesRouter from "./sub-types-router"
 
 const apiRouter: Router = router()
 
@@ -21,6 +23,8 @@ apiRouter.use("/items", authorizationMiddleware([Roles.bartender, Roles.checkout
 apiRouter.use("/menu", authorizationMiddleware(Roles.admin), menuRouter)
 apiRouter.use("/destinations", destinationsRouter)
 apiRouter.use("/master-items", masterItemsRouter)
+apiRouter.use("/types", authorizationMiddleware(Roles.admin), typesRouter)
+apiRouter.use("/subtypes", subTypesRouter)
 apiRouter.use("/master-tables", masterTableRouter)
 apiRouter.use("/public", publicApiRouter)
 

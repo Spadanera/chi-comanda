@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type Event, type Table, type Item, ItemTypes as types, type CompleteOrderInput, type MasterTable } from "../../../models/src"
+import { type Event, type Table, type Item, type SubType, type CompleteOrderInput, type MasterTable } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import Axios from '@/services/client'
 import { SnackbarStore, type IUser } from '@/stores'
-import { copy, getIcon, sortItem, sortTables } from "@/services/utils"
+import { copy, sortItem, sortTables } from "@/services/utils"
 import { io } from 'socket.io-client'
 import { RouterLink } from 'vue-router'
 import ItemList from "@/components/ItemList.vue"
@@ -29,6 +29,7 @@ const discount = ref<boolean>(false)
 const realPaid = ref<number>(null)
 const partialPaid = ref<boolean>(false)
 const dialogPay = ref<boolean>(false)
+const types = ref<SubType[]>([])
 
 const computedSelectedTable = computed(() => {
   let result = copy<Table>((selectedTable.value.length ? selectedTable.value[0] : { items: [] }) as Table)
@@ -182,6 +183,7 @@ function pay(partial: boolean) {
 
 onMounted(async () => {
   loading.value = true
+  types.value = await axios.GetSubTypes()
   event.value = await axios.GetOnGoingEvent()
   if (event.value.id) {
     await getTables()
@@ -230,11 +232,13 @@ onMounted(async () => {
 
     is.on('order-completed', (data: CompleteOrderInput) => {
       const table = tables.value.find((t: Table) => t.id === data.table_id)
-      table.items.forEach((i: Item) => {
-        if (data.order_id === i.order_id) {
-          i.done = true
-        }
-      })
+      if (table) {
+        table.items.forEach((i: Item) => {
+          if (data.order_id === i.order_id) {
+            i.done = true
+          }
+        })
+      }
     })
   }
   loading.value = false
@@ -248,7 +252,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <v-navigation-drawer v-model="drawer" mobile-breakpoint="sm">
+  <v-navigation-drawer v-if="event?.id" v-model="drawer" mobile-breakpoint="sm">
     <RouterLink to="/waiter?origin=/checkout">
       <v-btn style="margin-top: 8px; margin-left: 15px;">Nuovo Ordine</v-btn>
     </RouterLink>
@@ -260,7 +264,7 @@ onBeforeUnmount(() => {
         </v-list-item-title>
         <template v-for="type in types">
           <v-btn readonly size="small" density="compact" variant="plain" v-if="getSubTypeCount(table, [type.name]) > 0">
-            <v-icon>{{ getIcon(type.name) }}</v-icon> {{ getSubTypeCount(table, [type.name]) }}
+            <v-icon>{{ type.icon }}</v-icon> {{ getSubTypeCount(table, [type.name]) }}
           </v-btn>
         </template>
       </v-list-item>
@@ -277,7 +281,7 @@ onBeforeUnmount(() => {
       <v-btn @click="changeTableSheet()" style="position: absolute; top: 74px; right: 25px;"
         v-if="selectedTable.length">Tavolo {{ selectedTable[0].name }}</v-btn>
     </v-container>
-    <ItemList style="margin-top: 2px;" :showtype="true" subheader="DA PAGARE" v-model="computedSelectedTable.itemsToDo">
+    <ItemList :shownote="true" style="margin-top: 2px;" :showtype="true" subheader="DA PAGARE" v-model="computedSelectedTable.itemsToDo">
       <template v-slot:prequantity="slotProps">
         <v-btn icon="mdi-delete" @click="deleteItemConfirm(slotProps.item.id)" variant="plain"></v-btn>
       </template>
@@ -337,7 +341,8 @@ onBeforeUnmount(() => {
             <v-checkbox v-model="discount" label="Applicare sconto"></v-checkbox>
           </v-row>
           <v-row v-if="discount">
-            <v-text-field :max="partialPaid ? itemToBePaidBill : tableTotalOrder" append-inner-icon="mdi-currency-eur" v-model.number="realPaid" label="Quanto vuoi far pagere" type="number"></v-text-field>
+            <v-text-field :max="partialPaid ? itemToBePaidBill : tableTotalOrder" append-inner-icon="mdi-currency-eur"
+              v-model.number="realPaid" label="Quanto vuoi far pagere" type="number"></v-text-field>
           </v-row>
           <v-row v-if="discount">
             <v-table style="width: 100%;" density="compact">

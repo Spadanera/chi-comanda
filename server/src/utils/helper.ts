@@ -22,18 +22,29 @@ export function hasMatchingRole(arr1: Roles[], arr2: Roles[]): boolean {
 }
 
 export const authorizationMiddleware = (role: Roles | Roles[]) => (req: Request, res: Response, next: any) => { 
-    if (Array.isArray(role)) {
-        if (hasMatchingRole((req.user as any).roles, role)) {
-            next()
-        } else {
-            res.status(401).json('Unauthorized')
-        }
+    const userRoles = (req.user as any).roles
+    if (!userRoles) {
+        res.status(401).json('Unauthorized')
     }
     else {
-        if ((req.user as any).roles?.includes(role)) {
+        if (userRoles.includes(Roles.superuser)) {
             next()
-        } else {
-            res.status(401).json('Unauthorized')
+        }
+        else {
+            if (Array.isArray(role)) {
+                if (hasMatchingRole((req.user as any).roles, role)) {
+                    next()
+                } else {
+                    res.status(401).json('Unauthorized')
+                }
+            }
+            else {
+                if ((req.user as any).roles?.includes(role)) {
+                    next()
+                } else {
+                    res.status(401).json('Unauthorized')
+                }
+            }
         }
     }
 }

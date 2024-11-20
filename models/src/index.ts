@@ -1,52 +1,24 @@
 import { RowDataPacket } from "mysql2"
 
-export interface Type {
+export interface Type extends RowDataPacket {
+  id?: number
   name: string
-  type: string
+  icon?: string
+  numProducts?: number
 }
 
-export const ItemTypes:Type[] = [
-  {
-    name: "Birra",
-    type: "Bevanda"
-  },
-  {
-    name: "Cocktail",
-    type: "Bevanda"
-  },
-  {
-    name: "Analcolico",
-    type: "Bevanda"
-  },
-  {
-    name: "Extra",
-    type: "Bevanda"
-  },
-  {
-    name: "Special",
-    type: "Cibo"
-  },
-  {
-    name: "Piadina",
-    type: "Cibo"
-  },
-  {
-    name: "Panino",
-    type: "Cibo"
-  },
-  {
-    name: "Fuori Menu",
-    type: "Bevanda"
-  },
-  {
-    name: "Sconto",
-    type: ""
-  }
-]
+export interface SubType extends RowDataPacket {
+  id?: number
+  name: string
+  type_id?: number
+  icon?: string
+  type?: string
+  numProducts?: number
+}
 
 export interface CompleteOrderInput {
-  event_id: number,
-  table_id: number,
+  event_id?: number,
+  table_id?: number,
   order_id?: number,
   item_ids: number[]
 }
@@ -83,8 +55,6 @@ export interface Event extends Repository {
   workers?: User[]
   orders?: Order[]
   tableCount?: number
-  foodCount?: number
-  beverageCount?: number
   revenue?: number
   discount?: number
   currentPaid?: number
@@ -135,6 +105,7 @@ export interface Item extends Repository {
   master_item_id?: number
   type?: string
   sub_type?: string
+  icon?: string
   note?: string
   done?: boolean
   paid?: boolean
@@ -171,8 +142,6 @@ export interface Menu extends Repository {
   id?: number
   name?: string
   status?: string
-  beverageCount?: number,
-  foodCount?: number
   from_id?: number
 }
 
@@ -184,7 +153,7 @@ export interface MasterItem extends Repository {
   price?: number
   destination_id?: number
   destination?: string
-  available?: boolean
+  available?: boolean | number
   status?: string
   menu_id?: number
 }

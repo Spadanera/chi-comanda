@@ -60,6 +60,7 @@ onBeforeUnmount(() => {
   <main>
     <v-skeleton-loader v-if="loading" type="card"></v-skeleton-loader>
     <v-container v-else-if="!event?.id">
+      <h3>Cameriere</h3>
       <p>Nessun evento attivo</p>
     </v-container>
     <v-container v-else>

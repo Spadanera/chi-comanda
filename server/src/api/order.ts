@@ -30,6 +30,7 @@ class OrderAPI {
                             'name', items.name, 
                             'order_id', items.order_id, 
                             'type', items.type, 
+                            'icon', items.icon, 
                             'sub_type', items.sub_type, 
                             'price', items.price,
                             'destination_id', items.destination_id,
@@ -63,9 +64,12 @@ class OrderAPI {
         if (order.items) {
             for (let i = 0; i < order.items.length; i++) {
                 let item = order.items[i]
-                order.items[i].id = await db.executeInsert(`INSERT INTO items (event_id, order_id, table_id, master_item_id, type, sub_type, name, price, note, destination_id) 
-                    VALUES (?,?,?,?,?,?,?,?,?,?)`
-                    , [order.event_id, order_id, order.table_id, item.master_item_id, item.type, item.sub_type, item.name, item.price, item.note || '', item.destination_id])
+                order.items[i].id = await db.executeInsert(`INSERT INTO items (event_id, order_id, table_id, master_item_id, type, sub_type, name, price, note, destination_id, icon, done, paid) 
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
+                    , [order.event_id, order_id, order.table_id, item.master_item_id, item.type, item.sub_type, item.name, item.price, item.note || '', item.destination_id, item.icon, item.done, item.paid])
+            }
+            if (order.items.length && order.items[0].done) {
+                await this.completeOrder(order_id, { item_ids: [] })
             }
         }
         order.id = order_id
