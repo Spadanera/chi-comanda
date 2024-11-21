@@ -18,7 +18,8 @@ ordersRouter.get("/:eventid/:destinationsids", authorizationMiddleware(Roles.bar
 
 ordersRouter.post("/", authorizationMiddleware([Roles.waiter, Roles.bartender, Roles.checkout]), async (req: Request, res: Response) => {
     try {
-        const result = await orderApi.create(req.body)
+        const userId = (req.user as any).id
+        const result = await orderApi.create(req.body, +userId)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)

@@ -40,7 +40,8 @@ CREATE TABLE `tables` (
   `event_id` integer,
   `name` varchar(255),
   `paid` bool,
-  `status` varchar(255)
+  `status` varchar(255),
+  `user_id` INT NULL
 );
 
 CREATE TABLE `table_master_table` (
@@ -69,7 +70,8 @@ CREATE TABLE `orders` (
   `event_id` integer,
   `table_id` integer,
   `done` bool,
-  `order_date` datetime
+  `order_date` datetime,
+  `user_id` INT NULL
 );
 
 CREATE TABLE `destinations` (
@@ -137,6 +139,12 @@ CREATE TABLE `sub_types` (
   `icon` varchar(255)
 );
 
+CREATE TABLE `user_event` (
+  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
+  `user_id` integer,
+  `event_id` integer
+);
+
 ALTER TABLE `user_role` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 ALTER TABLE `user_role` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`);
 ALTER TABLE `tables` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
@@ -152,6 +160,10 @@ ALTER TABLE `items` ADD FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`);
 ALTER TABLE `master_items` ADD FOREIGN KEY (`menu_id`) REFERENCES `menu` (`id`);
 ALTER TABLE `events` ADD FOREIGN KEY (`menu_id`) REFERENCES `menu` (`id`);
 ALTER TABLE `sub_types` ADD FOREIGN KEY (`type_id`) REFERENCES `types` (`id`);
+ALTER TABLE `user_event` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
+ALTER TABLE `user_event` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
+ALTER TABLE `orders` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
+ALTER TABLE `tables` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 
 INSERT INTO users (email, username, status) VALUES ('ziro84@gmail.com', 'Superuser', 'ACTIVE');
 

@@ -113,8 +113,16 @@ export default class Axios {
         return await this.getSingle<Event>("/events/ongoing")
     }
 
+    async CreateEvent(event: Event): Promise<Number> {
+        return await this.post("/events", event)
+    }
+
     async SetEventStatus(event: Event): Promise<number> {
-        return await this.put(`/events/${event.id}`, event)
+        return await this.put(`/events/setstatus/${event.id}`, event)
+    }
+
+    async EditEvent(event: Event): Promise<number> {
+        return await this.put(`/events`, event)
     }
 
     async DeleteEvent(event_id: number): Promise<number> {
@@ -147,10 +155,6 @@ export default class Axios {
 
     async GetTablesInEvent(event_id: number): Promise<Table[]> {
         return await this.get<Table>(`/events/${event_id}/tables`)
-    }
-
-    async CreateEvent(event: Event): Promise<Number> {
-        return await this.post("/events", event)
     }
 
     async CreateOrder(order: Order): Promise<Number> {
@@ -285,6 +289,10 @@ export default class Axios {
 
     async GetUsers(): Promise<User[]> {
         return await this.get("/users")
+    }
+
+    async GetAvailableUsers(): Promise<User[]> {
+        return await this.get("/events/users")
     }
 
     async UpdateUser(user:User): Promise<number> {

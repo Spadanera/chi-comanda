@@ -1,5 +1,5 @@
 import db from "../db"
-import { Event } from "../../../models/src"
+import { type Event, type User } from "../../../models/src"
 
 class EventAPI {
     constructor() {
@@ -12,7 +12,16 @@ class EventAPI {
             (SELECT sum(items.price) FROM items WHERE items.event_id = events.id AND type != 'Sconto') revenue,
             (SELECT sum(items.price) FROM items WHERE items.event_id = events.id AND type = 'Sconto') discount,
             (SELECT sum(items.price) FROM items WHERE items.event_id = events.id AND type != 'Sconto' AND items.paid = 1) currentPaid,
-            (SELECT count(tables.id) FROM tables WHERE tables.event_id = events.id AND tables.status = 'ACTIVE') tablesOpen
+            (SELECT count(tables.id) FROM tables WHERE tables.event_id = events.id AND tables.status = 'ACTIVE') tablesOpen,
+            (
+                SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', users.id, 
+                    'username', users.username
+                ))
+                FROM users 
+                INNER JOIN user_event ON user_event.user_id = users.id
+                WHERE user_event.event_id = events.id
+            ) users
             FROM events
             INNER JOIN menu ON events.menu_id = menu.id
             ORDER BY date DESC`
@@ -54,21 +63,56 @@ class EventAPI {
                         WHERE tables.event_id = events.id
                         AND EXISTS (SELECT id FROM items WHERE items.table_id = tables.id)
                     ) grouped_tables
-                ) tables
+                ) tables,
+                (
+                    SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                        'id', users.id, 
+                        'username', users.username
+                    ))
+                    FROM users 
+                    INNER JOIN user_event ON user_event.user_id = users.id
+                    WHERE user_event.event_id = events.id
+                ) users
             FROM events WHERE events.id = ?`
             , [id])
     }
 
-    async getOnGoing(): Promise<Event> {
+    async getOnGoing(userId: number): Promise<Event> {
         try {
-            return await db.queryOne<Event>('SELECT * FROM events WHERE STATUS = ?', ["ONGOING"])
+            return await db.queryOne<Event>(`
+                SELECT *
+                FROM events 
+                WHERE STATUS = "ONGOING"
+                AND EXISTS (
+                    SELECT users.id
+                    FROM users
+                    INNER JOIN user_event ON user_event.user_id = users.id
+                    WHERE user_event.event_id = events.id
+                    AND users.id = ? AND users.status = 'ACTIVE'
+                    UNION
+                    SELECT users.id
+                    FROM users
+                    INNER JOIN user_role ON user_role.user_id = users.id
+                    INNER JOIN roles ON user_role.role_id = roles.id
+                    WHERE roles.name = 'superuser' AND users.id = ?
+                )
+                `, [userId, userId])
         } catch (error) {
             return {} as Event
         }
     }
 
     async create(event: Event): Promise<number> {
-        return db.executeInsert('INSERT INTO events (name, date, status, menu_id) VALUES (?,?,?,?)', [event.name, (event.date + "").split('T')[0], 'PLANNED', event.menu_id])
+        const eventId = await db.executeInsert('INSERT INTO events (name, date, status, menu_id) VALUES (?,?,?,?)', [event.name, (event.date + "").split('T')[0], 'PLANNED', event.menu_id])
+        if (event.users) {
+            console.log(event.users.map((u:User) => 'INSERT INTO user_event (user_id, event_id) VALUES (?,?)'),
+            event.users.map((u:User) => [u.id, eventId]))
+            await db.executeTransaction(
+                event.users.map((u:User) => 'INSERT INTO user_event (user_id, event_id) VALUES (?,?)'),
+                event.users.map((u:User) => [u.id, eventId])
+            )
+        }
+        return eventId
     }
 
     async delete(id: number): Promise<number> {
@@ -79,8 +123,27 @@ class EventAPI {
         return await db.executeUpdate('DELETE FROM events WHERE id = ?', [id])
     }
 
-    async update(event: Event, id: number): Promise<number> {
-        return await db.executeUpdate('UPDATE events SET status = ? WHERE id = ?', [event.status, id])
+    async updateStatus(event: Event): Promise<number> {
+        return await db.executeUpdate('UPDATE events SET status = ? WHERE id = ?', [event.status, event.id])
+    }
+
+    async update(event: Event): Promise<number> {
+        if (event.users) {
+            return await db.executeTransaction(
+                [
+                    'UPDATE events SET name = ?, date = ?, menu_id = ? WHERE id = ?',
+                    'DELETE FROM user_event WHERE event_id = ?',
+                    ...event.users.map((u:User) => 'INSERT INTO user_event (user_id, event_id) VALUES (?,?)')
+                ],
+                [
+                    [event.name, (event.date + "").split('T')[0], event.menu_id, event.id],
+                    [event.id],
+                    ...event.users.map((u:User) => [u.id, event.id])
+                ]
+            )
+            
+        }
+        throw new Error("Missing users")
     }
 }
 
