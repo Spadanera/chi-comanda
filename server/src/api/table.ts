@@ -98,7 +98,15 @@ class TableApi {
                 LEFT JOIN sub_types ON sub_types.id = items.sub_type_id
                 LEFT JOIN types ON sub_types.type_id = types.id
                 WHERE table_id = tables.id
-            ) items
+            ) items,
+            (
+                SELECT JSON_OBJECT(
+                    'id', users.id, 
+                    'username', users.username
+                )
+                FROM users 
+                WHERE users.id = tables.user_id
+            ) user
             FROM tables 
             WHERE event_id = ?
             ORDER BY paid, tables.id
@@ -113,8 +121,8 @@ class TableApi {
         return await db.query('SELECT * FROM tables WHERE ID = ?', [id])
     }
 
-    async create(table: Table): Promise<number> {
-        const table_id = await db.executeInsert('INSERT INTO tables (name, event_id, status) VALUES (?,?)', [table.name, table.event_id, 'ACTIVE'])
+    async create(table: Table, userId: number): Promise<number> {
+        const table_id = await db.executeInsert('INSERT INTO tables (name, event_id, status, user_id) VALUES (?,?,?)', [table.name, table.event_id, 'ACTIVE', userId])
         if (table.master_table_id) {
             const transactionInput: { queries: string[], values: any[]} = {
                 queries: [],

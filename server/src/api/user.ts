@@ -2,7 +2,7 @@ import db from "../db"
 import sendEmail from "../utils/mail"
 import { User } from "../../../models/src"
 import { type Invitation } from '../../../models/src/index';
-import { getCurrentDateTimeInItaly } from "../utils/helper";
+import { getCurrentDateTimeInItaly, Roles } from "../utils/helper";
 import { v4 as uuidv4 } from 'uuid';
 import { hashPassword, checkPassword } from "../utils/crypt";
 
@@ -13,6 +13,21 @@ class UserApi {
     async getAll(): Promise<User[]> {
         return await db.query(`SELECT id,username, email, status, (select json_arrayagg(name) FROM roles
             INNER JOIN user_role on roles.id = user_role.role_id WHERE user_id = users.id) as roles FROM users`, [])
+    }
+
+    async getAvailable(): Promise<User[]> {
+        const filter = `'${Object.values(Roles).join("','")}'`
+        return await db.query(`
+            SELECT id, username 
+            FROM users 
+            WHERE status = 'ACTIVE'
+            AND EXISTS (
+                SELECT user_id
+                FROM user_role 
+                INNER JOIN roles ON roles.id = user_role.role_id
+                WHERE user_role.user_id = users.id
+                AND roles.name in (${filter})
+            )`, [])
     }
 
     async getByEmailAndPassword(email: string, password: string): Promise<User> {
@@ -121,7 +136,7 @@ class UserApi {
                                 </p>
                                 <a href="${process.env.BASE_URL}/invitation/${invitation.token}" class="button">Reimposta Password</a>
                                 <p>
-                                    Questo link scadrà tra 24 ore, quindi assicurati di completare l'a registrazione'operazione entro tale data.
+                                    Questo link scadrà tra 24 ore, quindi assicurati di completare la registrazione entro tale data.
                                 </p>
                                 <p>
                                     A presto su Chi Comanda!
@@ -143,7 +158,6 @@ class UserApi {
         }
         return false
     }
-
 
     async acceptInvitation(invitation: Invitation): Promise<number> {
         if (invitation.password) {
@@ -210,7 +224,7 @@ class UserApi {
                                 </p>
                                 <a href="${process.env.BASE_URL}/reset/${id}" class="button">Reimposta Password</a>
                                 <p>
-                                    Questo link scadrà tra 24 ore, quindi assicurati di completare l'a registrazione'operazione entro tale data.
+                                    Questo link scadrà tra 24 ore, quindi assicurati di completare la registrazione entro tale data.
                                 </p>
                                 <p>
                                     A presto su Chi Comanda!

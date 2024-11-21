@@ -41,7 +41,8 @@ tablesRouter.get("/:id", async (req: Request, res: Response) => {
 
 tablesRouter.post("/", async (req: Request, res: Response) => {
     try {
-        const result = await tableApi.create(req.body)
+        const userId = (req.user as any).id
+        const result = await tableApi.create(req.body, +userId)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)

@@ -196,10 +196,15 @@ onMounted(async () => {
             </v-row>
             <v-row v-show="!fidelityClient">
               <v-col>
-                <v-select chips label="Ruoli" v-model="selectedRoles" :items="roleOptions" multiple
+                <v-select label="Ruoli" v-model="selectedRoles" :items="roleOptions" multiple
                   :rules="[customSelectRule]">
                   <template v-slot:item="{ props, item }">
-                    <v-list-item v-bind="props" :title="formatedRole(item.raw)"></v-list-item>
+                    <v-list-item v-bind="props" :title="formatedRole(item.title)"></v-list-item>
+                  </template>
+                  <template v-slot:selection="{ item }">
+                    <v-chip>
+                      <span>{{ formatedRole(item.title) }}</span>
+                    </v-chip>
                   </template>
                 </v-select>
               </v-col>

@@ -5,7 +5,7 @@ import Axios from '@/services/client'
 import { copy } from "@/services/utils"
 import EventDetails from '@/components/EventDetails.vue'
 
-const emit = defineEmits(['reload'])
+const emit = defineEmits(['reload', 'editevent'])
 const props = defineProps(['ongoing'])
 
 const axios = new Axios()
@@ -93,6 +93,10 @@ onMounted(() => {
                             <v-icon>mdi-cart-percent</v-icon> {{ event.discount * -1 }} €
                         </v-btn>
                     </v-card-text>
+                    <v-card-text v-if="event.users && event.users.length">
+                        <h4 style="margin-bottom: 10px;">Lavoranti</h4>
+                        <v-chip v-for="user in event.users">{{ user.username }}</v-chip>
+                    </v-card-text>
                     <v-card-actions v-if="event.status === 'ONGOING' || event.status === 'PLANNED'">
                         <v-btn text="APRI EVENTO" v-if="event.status === 'PLANNED' && !ongoing" size="small"
                             density="compact" variant="plain" @click.stop="setEventStatus(event, 'ONGOING')"></v-btn>
@@ -101,6 +105,9 @@ onMounted(() => {
                         <v-btn text="CHIUDI EVENTO" v-if="event.status === 'ONGOING' && event.tablesOpen === 0"
                             size="small" density="compact" variant="plain"
                             @click.stop="closeEventConfirm(event)"></v-btn>
+                        <v-btn text="MODIFICA" v-if="event.status !== 'CLOSED'"
+                            size="small" density="compact" variant="plain"
+                            @click.stop="emit('editevent', event)"></v-btn>
                         <v-btn text="SONO PRESENTI TAVOLI APERTI"
                             v-if="event.status === 'ONGOING' && event.tablesOpen > 0" size="small" density="compact"
                             variant="plain" :readonly="true" @click.stop="closeEventConfirm(event)"></v-btn>

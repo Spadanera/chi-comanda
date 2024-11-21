@@ -2,6 +2,7 @@ import router, { Router, Request, Response } from "express"
 import eventApi from "../api/event"
 import tableApi from "../api/table"
 import { authorizationMiddleware, Roles } from "../utils/helper"
+import userApi from "../api/user"
 
 const eventsRouter: Router = router()
 
@@ -17,7 +18,18 @@ eventsRouter.get("/", authorizationMiddleware(Roles.admin), async (req: Request,
 
 eventsRouter.get("/ongoing", async (req: Request, res: Response) => {
     try {
-        const result = await eventApi.getOnGoing()
+        const userId = (req.user as any).id
+        const result = await eventApi.getOnGoing(+userId)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+eventsRouter.get("/users", async (req: Request, res: Response) => {
+    try {
+        const result = await userApi.getAvailable()
         res.status(200).json(result)
     } catch (error) {
         console.log(error)
@@ -50,9 +62,19 @@ eventsRouter.post("/", authorizationMiddleware(Roles.admin), async (req: Request
     }
 })
 
-eventsRouter.put("/:id", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
+eventsRouter.put("/setstatus/:id", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
-        const result = await eventApi.update(req.body, +req.params.id)
+        const result = await eventApi.updateStatus(req.body)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+eventsRouter.put("/", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
+    try {
+        const result = await eventApi.update(req.body)
         res.status(200).json(result)
     } catch (error) {
         console.log(error)

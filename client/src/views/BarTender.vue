@@ -316,6 +316,7 @@ onBeforeUnmount(() => {
     <v-container>
       <h3>{{ props.pagetitle }} <span v-if="selectedOrder.length"> - Tavolo {{ selectedOrder[0].table_name }}</span>
       </h3>
+      <v-chip>{{ user.username }}</v-chip>
     </v-container>
     <ItemList :quantitybefore="true" :showtype="true" subheader="DA FARE" v-model="itemsToDo" :shownote="true">
       <template v-slot:prequantity="slotProps">

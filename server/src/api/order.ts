@@ -41,7 +41,15 @@ class OrderAPI {
                         LEFT JOIN sub_types ON sub_types.id = items.sub_type_id
                         LEFT JOIN types ON sub_types.type_id = types.id
                         WHERE order_id = orders.id AND items.destination_id IN (${destinationIdsString})
-                    ) items
+                    ) items,
+                    (
+					    SELECT JSON_OBJECT(
+                            'id', users.id, 
+                            'username', users.username
+                        )
+                        FROM users 
+                        WHERE users.id = orders.user_id
+                    ) user
                 FROM orders 
                 INNER JOIN tables ON orders.table_id = tables.id
                 WHERE orders.event_id = ?
@@ -54,7 +62,7 @@ class OrderAPI {
         return await db.query('SELECT * FROM orders WHERE ID = ?', [id])
     }
 
-    async create(order: Order): Promise<number> {
+    async create(order: Order, userId: number): Promise<number> {
         if (!order.table_id) {
             order.table_id = await db.executeInsert('INSERT INTO tables (name, event_id, status) VALUES (?, ?, ?)', [order.table_name, order.event_id, 'ACTIVE'])
             if (order.master_table_id) {
@@ -62,13 +70,19 @@ class OrderAPI {
             }
         }
         order.order_date = getCurrentDateTimeInItaly()
-        const order_id = await db.executeInsert('INSERT INTO orders (event_id, table_id, order_date) VALUES (?,?,?)', [order.event_id, order.table_id, order.order_date])
+        const order_id = await db.executeInsert('INSERT INTO orders (event_id, table_id, order_date, user_id) VALUES (?,?,?,?)'
+            , [order.event_id, order.table_id, order.order_date, userId])
         if (order.items) {
             for (let i = 0; i < order.items.length; i++) {
                 let item = order.items[i]
-                order.items[i].id = await db.executeInsert(`INSERT INTO items (event_id, order_id, table_id, master_item_id, type, sub_type, name, price, note, destination_id, icon, done, paid) 
+                order.items[i].id = await db.executeInsert(`
+                    INSERT INTO items 
+                    (event_id, order_id, table_id, master_item_id, type, sub_type, name, price, note, destination_id, icon, done, paid) 
                     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
-                    , [order.event_id, order_id, order.table_id, item.master_item_id, item.type, item.sub_type, item.name, item.price, item.note || '', item.destination_id, item.icon, item.done, item.paid])
+                    , [
+                        order.event_id, order_id, order.table_id, item.master_item_id, item.type, item.sub_type, item.name, item.price, item.note || ''
+                        , item.destination_id, item.icon, item.done, item.paid
+                    ])
             }
             if (order.items.length && order.items[0].done) {
                 await this.completeOrder(order_id, { item_ids: [] })
