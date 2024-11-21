@@ -42,9 +42,17 @@ a:visited {
     display: none !important;
 }
 
+.audit-page {
+    position: fixed;
+    height: calc(100% - 64px);
+}
+
 @media screen and (max-width: 600px) {
     .show-xs {
         display: none !important;
+    }
+    .audit-page {
+        width: 100% !important;
     }
 }
 
@@ -69,6 +77,10 @@ a:visited {
 @media screen and (min-width: 601px) {
     .hide-xs {
         display: none !important;
+    }
+
+    .audit-page {
+        width: calc(100% - 149px) !important;
     }
 }
 

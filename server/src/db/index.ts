@@ -16,7 +16,7 @@ class Database {
     private safeNull(values: any[] | undefined): any[] | undefined {
         if (values) {
             for (let i = 0; i < values.length; i++) {
-                values[i] = values[i] || null
+                values[i] = values[i] === undefined ? null : values[i]
             }
         }
         return values
@@ -47,6 +47,7 @@ class Database {
     async queryOne<T extends RowDataPacket>(query: string, values?: any[]): Promise<T> {
         const result = await this.query<T>(query, this.safeNull(values))
         if (result.length) {
+            console.log(result)
             return result[0]
         }
         return {} as T
@@ -73,15 +74,15 @@ class Database {
     async executeInsert(query: string, values?: any[]): Promise<number> {
         let connection: PoolConnection | null = null
         try {
-          connection = await this.getConnection()
-          const [result] = await connection.execute<ResultSetHeader>(query, this.safeNull(values))
-          return result.insertId
+            connection = await this.getConnection()
+            const [result] = await connection.execute<ResultSetHeader>(query, this.safeNull(values))
+            return result.insertId
         } finally {
-          if (connection) {
-            connection.release()
-          }
+            if (connection) {
+                connection.release()
+            }
         }
-      }
+    }
 
     async executeTransaction(queries: string[], valuesArray: any[][] = []): Promise<any> {
         let connection: PoolConnection | null = null
