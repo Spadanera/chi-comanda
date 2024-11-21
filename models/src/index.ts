@@ -43,7 +43,8 @@ export interface Audit extends Repository {
   user_id?: number,
   method?: string,
   path?: string,
-  data?: any
+  data?: any,
+  dateTime?: string
 }
 
 export interface Event extends Repository {
