@@ -12,6 +12,7 @@ import masterTableRouter from "./master-tables-router"
 import menuRouter from "./menu-router"
 import typesRouter from "./types-router"
 import subTypesRouter from "./sub-types-router"
+import auditRouter from "./audit-router"
 
 const apiRouter: Router = router()
 
@@ -26,6 +27,7 @@ apiRouter.use("/master-items", masterItemsRouter)
 apiRouter.use("/types", authorizationMiddleware(Roles.admin), typesRouter)
 apiRouter.use("/subtypes", subTypesRouter)
 apiRouter.use("/master-tables", masterTableRouter)
+apiRouter.use("/audit", authorizationMiddleware(Roles.superuser), auditRouter)
 apiRouter.use("/public", publicApiRouter)
 
 export default apiRouter

@@ -1,5 +1,5 @@
 import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance, type AxiosProgressEvent } from 'axios'
-import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation, type Menu, type Type, type SubType } from "../../../models/src"
+import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation, type Menu, type Type, type SubType, type Audit } from "../../../models/src"
 import router from '@/router'
 import { UserStore, SnackbarStore, type IUser, ProgressStore } from '@/stores'
 import type { StoreDefinition } from 'pinia'
@@ -289,6 +289,10 @@ export default class Axios {
 
     async GetUsers(): Promise<User[]> {
         return await this.get("/users")
+    }
+
+    async GetAudit(page: number, itemsPerPage: number, sortBy: string, sortDir: string): Promise<any> {
+        return await this.get(`/audit?page=${page}&itemsperpage=${itemsPerPage}&sortby=${sortBy}&sortdir=${sortDir}`)
     }
 
     async GetAvailableUsers(): Promise<User[]> {
