@@ -52,7 +52,7 @@ export interface Event extends Repository {
   date?: Date
   menu_id?: number
   tables?: Table[]
-  workers?: User[]
+  users?: User[]
   orders?: Order[]
   tableCount?: number
   revenue?: number
@@ -71,6 +71,7 @@ export interface Table extends Repository {
   name?: string
   paid?: boolean
   status?: string
+  user?: User
   items?: Item[]
   discuntItems?: Item[]
 }
@@ -92,6 +93,8 @@ export interface Order extends Repository {
   master_table_id?: number
   done?: boolean
   order_date?: string
+  user_id?: string
+  user?: User
   minPassed?: number
   items?: Item[]
   itemsToDo?: Item[]

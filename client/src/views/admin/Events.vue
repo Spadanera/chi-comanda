@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue"
-import { type Event as EventType } from "../../../../models/src"
+import { type Event, type Event as EventType } from "../../../../models/src"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
-import { requiredRule } from "@/services/utils"
+import { requiredRule, copy } from "@/services/utils"
 import EventList from "@/components/EventList.vue"
 const axios = new Axios()
 const snackbarStore = SnackbarStore()
@@ -14,6 +14,7 @@ const dialogEvent = ref<EventType>(null)
 const loading = ref<boolean>(false)
 const form = ref(null)
 const menu = ref([])
+const users = ref([])
 
 
 const ongoingEvents = computed<EventType[]>(() => {
@@ -32,24 +33,38 @@ async function getAllEvents() {
   events.value = await axios.GetAllEvents()
 }
 
-async function openDialog() {
-  dialogEvent.value = {
-    name: 'Serata Standard',
-    date: new Date()
-  } as EventType
+async function openDialog(event?: Event) {
+  if (event) {
+    const e = copy<Event>(event)
+    e.date = new Date(e.date)
+    dialogEvent.value = e
+  }
+  else {
+    dialogEvent.value = {
+      name: 'Serata Standard',
+      date: new Date()
+    } as EventType
+  }
   menu.value = await axios.GetAllMenu()
+  users.value = await axios.GetAvailableUsers()
   if (menu.value.length) {
-    dialogEvent.value.menu_id = menu.value[0].id  
+    dialogEvent.value.menu_id = menu.value[0].id
   }
   dialog.value = true
 }
 
-async function createEvent() {
+async function upsertEvent() {
   const { valid } = await form.value?.validate()
   if (valid) {
     dialogEvent.value.date.setHours(dialogEvent.value.date.getHours() + 4)
-    await axios.CreateEvent(dialogEvent.value)
-    snackbarStore.show('Evento creato con successo', 3000, 'bottom', 'success')
+    if (!dialogEvent.value.id) {
+      await axios.CreateEvent(dialogEvent.value)
+      snackbarStore.show('Evento creato con successo', 3000, 'bottom', 'success')
+    }
+    else {
+      await axios.EditEvent(dialogEvent.value)
+      snackbarStore.show('Evento modificato con successo', 3000, 'bottom', 'success')
+    }
     await load()
     dialog.value = false
   }
@@ -79,11 +94,12 @@ onMounted(async () => {
   <v-tabs-window v-model="tab">
     <v-tabs-window-item value="ONGOING">
       <v-skeleton-loader type="card" v-if="loading"></v-skeleton-loader>
-      <EventList v-else v-model="ongoingEvents" @reload="load"></EventList>
+      <EventList v-else v-model="ongoingEvents" @reload="load" @editevent="openDialog"></EventList>
     </v-tabs-window-item>
     <v-tabs-window-item value="PLANNED">
       <v-skeleton-loader type="card" v-if="loading"></v-skeleton-loader>
-      <EventList v-else :ongoing="ongoingEvents.length" v-model="futureEvents" @reload="load"></EventList>
+      <EventList v-else :ongoing="ongoingEvents.length" v-model="futureEvents" @reload="load" @editevent="openDialog">
+      </EventList>
     </v-tabs-window-item>
     <v-tabs-window-item value="CLOSED">
       <v-skeleton-loader type="card" v-if="loading"></v-skeleton-loader>
@@ -91,22 +107,33 @@ onMounted(async () => {
     </v-tabs-window-item>
   </v-tabs-window>
   <v-fab v-if="tab === 'PLANNED'" icon="mdi-plus" app style="position: fixed; right: 10px; bottom: 10px;"
-    location="bottom right" @click="openDialog"></v-fab>
+    location="bottom right" @click="openDialog()"></v-fab>
   <v-dialog v-model="dialog" width="380px">
     <v-card>
-      <v-card-title>
-        Crea nuovo evento
+      <v-card-title v-if="dialogEvent.id === undefined">
+        Crea Nuovo Evento
+      </v-card-title>
+      <v-card-title v-else>
+        Modifica Evento
       </v-card-title>
       <v-card-text>
         <v-form @submit.prevent ref="form">
-          <v-text-field v-model="dialogEvent.name" label="Nome Evento" clearable :rules="[requiredRule]"></v-text-field>
-          <v-select label="Menu" :items="menu" v-model="dialogEvent.menu_id" item-value="id" item-title="name" :rules="[requiredRule]"></v-select>
-          <v-date-picker hide-header locale="it" first-day-of-week="1" v-model:model-value="dialogEvent.date"></v-date-picker>
+          <v-text-field v-model="dialogEvent.name" :disabled="dialogEvent.id !== undefined && dialogEvent.status === 'ONGOING'"
+            :readonly="dialogEvent.id !== undefined && dialogEvent.status === 'ONGOING'" label="Nome Evento" :clearable="dialogEvent.id === undefined"
+            :rules="[requiredRule]"></v-text-field>
+          <v-select label="Menu" :items="menu" :disabled="dialogEvent.id !== undefined && dialogEvent.status === 'ONGOING'"
+            :readonly="dialogEvent.id !== undefined && dialogEvent.status === 'ONGOING'" v-model="dialogEvent.menu_id" item-value="id" item-title="name"
+            :rules="[requiredRule]"></v-select>
+          <v-select label="Lavoranti" :items="users" chips v-model="dialogEvent.users" item-value="id"
+            item-title="username" multiple :rules="[requiredRule]" return-object></v-select>
+          <v-date-picker hide-header locale="it" :disabled="dialogEvent.id !== undefined && dialogEvent.status === 'ONGOING'"
+            :readonly="dialogEvent.id !== undefined && dialogEvent.status === 'ONGOING'" first-day-of-week="1"
+            v-model:model-value="dialogEvent.date"></v-date-picker>
         </v-form>
       </v-card-text>
       <v-card-actions>
         <v-btn variant="plain" @click="dialog = false">ANNULLA</v-btn>
-        <v-btn variant="plain" @click="createEvent">CONFERMA</v-btn>
+        <v-btn variant="plain" @click="upsertEvent">CONFERMA</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
