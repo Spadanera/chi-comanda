@@ -134,7 +134,8 @@ export interface User extends Repository {
   roles?: string[],
   status?: string,
   statusSwitch?: boolean,
-  creation_date?: string
+  creation_date?: string,
+  avatar?: any
 }
 
 export interface Role extends Repository {

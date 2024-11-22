@@ -4,14 +4,16 @@ import Axios from '@/services/client'
 import { ref, onBeforeMount } from 'vue'
 import router from '@/router'
 import { UserStore, SnackbarStore, ProgressStore, ThemeStore } from '@/stores'
+import { type User } from '../../models/src'
 
 const axios: Axios = new Axios()
 const userStore = UserStore()
 const snackbarStore = SnackbarStore()
 const progressStore = ProgressStore()
 const themeStore = ThemeStore()
-const user = ref({})
+const user = ref<User>({} as User)
 const theme = ref('light')
+const avatar = ref(null)
 
 function login() {
   user.value = userStore.user
@@ -26,10 +28,6 @@ function reloadPage() {
   window.location.reload()
 }
 
-function toggleTheme() {
-  theme.value = theme.value === 'light' ? 'dark' : 'light'
-}
-
 onBeforeMount(async () => {
   await userStore.checkAuthentication()
   user.value = userStore.user
@@ -42,12 +40,11 @@ onBeforeMount(async () => {
     <v-app :theme="themeStore.theme">
       <v-app-bar>
         <template v-slot:prepend>
-          <!-- <v-img scr="@/assets/chicomanda.png" alt="Chi Comanda"></v-img> -->
           <RouterLink to="/">
-            <img alt="Chi Comanda" v-if="themeStore.theme === 'light'" class="logo" src="@/assets/chicomanda.png" style="margin-left: 8px; margin-top: 7px;"
-              width="40" height="40" />
-              <img alt="Chi Comanda" v-else class="logo" src="@/assets/chicomanda-invert.png" style="margin-left: 8px; margin-top: 7px;"
-              width="40" height="40" />
+            <img alt="Chi Comanda" v-if="themeStore.theme === 'light'" class="logo" src="@/assets/chicomanda.png"
+              style="margin-left: 8px; margin-top: 7px;" width="40" height="40" />
+            <img alt="Chi Comanda" v-else class="logo" src="@/assets/chicomanda-invert.png"
+              style="margin-left: 8px; margin-top: 7px;" width="40" height="40" />
           </RouterLink>
         </template>
         <v-app-bar-title>
@@ -55,7 +52,12 @@ onBeforeMount(async () => {
         </v-app-bar-title>
         <v-menu v-if="userStore.isLoggedIn">
           <template v-slot:activator="{ props }">
-            <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props"></v-btn>
+            <v-btn icon v-bind="props">
+              <v-avatar color="red">
+                <v-img v-if="user.avatar && user.avatar" alt="John" :src="user.avatar"></v-img>
+                <span v-else-if="user.username" class="text-h5">{{ user.username[0] }}</span>
+              </v-avatar>
+            </v-btn>
           </template>
 
           <v-list>
@@ -67,6 +69,18 @@ onBeforeMount(async () => {
                     <v-icon>{{ theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
                   </template>
                 </v-btn>
+              </v-list-item-title>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-title>
+                <RouterLink to="/profile">
+                  <v-btn v-if="userStore.isLoggedIn" variant="text">
+                    PROFILO
+                    <template v-slot:prepend>
+                      <v-icon>mdi-account</v-icon>
+                    </template>
+                  </v-btn>
+                </RouterLink>
               </v-list-item-title>
             </v-list-item>
             <v-list-item>

@@ -105,8 +105,6 @@ class EventAPI {
     async create(event: Event): Promise<number> {
         const eventId = await db.executeInsert('INSERT INTO events (name, date, status, menu_id) VALUES (?,?,?,?)', [event.name, (event.date + "").split('T')[0], 'PLANNED', event.menu_id])
         if (event.users) {
-            console.log(event.users.map((u:User) => 'INSERT INTO user_event (user_id, event_id) VALUES (?,?)'),
-            event.users.map((u:User) => [u.id, eventId]))
             await db.executeTransaction(
                 event.users.map((u:User) => 'INSERT INTO user_event (user_id, event_id) VALUES (?,?)'),
                 event.users.map((u:User) => [u.id, eventId])

@@ -273,7 +273,7 @@ export default class Axios {
         return await this.delete(`/subtypes/${id}`)
     }
 
-    async AskReset (email: string) {
+    async AskReset(email: string) {
         await this.client.post("/public/askreset", {
             email
         })
@@ -281,7 +281,7 @@ export default class Axios {
         router.push("/login")
     }
 
-    async Reset (invitation: Invitation) {
+    async Reset(invitation: Invitation) {
         await this.client.post("/public/reset", invitation)
         this.snackbarStoreDef().show("Password reimpostata con successo", 3000, 'top', 'success')
         router.push("/login")
@@ -295,19 +295,32 @@ export default class Axios {
         return await this.get(`/audit?page=${page}&itemsperpage=${itemsPerPage}&sortby=${sortBy}&sortdir=${sortDir}`)
     }
 
+    async GetProfile(id: number): Promise<User> {
+        return await this.getSingle<User>(`/profile/${id}`)
+    }
+
+    async EditProfileAvatar(formData: FormData, id: number): Promise<number> {
+        const response: AxiosResponse<number> = await this.client.put(`/profile/avatar/${id}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        })
+        return response.data
+    }
+
     async GetAvailableUsers(): Promise<User[]> {
         return await this.get("/events/users")
     }
 
-    async UpdateUser(user:User): Promise<number> {
+    async UpdateUser(user: User): Promise<number> {
         return await this.put("/users", user)
     }
 
-    async UpdateUserRoles(user:User): Promise<number> {
+    async UpdateUserRoles(user: User): Promise<number> {
         return await this.put("/users/roles", user)
     }
 
-    async DeleteUser(user_id:number): Promise<number> {
+    async DeleteUser(user_id: number): Promise<number> {
         return await this.delete(`/users/${user_id}`)
     }
 
@@ -326,6 +339,7 @@ export default class Axios {
             email: email,
             password: password
         })).data
+        console.log(user.avatar)
         this.userStoreDef().login(user)
     }
 

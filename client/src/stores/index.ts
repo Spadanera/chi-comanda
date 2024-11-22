@@ -5,6 +5,7 @@ export interface IUser {
     id?: number,
     username?: string,
     email?: string,
+    avatar?: string
     roles: string[]
     isLoggedIn: boolean
 }
@@ -17,7 +18,8 @@ export const UserStore: StoreDefinition = defineStore('user', {
             email: '',
             password: '',
             roles: [],
-            isLoggedIn: false
+            isLoggedIn: false,
+            avatar: ''
         } as IUser
     },
     getters: {
@@ -27,7 +29,8 @@ export const UserStore: StoreDefinition = defineStore('user', {
                 username: state.username,
                 email: state.email,
                 roles: state.roles,
-                isLoggedIn: state.isLoggedIn
+                isLoggedIn: state.isLoggedIn,
+                avatar: state.avatar
             }
         },
     },
@@ -36,6 +39,7 @@ export const UserStore: StoreDefinition = defineStore('user', {
             this.id = user.id
             this.username = user.username
             this.email = user.email
+            this.avatar = user.avatar
             this.roles = user.roles
             this.isLoggedIn = isLoggedIn
         },
@@ -54,6 +58,7 @@ export const UserStore: StoreDefinition = defineStore('user', {
                     id: this.id,
                     username: this.username,
                     email: this.email,
+                    avatar: this.avatar,
                     roles: this.roles,
                     isLoggedIn: true
                 }

@@ -6,6 +6,11 @@ import { getCurrentDateTimeInItaly, Roles } from "../utils/helper";
 import { v4 as uuidv4 } from 'uuid';
 import { hashPassword, checkPassword } from "../utils/crypt";
 
+function bufferToDataURL(buffer: any, mimeType: string) {
+    const base64 = buffer.toString('base64');
+    return `data:${mimeType};base64,${base64}`;
+}
+
 class UserApi {
     constructor() {
     }
@@ -32,7 +37,7 @@ class UserApi {
 
     async getByEmailAndPassword(email: string, password: string): Promise<User> {
         const result = await db.queryOne<User>(`SELECT id, email, username, password, (select json_arrayagg(name) FROM roles
-            INNER JOIN user_role on roles.id = user_role.role_id WHERE user_id = users.id) as roles
+            INNER JOIN user_role on roles.id = user_role.role_id WHERE user_id = users.id) as roles, avatar
             FROM users WHERE email = ? AND status = 'ACTIVE'`, [email])
         if (result.id && (await checkPassword(password, result.password || ''))) {
             delete result.password
@@ -41,6 +46,7 @@ class UserApi {
             } catch (error: any) {
                 console.log("Error setting last_login_date", error.message)
             }
+            result.avatar = bufferToDataURL(result.avatar, 'image/png')
             return result
         }
         else {
