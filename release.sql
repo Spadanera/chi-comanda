@@ -2,23 +2,21 @@ USE railway;
 
 SET SQL_SAFE_UPDATES = 0;
 
-CREATE TABLE `user_event` (
+CREATE TABLE `payment_providers` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
-  `user_id` integer,
-  `event_id` integer
+  `name` varchar(255),
+  `creation_date` datetime,
+  `type` varchar(255),
+  `status` varchar(255),
+  `access_info` varchar(255)
 );
 
-ALTER TABLE `user_event` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
-ALTER TABLE `user_event` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
-
-ALTER TABLE `orders` 
-ADD COLUMN `user_id` INT NULL DEFAULT NULL AFTER `order_date`;
-
-ALTER TABLE `orders` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
-
-ALTER TABLE `tables` 
-ADD COLUMN `user_id` INT NULL DEFAULT NULL AFTER `status`;
-
-ALTER TABLE `tables` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
+CREATE TABLE `transactions` (
+  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
+  `name` varchar(255),
+  `date_time` datetime,
+  `provider` varchar(255),
+  `providerInfo` varchar(255)
+);
 
 SET SQL_SAFE_UPDATES = 1;

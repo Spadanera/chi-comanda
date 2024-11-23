@@ -1,4 +1,4 @@
-import type { Item, AvailableTable, Order, Table, MasterItem } from "../../../models/src"
+import type { Item, AvailableTable, Order, Table, MasterItem, PaymentProviderBase } from "../../../models/src"
 
 export function sortItem<T extends Item & MasterItem>(a: T, b: T): number {
     if (a.sub_type < b.sub_type) {
@@ -327,4 +327,14 @@ export const icons = [
     "mdi-tea-outline",
     "mdi-toaster-oven",
     "mdi-water"
+]
+
+export const paymentProviderBase: PaymentProviderBase[] = [
+    {
+        name: "SumUp",
+        docUrl: 'https://developer.sumup.com/terminal-payments/guides/pairing-solo#pair-the-reader-to-the-merchant-account',
+        image: "https://confrontapos.com/wp-content/uploads/2021/09/sumup-logo-1024x408.jpg",
+        type: 'sumup',
+        description: "Bellissimo provider"
+    }
 ]

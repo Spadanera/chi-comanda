@@ -41,6 +41,12 @@ const navigationItems = ref<NavigationItem[]>([
     prependIcon: "mdi-send-check",
     to: "destinations",
     value: 3
+  },
+  {
+    title: "Pagamenti",
+    prependIcon: "mdi-account-credit-card",
+    to: "payment",
+    value: 4
   }
 
 ])
@@ -52,13 +58,13 @@ onMounted(() => {
         title: "Utenti",
         prependIcon: "mdi-account-group",
         to: "users",
-        value: 4
+        value: 5
       })
       navigationItems.value.push({
         title: "Audit",
         prependIcon: "mdi-police-badge",
         to: "audit",
-        value: 5
+        value: 6
       })
     }
     if (/\/items\//.test(window.location.pathname)) {

@@ -1,5 +1,5 @@
 import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance, type AxiosProgressEvent } from 'axios'
-import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation, type Menu, type Type, type SubType, type Audit } from "../../../models/src"
+import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation, type Menu, type Type, type SubType, type Audit, type PaymentProvider } from "../../../models/src"
 import router from '@/router'
 import { UserStore, SnackbarStore, type IUser, ProgressStore } from '@/stores'
 import type { StoreDefinition } from 'pinia'
@@ -293,6 +293,14 @@ export default class Axios {
 
     async GetAudit(page: number, itemsPerPage: number, sortBy: string, sortDir: string): Promise<any> {
         return await this.get(`/audit?page=${page}&itemsperpage=${itemsPerPage}&sortby=${sortBy}&sortdir=${sortDir}`)
+    }
+
+    async GetPaymentProviders(): Promise<PaymentProvider[]> {
+        return await this.get<PaymentProvider>("/payment-providers")
+    }
+
+    async CreatePaymentProviders(paymentProvider: PaymentProvider): Promise<number> {
+        return await this.post("/payment-providers", paymentProvider)
     }
 
     async GetAvailableUsers(): Promise<User[]> {

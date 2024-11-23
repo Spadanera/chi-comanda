@@ -169,3 +169,43 @@ export interface Destination extends Repository {
   canDelete?: number
   minute_to_alert?: number
 }
+
+export interface Transaction extends Repository {
+  id?: number,
+  date_time?: Date
+  provider?: 'Contanti' | 'SumUp'
+  providerInfo?: SumUpTransactionInfo
+}
+
+export interface PaymentProviderBase {
+  name: string
+  docUrl?: string
+  image: string
+  type: 'sumup'
+  description: string
+}
+
+export interface PaymentProvider extends Repository {
+  id?: number
+  name: string
+  creation_date?: Date
+  type: 'SumUp'
+  status: 'ACTIVE' | 'PAUSED' | 'DELETED'
+  access_info: AccessInfo
+}
+
+export type AccessInfo = SumUpAccessInfo
+
+export interface SumUpAccessInfo {
+  merchant_code: string
+  api_key: string
+}
+
+export interface SumUpTransactionInfo {
+  merchant_code?: string
+  transaction_id?: string
+  foreign_transaction_id?: string
+  description?: string
+  total_amount?: number
+  client_transaction_id?: number
+}

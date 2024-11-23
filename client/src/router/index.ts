@@ -121,6 +121,24 @@ const router = createRouter({
           meta: {
             allowedRole: Roles.superuser
           },
+        },
+        {
+          path: "payment",
+          name: "payment",
+          component: () => import('@/views/admin/Payment.vue'),
+          props: true,
+          meta: {
+            allowedRole: Roles.admin
+          },
+        },
+        {
+          path: "provider/:type",
+          name: "provider",
+          component: () => import('@/views/admin/Provider.vue'),
+          props: true,
+          meta: {
+            allowedRole: Roles.admin
+          },
         }
       ]
     },
