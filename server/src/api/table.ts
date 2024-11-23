@@ -40,10 +40,10 @@ class TableApi {
 
     async insertDiscount(eventId: number, tableId: number, discount: number): Promise<number> {
         return await db.executeInsert(`INSERT INTO items (
-                name, event_id, table_id, order_id, type, sub_type, price, done, paid, destination_id, icon
+                name, event_id, table_id, type, sub_type, price, done, paid, destination_id, icon
             ) VALUES (
-                ?,?,?,?,?,?,?,?,?,?,?
-            )`, ['Sconto', eventId, tableId, 0, 'Sconto', 'Sconto', discount * -1, true, true, 1, 'mdi-cart-percent'])
+                ?,?,?,?,?,?,?,?,?,?
+            )`, ['Sconto', eventId, tableId, 'Sconto', 'Sconto', discount * -1, true, true, 1, 'mdi-cart-percent'])
     }
 
     async getAvailableTable(eventId: number): Promise<MasterTable[]> {
