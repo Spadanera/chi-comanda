@@ -113,10 +113,10 @@ function openExtraItemDialog() {
 
 async function sendOrder() {
   if (alreadyDone.value) {
-    orderItems.value.forEach((i:Item) => { i.done = true })
+    orderItems.value.forEach((i: Item) => { i.done = true })
   }
   if (alreadyPaid.value) {
-    orderItems.value.forEach((i:Item) => { i.paid = true })
+    orderItems.value.forEach((i: Item) => { i.paid = true })
   }
   const _order: Order = {
     event_id: parseInt(props.event_id),
@@ -216,7 +216,7 @@ onMounted(async () => {
             <v-col><v-switch v-model="alreadyPaid" label="Pagato" density="compact" color="success"></v-switch></v-col>
           </v-row>
         </v-card-subtitle>
-        <ItemList v-model="groupedOrderItems" class="elevation-2">
+        <ItemList v-model="groupedOrderItems" class="elevation-2" :shownote="true">
           <template v-slot:prequantity="slotProps">
             <v-btn variant="plain" icon="mdi-minus" @click="changeItemQuantity(slotProps.item, -1)"></v-btn>
           </template>
@@ -227,6 +227,11 @@ onMounted(async () => {
       </v-card>
       <v-bottom-navigation :name="'inner-button-nav-bar'">
         <v-btn style="font-size: x-large;" icon="mdi-arrow-down" variant="plain" @click="sheet = !sheet"></v-btn>
+        <v-spacer></v-spacer>
+        <v-btn density="compact" readonly>
+          <v-icon>mdi-currency-eur</v-icon>
+          <span>{{ orderTotal }}</span>
+        </v-btn>
         <v-spacer></v-spacer>
         <v-btn style="font-size: x-large;" icon="mdi-send" variant="plain" @click="sendOrder">
 
