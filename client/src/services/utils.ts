@@ -331,10 +331,27 @@ export const icons = [
 
 export const paymentProviderBase: PaymentProviderBase[] = [
     {
+        name: "Contanti",
+        docUrl: '',
+        image: "mdi-cash-check",
+        type: 'cash',
+        description: "Accetta pagamenti in contanti",
+        isUnique: true
+    },
+    {
+        name: "POS Manuale",
+        docUrl: '',
+        image: "mdi-cash-register",
+        type: 'manual-pos',
+        description: "Pagamento tramite POS eseguito manualmente",
+        isUnique: true
+    },
+    {
         name: "SumUp",
         docUrl: 'https://developer.sumup.com/terminal-payments/guides/pairing-solo#pair-the-reader-to-the-merchant-account',
         image: "https://confrontapos.com/wp-content/uploads/2021/09/sumup-logo-1024x408.jpg",
         type: 'sumup',
-        description: "Bellissimo provider"
+        description: "Collega il tuo POS SumUp tramite API per inviare la richiesta di pagamento direttamente al POS",
+        hasConfigPage: true
     }
 ]

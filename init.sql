@@ -108,7 +108,7 @@ CREATE TABLE `items` (
   `done` bool,
   `paid` bool,
   `destination_id` integer, 
-  `menu_id` integer
+  `transaction_id` INT NULL
 );
 
 CREATE TABLE `audit` (
@@ -146,6 +146,24 @@ CREATE TABLE `user_event` (
   `event_id` integer
 );
 
+CREATE TABLE `payment_providers` (
+  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
+  `display_name` varchar(255),
+  `creation_date` datetime,
+  `type` varchar(255),
+  `is_default` bool,
+  `status` varchar(255),
+  `access_info` varchar(255)
+);
+
+CREATE TABLE `transactions` (
+  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
+  `date_time` datetime,
+  `payment_provider_id` INT,
+  `payment_provider_type` varchar(255),
+  `payment_provider_info` varchar(255)
+);
+
 ALTER TABLE `user_role` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 ALTER TABLE `user_role` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`);
 ALTER TABLE `tables` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
@@ -181,7 +199,7 @@ INSERT INTO user_role (user_id, role_id) VALUES (1, 3);
 INSERT INTO user_role (user_id, role_id) VALUES (1, 4);
 INSERT INTO user_role (user_id, role_id) VALUES (1, 5);
 
-INSERT INTO `menu` (name, creation_date, status) VALUES ('Menu Principale', NOW(), 'ACTIVE');
+INSERT INTO `payment_providers` (display_name, creation_date, type, is_default, status) VALUES ("Contanti", NOW(), 'cash', true, 'ACTIVE');
 
 INSERT INTO `types` (name, icon) VALUES ('Bevenda', 'mdi-beer');
 INSERT INTO `types` (name, icon) VALUES ('Cibo', 'mdi-hamburger');
@@ -194,6 +212,8 @@ INSERT INTO `sub_types` (name, type_id, icon) VALUES ('Extra', 1, 'mdi-glass-win
 INSERT INTO `sub_types` (name, type_id, icon) VALUES ('Special', 2, 'mdi-french-fries');
 INSERT INTO `sub_types` (name, type_id, icon) VALUES ('Piadina', 2, 'mdi-taco');
 INSERT INTO `sub_types` (name, type_id, icon) VALUES ('Panino', 2, 'mdi-food-hot-dog');
+
+INSERT INTO `payment_providers` (name, creation_date, type, default, status) VALUES ("Contanti", NOW(), 'cash', true, 'ACTIVE')
 
 INSERT INTO master_tables (name, default_seats, status) VALUES ('1', 6, 'ACTIVE');
 INSERT INTO master_tables (name, default_seats, status) VALUES ('2', 6, 'ACTIVE');

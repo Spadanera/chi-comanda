@@ -303,6 +303,14 @@ export default class Axios {
         return await this.post("/payment-providers", paymentProvider)
     }
 
+    async SetDefaultPaymentProviders(id: number): Promise<number> {
+        return await this.put(`/payment-providers/setdefault/${id}`, {} as PaymentProvider)
+    }
+
+    async EditStatusPaymentProviders(paymentProvider: PaymentProvider): Promise<number> {
+        return await this.put(`/payment-providers/setstatus/${paymentProvider.id}`, paymentProvider)
+    }
+
     async GetAvailableUsers(): Promise<User[]> {
         return await this.get("/events/users")
     }

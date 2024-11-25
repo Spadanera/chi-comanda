@@ -23,4 +23,24 @@ paymentProviderRouter.post("/", async (req: Request, res: Response) => {
     }
 })
 
+paymentProviderRouter.put("/setstatus/:id", async (req: Request, res: Response) => {
+    try {
+        const result = await paymentProviderApi.editStatus(req.body)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+paymentProviderRouter.put("/setdefault/:id", async (req: Request, res: Response) => {
+    try {
+        const result = await paymentProviderApi.setAsDefault(+req.params.id)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
 export default paymentProviderRouter

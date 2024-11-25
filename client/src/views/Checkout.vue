@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Event, type Table, type Item, type SubType, type CompleteOrderInput, type MasterTable } from "../../../models/src"
+import { type Event, type Table, type Item, type SubType, type CompleteOrderInput, type MasterTable, type PaymentProvider } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import Axios from '@/services/client'
 import { SnackbarStore, type IUser } from '@/stores'
@@ -30,6 +30,8 @@ const realPaid = ref<number>(null)
 const partialPaid = ref<boolean>(false)
 const dialogPay = ref<boolean>(false)
 const types = ref<SubType[]>([])
+const paymentProviders = ref<PaymentProvider[]>([])
+const paymentProvider = ref<number>(null)
 
 const computedSelectedTable = computed(() => {
   let result = copy<Table>((selectedTable.value.length ? selectedTable.value[0] : { items: [] }) as Table)
@@ -107,7 +109,6 @@ async function deleteItem() {
   confirm.value = false
 }
 
-
 async function completeTable() {
   if (discount.value) {
     if (!realPaid.value) {
@@ -129,11 +130,12 @@ async function completeTable() {
 }
 
 async function paySelectedItem() {
+  let discountAmout = 0
   if (discount.value) {
     if (!realPaid.value) {
       return
     }
-    const discountAmout = itemToBePaidBill.value - realPaid.value
+    discountAmout = itemToBePaidBill.value - realPaid.value
     await axios.InsertDiscount(event.value.id, selectedTable.value[0].id, discountAmout)
   }
   await axios.PaySelectedItem(selectedTable.value[0].id, itemToBePaid.value)
@@ -174,11 +176,19 @@ async function changeTable(table_id: number) {
   tableSheet.value = false
 }
 
-function pay(partial: boolean) {
+async function pay(partial: boolean) {
   partialPaid.value = partial
   discount.value = false
   realPaid.value = partial ? itemToBePaidBill.value : tableTotalOrder.value
-  dialogPay.value = true
+  if (!partial && realPaid.value === 0) {
+    await completeTable()
+  }
+  else {
+    paymentProviders.value = await axios.GetPaymentProviders()
+    paymentProvider.value = paymentProviders.value[0].id
+  
+    dialogPay.value = true
+  }
 }
 
 onMounted(async () => {
@@ -281,7 +291,8 @@ onBeforeUnmount(() => {
       <v-btn @click="changeTableSheet()" style="position: absolute; top: 74px; right: 25px;"
         v-if="selectedTable.length">Tavolo {{ selectedTable[0].name }}</v-btn>
     </v-container>
-    <ItemList :shownote="true" style="margin-top: 2px;" :showtype="true" subheader="DA PAGARE" v-model="computedSelectedTable.itemsToDo">
+    <ItemList :shownote="true" style="margin-top: 2px;" :showtype="true" subheader="DA PAGARE"
+      v-model="computedSelectedTable.itemsToDo">
       <template v-slot:prequantity="slotProps">
         <v-btn icon="mdi-delete" @click="deleteItemConfirm(slotProps.item.id)" variant="plain"></v-btn>
       </template>
@@ -335,6 +346,13 @@ onBeforeUnmount(() => {
           <v-row v-else>
             <v-col style="font-size: x-large;">
               Da pagare: {{ tableTotalOrder }} €
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <v-select label="Metodo di pagamento" v-model="paymentProvider" :items="paymentProviders" item-title="display_name" item-value="id">
+
+              </v-select>
             </v-col>
           </v-row>
           <v-row>

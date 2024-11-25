@@ -170,27 +170,39 @@ export interface Destination extends Repository {
   minute_to_alert?: number
 }
 
+export interface InsertTransactionInput {
+  eventId: number
+  tableId: number
+  paymentProviderId: number
+  item_ids: number[]
+  tableToClose: boolean
+  discount: number
+}
+
 export interface Transaction extends Repository {
   id?: number,
   date_time?: Date
-  provider?: 'Contanti' | 'SumUp'
-  providerInfo?: SumUpTransactionInfo
+  payment_provider_id?: number
+  payment_provider_type?: PaymentProviderType
+  payment_provider_info?: SumUpTransactionInfo
 }
 
 export interface PaymentProviderBase {
   name: string
   docUrl?: string
   image: string
-  type: 'sumup'
+  type: PaymentProviderType
   description: string
+  hasConfigPage?: boolean
+  isUnique?: boolean
 }
 
-export interface PaymentProvider extends Repository {
+export interface PaymentProvider extends Repository, PaymentProviderBase {
   id?: number
-  name: string
+  display_name?: string
   creation_date?: Date
-  type: 'SumUp'
-  status: 'ACTIVE' | 'PAUSED' | 'DELETED'
+  status: PaymentProviderStatus
+  is_default: boolean
   access_info: AccessInfo
 }
 
@@ -209,3 +221,6 @@ export interface SumUpTransactionInfo {
   total_amount?: number
   client_transaction_id?: number
 }
+
+export type PaymentProviderType = 'cash' | 'manual-pos' | 'sumup'
+export type PaymentProviderStatus = 'ACTIVE' | 'DISABLED' | 'DELETED'

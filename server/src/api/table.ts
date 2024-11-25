@@ -1,5 +1,5 @@
 import db from "../db"
-import { MasterTable, Table } from "../../../models/src"
+import { InsertTransactionInput, MasterTable, Table } from "../../../models/src"
 import { SocketIOService } from "../socket"
 
 class TableApi {
@@ -36,14 +36,6 @@ class TableApi {
             body: {}
         })
         return result
-    }
-
-    async insertDiscount(eventId: number, tableId: number, discount: number): Promise<number> {
-        return await db.executeInsert(`INSERT INTO items (
-                name, event_id, table_id, order_id, type, sub_type, price, done, paid, destination_id, icon
-            ) VALUES (
-                ?,?,?,?,?,?,?,?,?,?,?
-            )`, ['Sconto', eventId, tableId, 0, 'Sconto', 'Sconto', discount * -1, true, true, 1, 'mdi-cart-percent'])
     }
 
     async getAvailableTable(eventId: number): Promise<MasterTable[]> {
@@ -124,7 +116,7 @@ class TableApi {
     async create(table: Table, userId: number): Promise<number> {
         const table_id = await db.executeInsert('INSERT INTO tables (name, event_id, status, user_id) VALUES (?,?,?)', [table.name, table.event_id, 'ACTIVE', userId])
         if (table.master_table_id) {
-            const transactionInput: { queries: string[], values: any[]} = {
+            const transactionInput: { queries: string[], values: any[] } = {
                 queries: [],
                 values: []
             }
@@ -171,6 +163,47 @@ class TableApi {
 
     async paySelectedItem(table_id: number, item_ids: number[]): Promise<number> {
         return await db.executeUpdate(`UPDATE items SET paid = TRUE WHERE table_id = ? AND id IN (${item_ids.join(',')})`, [table_id])
+    }
+
+    async insertDiscount(eventId: number, tableId: number, discount: number): Promise<number> {
+        return await db.executeInsert(`INSERT INTO items (
+                name, event_id, table_id, order_id, type, sub_type, price, done, paid, destination_id, icon
+            ) VALUES (
+                ?,?,?,?,?,?,?,?,?,?,?
+            )`, ['Sconto', eventId, tableId, 0, 'Sconto', 'Sconto', discount * -1, true, true, 1, 'mdi-cart-percent'])
+    }
+
+    async insertTransaction(input: InsertTransactionInput): Promise<number> {
+        const queries: string[] = []
+        const params: any[][] = []
+
+        const transaction_id = await db.executeInsert("", [])
+
+        if (input.tableToClose) {
+            queries.push(...[
+                'UPDATE items SET paid = TRUE, transaction_id = ? WHERE table_id = ?',
+                'UPDATE tables SET status = "CLOSED", paid = TRUE WHERE id = ?'
+            ])
+            params.push(...[
+                [transaction_id, input.tableId],
+                [input.tableId]
+            ])
+        }
+        else {
+            queries.push(`UPDATE items SET paid = TRUE, transaction_id = ? WHERE table_id = ? AND id IN (${input.item_ids.join(',')})`)
+            params.push([transaction_id, input.tableId])
+        }
+
+        if (input.discount) {
+            queries.push(`INSERT INTO items (
+                name, event_id, table_id, order_id, type, sub_type, price, done, paid, destination_id, icon, transaction_id
+            ) VALUES (
+                ?,?,?,?,?,?,?,?,?,?,?, ?
+            )`)
+            params.push(['Sconto', input.eventId, input.tableId, 0, 'Sconto', 'Sconto', input.discount * -1, true, true, 1, 'mdi-cart-percent', transaction_id])
+        }
+
+        return await db.executeTransaction(queries, params)
     }
 }
 
