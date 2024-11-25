@@ -15,8 +15,8 @@ class ProfileApi {
     }
 
     async updateUsername(user: User): Promise<number> {
-        return await db.executeUpdate('UPDATE users SET avatar = ? WHERE id = ?'
-            , [user.username, user.avatar, user.id])
+        return await db.executeUpdate('UPDATE users SET username = ? WHERE id = ?'
+            , [user.username, user.id])
     }
 }
 

@@ -16,7 +16,8 @@ class EventAPI {
             (
                 SELECT JSON_ARRAYAGG(JSON_OBJECT(
                     'id', users.id, 
-                    'username', users.username
+                    'username', users.username,
+                    'avatar', users.avatar
                 ))
                 FROM users 
                 INNER JOIN user_event ON user_event.user_id = users.id

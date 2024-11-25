@@ -95,7 +95,12 @@ onMounted(() => {
                     </v-card-text>
                     <v-card-text v-if="event.users && event.users.length">
                         <h4 style="margin-bottom: 10px;">Lavoranti</h4>
-                        <v-chip v-for="user in event.users">{{ user.username }}</v-chip>
+                        <v-chip v-for="user in event.users">
+                            <v-avatar start> 
+                                <v-img v-if="user.avatar" :alt="user.username" :src="user.avatar"></v-img>
+                            </v-avatar>
+                            {{ user.username }}
+                        </v-chip>
                     </v-card-text>
                     <v-card-actions v-if="event.status === 'ONGOING' || event.status === 'PLANNED'">
                         <v-btn text="APRI EVENTO" v-if="event.status === 'PLANNED' && !ongoing" size="small"
@@ -105,9 +110,8 @@ onMounted(() => {
                         <v-btn text="CHIUDI EVENTO" v-if="event.status === 'ONGOING' && event.tablesOpen === 0"
                             size="small" density="compact" variant="plain"
                             @click.stop="closeEventConfirm(event)"></v-btn>
-                        <v-btn text="MODIFICA" v-if="event.status !== 'CLOSED'"
-                            size="small" density="compact" variant="plain"
-                            @click.stop="emit('editevent', event)"></v-btn>
+                        <v-btn text="MODIFICA" v-if="event.status !== 'CLOSED'" size="small" density="compact"
+                            variant="plain" @click.stop="emit('editevent', event)"></v-btn>
                         <v-btn text="SONO PRESENTI TAVOLI APERTI"
                             v-if="event.status === 'ONGOING' && event.tablesOpen > 0" size="small" density="compact"
                             variant="plain" :readonly="true" @click.stop="closeEventConfirm(event)"></v-btn>

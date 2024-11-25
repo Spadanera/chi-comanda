@@ -35,6 +35,12 @@ export const UserStore: StoreDefinition = defineStore('user', {
         },
     },
     actions: {
+        setUsername(username: string) {
+            this.username = username
+        },
+        setAvatar(avatar: string) {
+            this.avatar = avatar
+        },
         setUser(user: IUser, isLoggedIn: boolean) {
             this.id = user.id
             this.username = user.username

@@ -299,13 +299,17 @@ export default class Axios {
         return await this.getSingle<User>(`/profile/${id}`)
     }
 
-    async EditProfileAvatar(formData: FormData, id: number): Promise<number> {
-        const response: AxiosResponse<number> = await this.client.put(`/profile/avatar/${id}`, formData, {
+    async EditProfileAvatar(formData: FormData, id: number): Promise<string> {
+        const response: AxiosResponse<string> = await this.client.put(`/profile/avatar/${id}`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
         })
         return response.data
+    }
+
+    async EditProfileUsername(user: User): Promise<number> {
+        return await this.put("/profile/username", user)
     }
 
     async GetAvailableUsers(): Promise<User[]> {
@@ -339,7 +343,6 @@ export default class Axios {
             email: email,
             password: password
         })).data
-        console.log(user.avatar)
         this.userStoreDef().login(user)
     }
 

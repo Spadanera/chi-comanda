@@ -1,15 +1,10 @@
 import db from "../db"
 import sendEmail from "../utils/mail"
 import { User } from "../../../models/src"
-import { type Invitation } from '../../../models/src/index';
-import { getCurrentDateTimeInItaly, Roles } from "../utils/helper";
-import { v4 as uuidv4 } from 'uuid';
-import { hashPassword, checkPassword } from "../utils/crypt";
-
-function bufferToDataURL(buffer: any, mimeType: string) {
-    const base64 = buffer.toString('base64');
-    return `data:${mimeType};base64,${base64}`;
-}
+import { type Invitation } from '../../../models/src/index'
+import { getCurrentDateTimeInItaly, Roles } from "../utils/helper"
+import { v4 as uuidv4 } from 'uuid'
+import { hashPassword, checkPassword } from "../utils/crypt"
 
 class UserApi {
     constructor() {
@@ -17,13 +12,13 @@ class UserApi {
 
     async getAll(): Promise<User[]> {
         return await db.query(`SELECT id,username, email, status, (select json_arrayagg(name) FROM roles
-            INNER JOIN user_role on roles.id = user_role.role_id WHERE user_id = users.id) as roles FROM users`, [])
+            INNER JOIN user_role on roles.id = user_role.role_id WHERE user_id = users.id) as roles, avatar FROM users`, [])
     }
 
     async getAvailable(): Promise<User[]> {
         const filter = `'${Object.values(Roles).join("','")}'`
         return await db.query(`
-            SELECT id, username 
+            SELECT id, username, avatar
             FROM users 
             WHERE status = 'ACTIVE'
             AND EXISTS (
@@ -46,7 +41,6 @@ class UserApi {
             } catch (error: any) {
                 console.log("Error setting last_login_date", error.message)
             }
-            result.avatar = bufferToDataURL(result.avatar, 'image/png')
             return result
         }
         else {
@@ -55,7 +49,7 @@ class UserApi {
     }
 
     async getByEmail(email: string): Promise<User> {
-        return await db.queryOne<User>('SELECT id, email, username FROM users WHERE email = ?', [email])
+        return await db.queryOne<User>('SELECT id, email, username, avatar FROM users WHERE email = ?', [email])
     }
 
     async get(id: number): Promise<User[]> {

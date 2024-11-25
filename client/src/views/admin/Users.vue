@@ -148,6 +148,7 @@ onMounted(async () => {
     <v-table density="compact">
       <thead>
         <tr>
+          <th></th>
           <th class="text-left">
             Nome Utente
           </th>
@@ -164,6 +165,12 @@ onMounted(async () => {
       </thead>
       <tbody style="cursor: pointer;">
         <tr v-for="user in filteredUsers" :key="user.id" @click="openDialog(user)">
+          <td>
+            <v-avatar :color="user.avatar ? 'default' : 'red'" size="small">
+              <v-img v-if="user.avatar" :alt="user.username" :src="user.avatar"></v-img>
+              <span v-else-if="user.username" class="text-h5">{{ user.username[0] }}</span>
+            </v-avatar>
+          </td>
           <td>{{ user.username }}</td>
           <td>{{ user.email }}</td>
           <td>

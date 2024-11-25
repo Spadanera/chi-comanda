@@ -35,13 +35,29 @@ profileRouter.put("/avatar/:id", authorizationMiddleware(), upload.single('avata
         if (req.file) {
             const avatarBuffer = req.file.buffer
             const optimizedAvatar = await sharp(avatarBuffer)
-                .resize({ width: 48, height: 48 })
+                .resize({ width: 200, height: 200 })
                 .toBuffer()
-            avatar = optimizedAvatar.toString('base64')
+            avatar = `data:image/jpeg;base64,${optimizedAvatar.toString('base64')}`
+            await profileApi.updateAvatar({
+                avatar, id: +req.params.id
+            } as User);
+
+            (req.user as User).avatar = avatar
+            res.status(200).json(avatar)
         }
-        const result = await profileApi.updateAvatar({
-            avatar, id: +req.params.id
-        } as User)
+        else {
+            res.status(404).json('Missing image')
+        }
+    } catch (error) {
+        console.log(error)
+        res.status(500).json(error)
+    }
+})
+
+profileRouter.put("/username", authorizationMiddleware(), async (req: Request, res: Response) => {
+    try {
+        const result = await profileApi.updateUsername(req.body);
+        (req.user as User).username = req.body.username
         res.status(200).json(result)
     } catch (error) {
         console.log(error)

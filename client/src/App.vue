@@ -53,8 +53,8 @@ onBeforeMount(async () => {
         <v-menu v-if="userStore.isLoggedIn">
           <template v-slot:activator="{ props }">
             <v-btn icon v-bind="props">
-              <v-avatar color="red">
-                <v-img v-if="user.avatar && user.avatar" alt="John" :src="user.avatar"></v-img>
+              <v-avatar :color="userStore.user.avatar ? 'default' : 'red'"  >
+                <v-img v-if="user.avatar" :alt="user.username" :src="user.avatar"></v-img>
                 <span v-else-if="user.username" class="text-h5">{{ user.username[0] }}</span>
               </v-avatar>
             </v-btn>
