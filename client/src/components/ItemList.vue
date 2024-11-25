@@ -33,9 +33,7 @@ const items = defineModel({ default: [] })
                 </template>
             </v-list-item>
             <v-list-subheader
-                v-if="props.showtype && i < (items.length - 1) && item.sub_type !== items[i + 1].sub_type"><v-icon
-                    style="margin-top: -6px; margin-right: 10px;">{{
-                        items[i + 1].icon }}</v-icon>{{ items[i + 1].sub_type }}</v-list-subheader>
+                v-if="props.showtype && i < (items.length - 1) && item.sub_type !== items[i + 1].sub_type">{{ items[i + 1].sub_type }}</v-list-subheader>
         </template>
     </v-list>
 </template>

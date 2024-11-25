@@ -85,7 +85,7 @@ CREATE TABLE `master_items` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `name` varchar(255),
   `price` double,
-  `destination_id, menu_id` integer,
+  `destination_id` integer,
   `available` bool,
   `status` varchar(255),
   `menu_id` INT NULL,
@@ -107,7 +107,8 @@ CREATE TABLE `items` (
   `note` varchar(255),
   `done` bool,
   `paid` bool,
-  `destination_id, menu_id` integer
+  `destination_id` integer, 
+  `menu_id` integer
 );
 
 CREATE TABLE `audit` (
@@ -153,7 +154,7 @@ ALTER TABLE `table_master_table` ADD FOREIGN KEY (`table_id`) REFERENCES `tables
 ALTER TABLE `orders` ADD FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`);
 ALTER TABLE `orders` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
 ALTER TABLE `audit` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
-ALTER TABLE `master_items` ADD FOREIGN KEY (`destination_id, menu_id`) REFERENCES `destinations` (`id`);
+ALTER TABLE `master_items` ADD FOREIGN KEY (`destination_id`) REFERENCES `destinations` (`id`);
 ALTER TABLE `items` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
 ALTER TABLE `items` ADD FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`);
 ALTER TABLE `items` ADD FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`);
