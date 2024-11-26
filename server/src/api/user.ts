@@ -79,7 +79,7 @@ class UserApi {
     async updateRoles(user: User): Promise<number> {
         return await db.executeTransaction([
             "DELETE FROM user_role WHERE user_id = ?",
-            `INSERT INTO user_role (user_id, role_id) SELECT ?, id FROM roles WHERE name in (${user.roles?.map(value => `'${value}'`).join(',')})`
+            `INSERT INTO user_role (user_id, role_id) SELECT ?, id FROM roles WHERE name in (${user.roles?.map((value:string) => `'${value}'`).join(',')})`
         ], [
             [user.id],
             [user.id]
@@ -96,7 +96,7 @@ class UserApi {
 
             const result = await db.executeInsert("INSERT INTO users (email, token, creation_date) VALUES (?,?,?)", [invitation.email, invitation.token, invitation.creation_date])
 
-            await db.executeInsert(`INSERT INTO user_role (user_id, role_id) SELECT ?, id FROM roles WHERE name in (${user.roles?.map(value => `'${value}'`).join(',')})`, [result])
+            await db.executeInsert(`INSERT INTO user_role (user_id, role_id) SELECT ?, id FROM roles WHERE name in (${user.roles?.map((value:string) => `'${value}'`).join(',')})`, [result])
 
             await sendEmail({
                 to: user.email,
