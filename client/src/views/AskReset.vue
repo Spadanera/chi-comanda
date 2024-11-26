@@ -18,7 +18,7 @@ async function askReset() {
         try {
             await axios.AskReset(email.value)
         } catch (error) {
-            console.log(error)
+            console.error(error)
         }
     }
 }

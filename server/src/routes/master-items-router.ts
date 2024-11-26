@@ -9,7 +9,7 @@ masterItemsRouter.get("/:id", authorizationMiddleware(Roles.admin), async (req: 
         const result = await masterItemsApi.getAll(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -19,7 +19,7 @@ masterItemsRouter.get("/available/:id", authorizationMiddleware([Roles.waiter, R
         const result = await masterItemsApi.getAllAvailable(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -29,7 +29,7 @@ masterItemsRouter.post("/", authorizationMiddleware(Roles.admin), async (req: Re
         const result = await masterItemsApi.create(req.body)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -39,7 +39,7 @@ masterItemsRouter.put("/", authorizationMiddleware(Roles.admin), async (req: Req
         const result = await masterItemsApi.update(req.body)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -49,7 +49,7 @@ masterItemsRouter.delete("/:id", authorizationMiddleware(Roles.admin), async (re
         const result = await masterItemsApi.delete(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })

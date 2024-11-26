@@ -1,5 +1,6 @@
 import db from "../db"
 import { type Event, type User } from "../../../models/src"
+import { SocketIOService } from "../socket"
 
 class EventAPI {
     constructor() {
@@ -81,7 +82,17 @@ class EventAPI {
     async getOnGoing(userId: number): Promise<Event> {
         try {
             return await db.queryOne<Event>(`
-                SELECT *
+                SELECT events.*,
+                (
+                    SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                        'id', users.id, 
+                        'username', users.username,
+                        'avatar', users.avatar
+                    ))
+                    FROM users 
+                    INNER JOIN user_event ON user_event.user_id = users.id
+                    WHERE user_event.event_id = events.id
+                ) users
                 FROM events 
                 WHERE STATUS = "ONGOING"
                 AND EXISTS (
@@ -123,7 +134,12 @@ class EventAPI {
     }
 
     async updateStatus(event: Event): Promise<number> {
-        return await db.executeUpdate('UPDATE events SET status = ? WHERE id = ?', [event.status, event.id])
+        const result = await db.executeUpdate('UPDATE events SET status = ? WHERE id = ?', [event.status, event.id])
+        SocketIOService.instance().sendMessage({
+            room: "main",
+            event: "reload"
+        })
+        return result
     }
 
     async update(event: Event): Promise<number> {

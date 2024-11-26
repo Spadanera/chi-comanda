@@ -45,7 +45,7 @@ class UserApi {
             try {
                 await db.executeInsert("UPDATE users SET last_login_date = ? WHERE id = ?", [getCurrentDateTimeInItaly(), result.id])
             } catch (error: any) {
-                console.log("Error setting last_login_date", error.message)
+                console.error("Error setting last_login_date", error.message)
             }
             return result
         }

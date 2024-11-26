@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { type Event, type Order, type Item, type SubType, type User } from "../../../models/src"
+import { type Order, type Item, type SubType, type User } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { groupItems, copy, sortOrder } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
-import { io } from 'socket.io-client'
 import Avatar from "@/components/Avatar.vue"
 import fileAudio from '@/assets/nuovo-ordine.wav'
 import fileAudio1 from '@/assets/nuovo-ordine-1.ogg'
@@ -14,7 +13,6 @@ import fileAudio3 from '@/assets/nuovo-ordine-3.ogg'
 import fileAudio4 from '@/assets/nuovo-ordine-4.mp3'
 
 const axios = new Axios()
-var is: any
 var interval: number
 const user = defineModel<User>()
 const snackbarStore = SnackbarStore()
@@ -22,10 +20,10 @@ const types = ref<SubType[]>([])
 
 const emit = defineEmits(['login', 'reload'])
 
-const props = defineProps(['destinations', 'pagetitle', 'minutetoalert'])
+const props = defineProps(['destinations', 'pagetitle', 'minutetoalert', 'is', 'event'])
 
+const event = props.event
 const loading = ref<boolean>(true)
-const event = ref<Event>()
 const orders = ref<Order[]>([])
 const confirm = ref<boolean>(false)
 const deleteItemId = ref<number>(0)
@@ -34,6 +32,7 @@ const confirm2 = ref<boolean>(false)
 const drawer = ref<boolean>(true)
 const audio = ref([]);
 const origin = window.location.pathname
+const is = props.is
 
 const itemsToDo = computed(() => {
   if (selectedOrder.value.length) {
@@ -106,7 +105,6 @@ async function rollbackItem(item: Item) {
   } catch (error) {
     item.done = true
   }
-  // await getOrders()
 }
 
 async function deleteItemConfirm(item_id: number) {
@@ -124,7 +122,7 @@ async function deleteItem() {
 
 async function completeOrder() {
   await axios.CompleteOrder(selectedOrder.value[0].id || 0, {
-    event_id: event.value?.id || 0,
+    event_id: event?.id || 0,
     table_id: selectedOrder.value[0].table_id || 0,
     item_ids: selectedOrder.value[0].items?.map(i => i.id) || []
   })
@@ -140,7 +138,7 @@ async function completeOrder() {
 }
 
 async function getOrders() {
-  orders.value = await axios.GetOrdersInEvent(event.value?.id || 0, props.destinations)
+  orders.value = await axios.GetOrdersInEvent(event?.id || 0, props.destinations)
   calculateMinPassed()
   if (orders.value.length && !orders.value[0].done) {
     if (selectedOrder.value.length === 0) {
@@ -200,26 +198,9 @@ onMounted(async () => {
     new Audio(fileAudio4),
   ]
   types.value = await axios.GetSubTypes()
-  event.value = await axios.GetOnGoingEvent()
-  if (event.value.id) {
+  if (event.id) {
     await getOrders()
-
-    is = io(window.location.origin, {
-      path: "/socket/socket.io"
-    })
-
-    is.on('connect', () => {
-      is.emit('join', 'bar')
-    })
-
-    is.on('disconnect', () => {
-
-    })
-
-    is.on('connect_error', (err: any) => {
-      snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
-      is.emit('end')
-    })
+    is.emit('join', 'bartender')
 
     is.on('new-order', (data: Order) => {
       data.items = data.items?.filter((i: Item) => parseInt(props.destinations) === i.destination_id)
@@ -280,7 +261,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.clearInterval(interval)
   if (is) {
-    is.emit('end')
+    is.emit('leave', 'bartender')
   }
 })
 </script>
@@ -295,7 +276,8 @@ onBeforeUnmount(() => {
         :style="{ opacity: !order.done ? 'inherit' : 0.3 }">
         <v-list-item-title>
           <span :class="{ done: order.done }">Tavolo {{ order.table_name }}</span>
-          <v-btn variant="plain" v-if="!order.done && order.minPassed >= 0" :class="{ 'text-danger': order.minPassed >= minutetoalert, 'font-weight-bold': order.minPassed > 14}">
+          <v-btn variant="plain" v-if="!order.done && order.minPassed >= 0"
+            :class="{ 'text-danger': order.minPassed >= minutetoalert, 'font-weight-bold': order.minPassed > 14 }">
             {{ order.minPassed }} <span style="text-transform: lowercase;">m</span>
           </v-btn>
         </v-list-item-title>

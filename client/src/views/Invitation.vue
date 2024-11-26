@@ -37,7 +37,7 @@ async function reset() {
       formData.append('token', credentials.value.token)
       await axios.AcceptInvitation(formData)
     } catch (error) {
-      console.log(error)
+      console.error(error)
     }
   }
 }

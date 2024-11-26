@@ -9,7 +9,7 @@ subTypesRouter.get("/", authorizationMiddleware([Roles.admin, Roles.bartender, R
         const result = await masterItemsApi.getSubTypes()
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -19,7 +19,7 @@ subTypesRouter.post("/", authorizationMiddleware(Roles.admin), async (req: Reque
         const result = await masterItemsApi.createSubTypes(req.body)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -29,7 +29,7 @@ subTypesRouter.put("/", authorizationMiddleware(Roles.admin), async (req: Reques
         const result = await masterItemsApi.updateSubTypes(req.body)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -39,7 +39,7 @@ subTypesRouter.delete("/:id", authorizationMiddleware(Roles.admin), async (req: 
         const result = await masterItemsApi.deleteSubtypes(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })

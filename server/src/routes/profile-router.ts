@@ -24,7 +24,7 @@ profileRouter.get("/:id", authorizationMiddleware(), async (req: Request, res: R
         const result = await profileApi.get(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -45,7 +45,7 @@ profileRouter.put("/avatar/:id", authorizationMiddleware(), upload.single('avata
             res.status(404).json('Missing image')
         }
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -56,7 +56,7 @@ profileRouter.put("/username", authorizationMiddleware(), async (req: Request, r
         (req.user as User).username = req.body.username
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })

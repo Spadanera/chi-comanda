@@ -8,7 +8,7 @@ auditRouter.get("/", async (req: Request, res: Response) => {
         const result = await auditApi.get(+(req.query.page || 1), +(req.query.itemsperpage || 25), req.query.sortby?.toString(), req.query.sortdir?.toString())
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })

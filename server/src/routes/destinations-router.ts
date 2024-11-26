@@ -9,7 +9,7 @@ destinationsRouter.get("/", async (req: Request, res: Response) => {
         const result = await destinationApi.getAll()
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -19,7 +19,7 @@ destinationsRouter.post("/", authorizationMiddleware(Roles.admin), async (req: R
         const result = await destinationApi.create(req.body)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -29,7 +29,7 @@ destinationsRouter.put("/", authorizationMiddleware(Roles.admin), async (req: Re
         const result = await destinationApi.update(req.body)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })

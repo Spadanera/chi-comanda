@@ -31,7 +31,7 @@ class TableApi {
             [table_name, table_id]
         ])
         SocketIOService.instance().sendMessage({
-            rooms: ["waiter", "bar"],
+            rooms: ["waiter", "bartender"],
             event: "reload-table",
             body: {}
         })
