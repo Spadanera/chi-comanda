@@ -1,4 +1,5 @@
 import { Request, Response } from "express"
+import sharp from 'sharp'
 
 export enum Roles {
     admin = 'admin',
@@ -21,7 +22,7 @@ export function hasMatchingRole(arr1: Roles[], arr2: Roles[]): boolean {
     return false
 }
 
-export const authorizationMiddleware = (role: Roles | Roles[]) => (req: Request, res: Response, next: any) => { 
+export const authorizationMiddleware = (role: Roles | Roles[]) => (req: Request, res: Response, next: any) => {
     const userRoles = (req.user as any).roles
     if (!userRoles) {
         res.status(401).json('Unauthorized')
@@ -84,4 +85,12 @@ export function getCurrentDateTimeInItaly(): string {
     else {
         return '2024-01-01 00:00:00'
     }
+}
+
+export async function fileToBase64String(file: Express.Multer.File): Promise<string> {
+    const avatarBuffer = file.buffer
+    const optimizedAvatar = await sharp(avatarBuffer)
+        .resize({ width: 200, height: 200 })
+        .toBuffer()
+    return `data:${file.mimetype};base64,${optimizedAvatar.toString('base64')}`
 }
