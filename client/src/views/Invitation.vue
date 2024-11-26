@@ -26,9 +26,11 @@ async function reset() {
   const { valid } = await form.value?.validate()
   if (valid) {
     try {
-      const file = files.value[0]
       const formData = new FormData()
-      formData.append('avatar', file)
+      if (files.value && files.value.length) {
+        const file = files.value[0]
+        formData.append('avatar', file)
+      }
       formData.append('username', credentials.value.username)
       formData.append('password', credentials.value.password)
       formData.append('confirmPassword', credentials.value.confirmPassword)

@@ -12,6 +12,6 @@ const props = defineProps<{
 <template>
     <v-avatar :color="user.avatar ? 'default' : 'red'" :size="size" :start="start" v-if="user.username">
         <v-img v-if="user.avatar" :alt="user.username" :src="user.avatar"></v-img>
-        <span v-else-if="user.username && alt" class="text-h5">{{ user.username[0] }}</span>
+        <span v-else-if="user.username && alt">{{ user.username[0] }}</span>
     </v-avatar>
 </template>
