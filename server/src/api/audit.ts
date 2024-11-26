@@ -21,9 +21,8 @@ class AuditApi {
             sortBy = 'dateTime'
         }
         const offset = (page - 1) * itemsPerPage
-        console.log(offset)
         const data = await db.query(`
-            SELECT users.username, audit.method, audit.path, audit.dateTime, audit.data
+            SELECT users.avatar, users.username, audit.method, audit.path, audit.dateTime, audit.data
             FROM audit
             INNER JOIN users ON users.id = audit.user_id
             ORDER BY ${sortBy} ${sortDir}

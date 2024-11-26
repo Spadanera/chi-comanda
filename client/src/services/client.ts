@@ -1,7 +1,7 @@
 import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance, type AxiosProgressEvent } from 'axios'
 import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation, type Menu, type Type, type SubType, type Audit } from "../../../models/src"
 import router from '@/router'
-import { UserStore, SnackbarStore, type IUser, ProgressStore } from '@/stores'
+import { UserStore, SnackbarStore, ProgressStore } from '@/stores'
 import type { StoreDefinition } from 'pinia'
 
 export default class Axios {
@@ -273,7 +273,7 @@ export default class Axios {
         return await this.delete(`/subtypes/${id}`)
     }
 
-    async AskReset (email: string) {
+    async AskReset(email: string) {
         await this.client.post("/public/askreset", {
             email
         })
@@ -281,7 +281,7 @@ export default class Axios {
         router.push("/login")
     }
 
-    async Reset (invitation: Invitation) {
+    async Reset(invitation: Invitation) {
         await this.client.post("/public/reset", invitation)
         this.snackbarStoreDef().show("Password reimpostata con successo", 3000, 'top', 'success')
         router.push("/login")
@@ -295,19 +295,36 @@ export default class Axios {
         return await this.get(`/audit?page=${page}&itemsperpage=${itemsPerPage}&sortby=${sortBy}&sortdir=${sortDir}`)
     }
 
+    async GetProfile(id: number): Promise<User> {
+        return await this.getSingle<User>(`/profile/${id}`)
+    }
+
+    async EditProfileAvatar(formData: FormData, id: number): Promise<string> {
+        const response: AxiosResponse<string> = await this.client.put(`/profile/avatar/${id}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        })
+        return response.data
+    }
+
+    async EditProfileUsername(user: User): Promise<number> {
+        return await this.put("/profile/username", user)
+    }
+
     async GetAvailableUsers(): Promise<User[]> {
         return await this.get("/events/users")
     }
 
-    async UpdateUser(user:User): Promise<number> {
+    async UpdateUser(user: User): Promise<number> {
         return await this.put("/users", user)
     }
 
-    async UpdateUserRoles(user:User): Promise<number> {
+    async UpdateUserRoles(user: User): Promise<number> {
         return await this.put("/users/roles", user)
     }
 
-    async DeleteUser(user_id:number): Promise<number> {
+    async DeleteUser(user_id: number): Promise<number> {
         return await this.delete(`/users/${user_id}`)
     }
 
@@ -315,8 +332,13 @@ export default class Axios {
         return await this.post("/users/invite", user)
     }
 
-    async AcceptInvitation(invitation: Invitation) {
-        await this.post("/public/invitation/accept", invitation)
+    async AcceptInvitation(formData: FormData) {
+        await this.client.post("/public/invitation/accept", formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        })
+
         this.snackbarStoreDef().show("Invito accettato con successo", 3000, 'top', 'success')
         router.push("/login")
     }
@@ -336,8 +358,8 @@ export default class Axios {
         this.snackbarStoreDef().show("Logout effettuato con successo")
     }
 
-    async CheckAuthentication(): Promise<IUser> {
-        return (await this.client.get<IUser>('/checkauthentication')).data
+    async CheckAuthentication(): Promise<User> {
+        return (await this.client.get<User>('/checkauthentication')).data
     }
 }
 

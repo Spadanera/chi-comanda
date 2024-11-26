@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type Order, type MasterItem, type Item, type SubType, type Type, type Destination } from "../../../models/src"
+import { type Order, type MasterItem, type Item, type SubType, type Type, type Destination, type User } from "../../../models/src"
 import { ref, onMounted, computed } from "vue"
 import router from '@/router'
 import Axios from '@/services/client'
-import { SnackbarStore, type IUser } from '@/stores'
+import { SnackbarStore } from '@/stores'
 import { groupItems, copy, sortItem } from "@/services/utils"
 import { useRoute } from 'vue-router'
 import { requiredRule } from "@/services/utils"
@@ -12,7 +12,7 @@ import ItemList from "@/components/ItemList.vue"
 const route = useRoute()
 const origin = route.query.origin ? `${route.query.origin}` : '/waiter'
 const axios = new Axios()
-const user = defineModel<IUser>()
+const user = defineModel<User>()
 const snackbarStore = SnackbarStore()
 const destinations = ref<Destination[]>([])
 const types = ref<SubType[]>([])
