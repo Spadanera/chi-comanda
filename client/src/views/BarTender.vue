@@ -316,7 +316,7 @@ onBeforeUnmount(() => {
     <v-container>
       <h3>{{ props.pagetitle }} <span v-if="selectedOrder.length"> - Tavolo {{ selectedOrder[0].table_name }}</span>
       </h3>
-      <v-chip>
+      <v-chip v-if="selectedOrder.length">
         <Avatar :user="selectedOrder[0].user" alt start></Avatar>
         {{ selectedOrder[0].user.username }}
       </v-chip>
