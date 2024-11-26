@@ -14,7 +14,8 @@ CREATE TABLE `users` (
   `last_login_date` datetime,
   `status` varchar(255),
   `googleId` varchar(255),
-  `token` varchar(255)
+  `token` varchar(255),
+  `avatar` LONGTEXT NULL DEFAULT NULL
 );
 
 CREATE TABLE `roles` (

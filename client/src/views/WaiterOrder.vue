@@ -206,7 +206,7 @@ onMounted(async () => {
       </template>
     </v-list>
     <v-bottom-sheet v-model="sheet" scrollable>
-      <v-card style="padding-bottom: 50px">
+      <v-card>
         <v-card-title>
           Ordine Tavolo {{ table_name }}
         </v-card-title>
@@ -216,7 +216,7 @@ onMounted(async () => {
             <v-col><v-switch v-model="alreadyPaid" label="Pagato" density="compact" color="success"></v-switch></v-col>
           </v-row>
         </v-card-subtitle>
-        <ItemList v-model="groupedOrderItems" class="elevation-2" :shownote="true">
+        <ItemList v-model="groupedOrderItems" class="elevation-1" :shownote="true">
           <template v-slot:prequantity="slotProps">
             <v-btn variant="plain" icon="mdi-minus" @click="changeItemQuantity(slotProps.item, -1)"></v-btn>
           </template>
@@ -224,19 +224,21 @@ onMounted(async () => {
             <v-btn variant="plain" icon="mdi-plus" @click="changeItemQuantity(slotProps.item, 1)"></v-btn>
           </template>
         </ItemList>
+        <v-card-actions>
+          <v-btn style="font-size: x-large;" icon="mdi-arrow-down" variant="plain" @click="sheet = !sheet"></v-btn>
+          <v-spacer></v-spacer>
+          <v-btn density="compact" readonly>
+            <span>{{ orderTotal }}</span>
+            <v-icon>mdi-currency-eur</v-icon>
+          </v-btn>
+          <v-spacer></v-spacer>
+          <v-btn style="font-size: x-large;" icon="mdi-send" variant="plain" @click="sendOrder">
+    
+          </v-btn>
+        </v-card-actions>
       </v-card>
-      <v-bottom-navigation :name="'inner-button-nav-bar'">
-        <v-btn style="font-size: x-large;" icon="mdi-arrow-down" variant="plain" @click="sheet = !sheet"></v-btn>
-        <v-spacer></v-spacer>
-        <v-btn density="compact" readonly>
-          <v-icon>mdi-currency-eur</v-icon>
-          <span>{{ orderTotal }}</span>
-        </v-btn>
-        <v-spacer></v-spacer>
-        <v-btn style="font-size: x-large;" icon="mdi-send" variant="plain" @click="sendOrder">
-
-        </v-btn>
-      </v-bottom-navigation>
+      <!-- <v-bottom-navigation :name="'inner-button-nav-bar'">
+      </v-bottom-navigation> -->
     </v-bottom-sheet>
   </div>
   <v-dialog v-model="dialogTable" max-width="600">
