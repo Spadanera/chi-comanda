@@ -18,7 +18,7 @@ class UserApi {
                 INNER JOIN user_role on roles.id = user_role.role_id 
                 WHERE user_id = users.id) as roles 
             FROM users
-            WHERE status != 'DELETED'`, [])
+            WHERE IFNULL(status, '') != 'DELETED'`, [])
     }
 
     async getAvailable(): Promise<User[]> {
