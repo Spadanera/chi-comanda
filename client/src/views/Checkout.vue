@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type Event, type Table, type Item, type SubType, type CompleteOrderInput, type MasterTable } from "../../../models/src"
+import { type Event, type Table, type Item, type SubType, type CompleteOrderInput, type MasterTable, type User } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import Axios from '@/services/client'
-import { SnackbarStore, type IUser } from '@/stores'
+import { SnackbarStore } from '@/stores'
 import { copy, sortItem, sortTables } from "@/services/utils"
 import { io } from 'socket.io-client'
 import { RouterLink } from 'vue-router'
@@ -10,7 +10,7 @@ import ItemList from "@/components/ItemList.vue"
 
 const axios = new Axios()
 var is: any
-const user = defineModel<IUser>()
+const user = defineModel<User>()
 const snackbarStore = SnackbarStore()
 
 const emit = defineEmits(['login', 'reload'])

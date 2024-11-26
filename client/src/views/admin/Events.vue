@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue"
-import { type Event, type Event as EventType } from "../../../../models/src"
+import { type Event, type Event as EventType, type User } from "../../../../models/src"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { requiredRule, copy } from "@/services/utils"
 import EventList from "@/components/EventList.vue"
+import Avatar from "@/components/Avatar.vue"
 const axios = new Axios()
 const snackbarStore = SnackbarStore()
 const tab = ref<string>(null)
@@ -14,7 +15,7 @@ const dialogEvent = ref<EventType>(null)
 const loading = ref<boolean>(false)
 const form = ref(null)
 const menu = ref([])
-const users = ref([])
+const users = ref<User[]>([])
 
 
 const ongoingEvents = computed<EventType[]>(() => {
@@ -118,15 +119,32 @@ onMounted(async () => {
       </v-card-title>
       <v-card-text>
         <v-form @submit.prevent ref="form">
-          <v-text-field v-model="dialogEvent.name" :disabled="dialogEvent.id !== undefined && dialogEvent.status === 'ONGOING'"
-            :readonly="dialogEvent.id !== undefined && dialogEvent.status === 'ONGOING'" label="Nome Evento" :clearable="dialogEvent.id === undefined"
-            :rules="[requiredRule]"></v-text-field>
-          <v-select label="Menu" :items="menu" :disabled="dialogEvent.id !== undefined && dialogEvent.status === 'ONGOING'"
-            :readonly="dialogEvent.id !== undefined && dialogEvent.status === 'ONGOING'" v-model="dialogEvent.menu_id" item-value="id" item-title="name"
-            :rules="[requiredRule]"></v-select>
-          <v-select label="Lavoranti" :items="users" chips v-model="dialogEvent.users" item-value="id"
-            item-title="username" multiple :rules="[requiredRule]" return-object></v-select>
-          <v-date-picker hide-header locale="it" :disabled="dialogEvent.id !== undefined && dialogEvent.status === 'ONGOING'"
+          <v-text-field v-model="dialogEvent.name"
+            :disabled="dialogEvent.id !== undefined && dialogEvent.status === 'ONGOING'"
+            :readonly="dialogEvent.id !== undefined && dialogEvent.status === 'ONGOING'" label="Nome Evento"
+            :clearable="dialogEvent.id === undefined" :rules="[requiredRule]"></v-text-field>
+          <v-select label="Menu" :items="menu"
+            :disabled="dialogEvent.id !== undefined && dialogEvent.status === 'ONGOING'"
+            :readonly="dialogEvent.id !== undefined && dialogEvent.status === 'ONGOING'" v-model="dialogEvent.menu_id"
+            item-value="id" item-title="name" :rules="[requiredRule]"></v-select>
+          <v-select label="Lavoranti" :items="users" v-model="dialogEvent.users" item-value="id"
+            item-title="username" multiple :rules="[requiredRule]" return-object>
+            <template v-slot:item="{ props, item }">
+              <v-list-item v-bind="props" :title="item.title">
+                <template v-slot:prepend>
+                  <Avatar :user="item.raw" alt size="small"></Avatar>
+                </template>
+              </v-list-item>
+            </template>
+            <template v-slot:selection="{ item }">
+              <v-chip>
+                <Avatar :user="item.raw" alt size="small"></Avatar>
+                <span style="margin-left: 5px;">{{ item.title }}</span>
+              </v-chip>
+            </template>
+          </v-select>
+          <v-date-picker hide-header locale="it"
+            :disabled="dialogEvent.id !== undefined && dialogEvent.status === 'ONGOING'"
             :readonly="dialogEvent.id !== undefined && dialogEvent.status === 'ONGOING'" first-day-of-week="1"
             v-model:model-value="dialogEvent.date"></v-date-picker>
         </v-form>

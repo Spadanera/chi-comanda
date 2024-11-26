@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { type Event, type Order, type Item, type SubType } from "../../../models/src"
+import { type Event, type Order, type Item, type SubType, type User } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import Axios from '@/services/client'
-import { SnackbarStore, type IUser } from '@/stores'
+import { SnackbarStore } from '@/stores'
 import { groupItems, copy, sortOrder } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
 import { io } from 'socket.io-client'
+import Avatar from "@/components/Avatar.vue"
 import fileAudio from '@/assets/nuovo-ordine.wav'
 import fileAudio1 from '@/assets/nuovo-ordine-1.ogg'
 import fileAudio2 from '@/assets/nuovo-ordine-2.ogg'
@@ -15,7 +16,7 @@ import fileAudio4 from '@/assets/nuovo-ordine-4.mp3'
 const axios = new Axios()
 var is: any
 var interval: number
-const user = defineModel<IUser>()
+const user = defineModel<User>()
 const snackbarStore = SnackbarStore()
 const types = ref<SubType[]>([])
 
@@ -223,7 +224,6 @@ onMounted(async () => {
     is.on('new-order', (data: Order) => {
       data.items = data.items?.filter((i: Item) => parseInt(props.destinations) === i.destination_id)
       if (data.items?.length) {
-        console.log(data)
         orders.value.push(data)
         calculateMinPassed()
         if (!selectedOrder.value.length) {
@@ -316,7 +316,10 @@ onBeforeUnmount(() => {
     <v-container>
       <h3>{{ props.pagetitle }} <span v-if="selectedOrder.length"> - Tavolo {{ selectedOrder[0].table_name }}</span>
       </h3>
-      <v-chip>{{ user.username }}</v-chip>
+      <v-chip>
+        <Avatar :user="user" alt start></Avatar>
+        {{ user.username }}
+      </v-chip>
     </v-container>
     <ItemList :quantitybefore="true" :showtype="true" subheader="DA FARE" v-model="itemsToDo" :shownote="true">
       <template v-slot:prequantity="slotProps">

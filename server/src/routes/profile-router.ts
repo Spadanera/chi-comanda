@@ -1,8 +1,8 @@
 import router, { Router, Request, Response } from "express"
 import profileApi from "../api/profile"
 import multer from 'multer'
-import sharp from 'sharp'
 import { User } from "../../../models/src"
+import { fileToBase64String} from '../utils/helper'
 
 const upload = multer({ storage: multer.memoryStorage() })
 
@@ -33,11 +33,7 @@ profileRouter.put("/avatar/:id", authorizationMiddleware(), upload.single('avata
     try {
         let avatar
         if (req.file) {
-            const avatarBuffer = req.file.buffer
-            const optimizedAvatar = await sharp(avatarBuffer)
-                .resize({ width: 200, height: 200 })
-                .toBuffer()
-            avatar = `data:image/jpeg;base64,${optimizedAvatar.toString('base64')}`
+            avatar = await fileToBase64String(req.file)
             await profileApi.updateAvatar({
                 avatar, id: +req.params.id
             } as User);

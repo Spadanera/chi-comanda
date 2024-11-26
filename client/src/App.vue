@@ -5,6 +5,7 @@ import { ref, onBeforeMount } from 'vue'
 import router from '@/router'
 import { UserStore, SnackbarStore, ProgressStore, ThemeStore } from '@/stores'
 import { type User } from '../../models/src'
+import Avatar from './components/Avatar.vue'
 
 const axios: Axios = new Axios()
 const userStore = UserStore()
@@ -53,10 +54,7 @@ onBeforeMount(async () => {
         <v-menu v-if="userStore.isLoggedIn">
           <template v-slot:activator="{ props }">
             <v-btn icon v-bind="props">
-              <v-avatar :color="userStore.user.avatar ? 'default' : 'red'"  >
-                <v-img v-if="user.avatar" :alt="user.username" :src="user.avatar"></v-img>
-                <span v-else-if="user.username" class="text-h5">{{ user.username[0] }}</span>
-              </v-avatar>
+              <Avatar :user="userStore.user" alt></Avatar>
             </v-btn>
           </template>
 

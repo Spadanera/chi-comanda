@@ -4,6 +4,7 @@ import { type Event } from "../../../models/src"
 import Axios from '@/services/client'
 import { copy } from "@/services/utils"
 import EventDetails from '@/components/EventDetails.vue'
+import Avatar from './Avatar.vue';
 
 const emit = defineEmits(['reload', 'editevent'])
 const props = defineProps(['ongoing'])
@@ -96,9 +97,7 @@ onMounted(() => {
                     <v-card-text v-if="event.users && event.users.length">
                         <h4 style="margin-bottom: 10px;">Lavoranti</h4>
                         <v-chip v-for="user in event.users">
-                            <v-avatar start> 
-                                <v-img v-if="user.avatar" :alt="user.username" :src="user.avatar"></v-img>
-                            </v-avatar>
+                            <Avatar :user="user" alt start></Avatar>
                             {{ user.username }}
                         </v-chip>
                     </v-card-text>

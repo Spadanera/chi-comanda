@@ -1,14 +1,6 @@
 import { defineStore, type StoreDefinition } from 'pinia'
 import Axios from "../services/client"
-
-export interface IUser {
-    id?: number,
-    username?: string,
-    email?: string,
-    avatar?: string
-    roles: string[]
-    isLoggedIn: boolean
-}
+import type { User } from '../../../models/src'
 
 export const UserStore: StoreDefinition = defineStore('user', {
     state: () => {
@@ -20,7 +12,7 @@ export const UserStore: StoreDefinition = defineStore('user', {
             roles: [],
             isLoggedIn: false,
             avatar: ''
-        } as IUser
+        } as User
     },
     getters: {
         user: (state: any) => {
@@ -41,7 +33,7 @@ export const UserStore: StoreDefinition = defineStore('user', {
         setAvatar(avatar: string) {
             this.avatar = avatar
         },
-        setUser(user: IUser, isLoggedIn: boolean) {
+        setUser(user: User, isLoggedIn: boolean) {
             this.id = user.id
             this.username = user.username
             this.email = user.email
@@ -49,11 +41,11 @@ export const UserStore: StoreDefinition = defineStore('user', {
             this.roles = user.roles
             this.isLoggedIn = isLoggedIn
         },
-        login(user: IUser) {
+        login(user: User) {
             this.setUser(user, true)
         },
         logout() {
-            this.setUser({} as IUser, false)
+            this.setUser({} as User, false)
         },
         async checkAuthentication() {
             const axios: Axios = new Axios()

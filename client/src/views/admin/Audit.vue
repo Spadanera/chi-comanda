@@ -2,6 +2,7 @@
 import { type Audit } from "../../../../models/src";
 import { onMounted, ref } from 'vue';
 import Axios from '@/services/client'
+import Avatar from "@/components/Avatar.vue";
 
 const axios = new Axios()
 
@@ -55,6 +56,10 @@ onMounted(() => {
     <v-data-table-server class="audit-page" v-model:items-per-page="itemsPerPage" :headers="headers"
         :items="serverItems" :items-length="totalItems" :loading="loading" :search="search" item-value="name"
         @update:options="loadItems" fixed-header fixed-footer height="100%">
+        <template v-slot:item.username="{ item }">
+            <Avatar :user="item" alt start size="small"></Avatar>
+            {{ item.username }}
+        </template>
         <template v-slot:item.dateTime="{ item }">
             {{ formatTimestamp(item.dateTime) }}
         </template>

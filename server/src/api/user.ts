@@ -11,8 +11,14 @@ class UserApi {
     }
 
     async getAll(): Promise<User[]> {
-        return await db.query(`SELECT id,username, email, status, (select json_arrayagg(name) FROM roles
-            INNER JOIN user_role on roles.id = user_role.role_id WHERE user_id = users.id) as roles, avatar FROM users`, [])
+        return await db.query(`
+            SELECT id,username, email, status, avatar,
+                (select json_arrayagg(name) 
+                FROM roles
+                INNER JOIN user_role on roles.id = user_role.role_id 
+                WHERE user_id = users.id) as roles 
+            FROM users
+            WHERE status != 'DELETED'`, [])
     }
 
     async getAvailable(): Promise<User[]> {
@@ -59,7 +65,7 @@ class UserApi {
     async delete(id: number): Promise<void> {
         await db.executeTransaction([
             'DELETE FROM user_role WHERE user_id = ?',
-            'DELETE FROM users WHERE id = ?'
+            'UPDATE users SET status = "DELETED" WHERE id = ?'
         ], [
             [id],
             [id]
@@ -152,7 +158,7 @@ class UserApi {
     }
 
     async checkUserExists(email: string): Promise<boolean> {
-        const users: User[] = await db.query("SELECT id FROM users WHERE email = ?", [email])
+        const users: User[] = await db.query("SELECT id FROM users WHERE email = ? AND status != 'DELETED'", [email])
         if (users.length) {
             return true
         }
@@ -163,8 +169,8 @@ class UserApi {
         if (invitation.password) {
             const _invitation: Invitation = await db.queryOne("SELECT * FROM users WHERE token = ?", [invitation.token])
             if (_invitation.id && _invitation.email) {
-                return await db.executeUpdate("UPDATE users SET username = ?, password = ?, status =? WHERE id = ?",
-                    [invitation.username, await hashPassword(invitation.password), 'ACTIVE', _invitation.id])
+                return await db.executeUpdate("UPDATE users SET username = ?, password = ?, status = ?, avatar = ? WHERE id = ?",
+                    [invitation.username, await hashPassword(invitation.password), 'ACTIVE', invitation.avatar, _invitation.id])
             }
             else {
                 throw new Error("Missing invitation")

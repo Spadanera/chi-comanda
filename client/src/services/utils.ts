@@ -111,6 +111,13 @@ export const positiveIntegerRule = (value: any) => {
     return true;
 }
 
+export const fileRequiredRule = (value: any) => {
+    if (Array.isArray(value) && value.length === 0) {
+        return 'Selezionare un file';
+    }
+    return true;
+}
+
 export const emailRule = (v: any) => /.+@.+\..+/.test(v) || 'Indirizzo email non valido'
 
 export const passwordMatchRule = (comparison: any) => (v: any) => v === comparison || 'Le password devono essere uguali'

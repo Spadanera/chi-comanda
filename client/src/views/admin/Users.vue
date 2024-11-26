@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { type User } from '../../../../models/src'
 import Axios from '@/services/client'
 import { copy, requiredRule, emailRule, Roles } from '@/services/utils'
+import Avatar from '@/components/Avatar.vue'
 
 const axios = new Axios()
 const loading = ref<boolean>(null)
@@ -148,7 +149,9 @@ onMounted(async () => {
     <v-table density="compact">
       <thead>
         <tr>
-          <th></th>
+          <th class="text-left">
+            Avatar
+          </th>
           <th class="text-left">
             Nome Utente
           </th>
@@ -166,10 +169,7 @@ onMounted(async () => {
       <tbody style="cursor: pointer;">
         <tr v-for="user in filteredUsers" :key="user.id" @click="openDialog(user)">
           <td>
-            <v-avatar :color="user.avatar ? 'default' : 'red'" size="small">
-              <v-img v-if="user.avatar" :alt="user.username" :src="user.avatar"></v-img>
-              <span v-else-if="user.username" class="text-h5">{{ user.username[0] }}</span>
-            </v-avatar>
+            <Avatar :user="user" alt size="small"></Avatar>
           </td>
           <td>{{ user.username }}</td>
           <td>{{ user.email }}</td>
