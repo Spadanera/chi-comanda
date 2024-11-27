@@ -30,6 +30,7 @@ const broadcast = ref<Broadcast>(null)
 const broadcasts = ref<Broadcast[]>([])
 const broadcastsQueue = ref<Broadcast[]>([])
 const broadcastListDialog = ref<boolean>(null)
+const socketConnected = ref<boolean>(false)
 
 function login() {
   user.value = userStore.user
@@ -109,6 +110,10 @@ onBeforeMount(async () => {
 
   is.value = io(window.location.origin, {
     path: "/socket/socket.io"
+  })
+
+  is.value.on('connect', () => {
+    socketConnected.value = true
   })
 
   is.value.on('connect_error', (err: any) => {
@@ -224,7 +229,7 @@ onBeforeUnmount(() => {
           slim @click="themeStore.toggle"></v-btn>
       </v-app-bar>
       <v-main>
-        <RouterView :is="is" v-model="user" @login="login" @reload="reload" :event="event" />
+        <RouterView v-if="socketConnected" :is="is" v-model="user" @login="login" @reload="reload" :event="event" />
       </v-main>
       <v-snackbar v-model="snackbarStore.enable" :timeout="snackbarStore.timeout" :location="snackbarStore.location"
         :color="snackbarStore.color">

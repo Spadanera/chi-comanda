@@ -127,11 +127,11 @@ SocketIOService.instance().getServer().on('connection', function (socket) {
         socket.disconnect()
     });
 
-    socket.on('leave', function (room) {
-        socket.leave(room)
+    socket.on('leave', async (room) => {
+        await socket.leave(room)
     });
 
-    socket.on('join', function (room) {
+    socket.on('join', (room) => {
         socket.join(room);
     });
 });

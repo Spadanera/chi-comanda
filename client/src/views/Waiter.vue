@@ -20,15 +20,18 @@ const loading = ref<boolean>(true)
 const availableTable = computed<AvailableTable[]>(() => tables.value.filter(t => !t.event_id).sort(sortAvailableTable))
 const activeTable = computed<AvailableTable[]>(() => tables.value.filter(t => t.event_id).sort(sortAvailableTable))
 
+
+async function reloadTableHandlerasync() {
+  tables.value = await axios.GetAvailableTables(event.id)
+  snackbarStore.show("Tavoli aggiornati")
+}
+
 onMounted(async () => {
   if (event.id) {
     tables.value = await axios.GetAvailableTables(event.id)
     is.emit('join', 'waiter')
 
-    is.on('reload-table', async () => {
-      tables.value = await axios.GetAvailableTables(event.id)
-      snackbarStore.show("Tavoli aggiornati")
-    })
+    is.on('reload-table', reloadTableHandlerasync)
   }
   loading.value = false
 })
@@ -36,6 +39,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   if (is) {
     is.emit('leave', 'waiter')
+    is.off('reload-table', reloadTableHandlerasync)
   }
 })
 </script>
@@ -70,7 +74,8 @@ onBeforeUnmount(() => {
       </v-row>
       <v-row>
         <v-col v-for="table in availableTable" cols="4">
-          <RouterLink :to="`/waiter/${event?.id}/mastertable/${table?.master_table_id}/table/0/menu/${event.menu_id}${queryToPass}`">
+          <RouterLink
+            :to="`/waiter/${event?.id}/mastertable/${table?.master_table_id}/table/0/menu/${event.menu_id}${queryToPass}`">
             <v-card height="50px" style="padding-top: 10px;">
               {{ table.master_table_name }}
             </v-card>

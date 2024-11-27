@@ -188,6 +188,57 @@ function calculateMinPassed() {
   })
 }
 
+function newOrderHandler(data: Order) {
+  data.items = data.items?.filter((i: Item) => parseInt(props.destinations) === i.destination_id)
+  if (data.items?.length) {
+    orders.value.push(data)
+    calculateMinPassed()
+    if (!selectedOrder.value.length) {
+      selectedOrder.value.push(data)
+    }
+
+    if (!data.items[0].done) {
+      snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
+      let audioToPlay = audio.value[Math.floor(Math.random() * audio.value.length)]
+      audioToPlay.play();
+    }
+  }
+}
+
+function orderCompletedHandler() {
+  getOrders()
+}
+
+function itemUpdatedHandler(data: Item) {
+  const _order = orders.value.find((o: Order) => o.id = data.order_id)
+  if (_order) {
+    const _item = _order.items.find((i: Item) => i.id === data.id)
+    if (_item) {
+      _item.done = data.done
+    }
+  }
+}
+
+function reloadTablehandler() {
+  getOrders()
+}
+
+function itemRemovedHandler(data: number) {
+  const order = orders.value.find((o: Order) => {
+    if (o.items.find((i: Item) => i.id === data)) {
+      return true
+    }
+  })
+  const _items = copy<Item[]>(order.items.filter((i: Item) => i.id !== data))
+  order.items = _items
+  if (_items.length === 0) {
+    if (order.id === selectedOrder.value[0].id) {
+      selectedOrder.value = []
+    }
+    orders.value = copy<Order[]>(orders.value.filter((o: Order) => o.id !== order.id))
+  }
+}
+
 onMounted(async () => {
   loading.value = true
   audio.value = [
@@ -202,56 +253,11 @@ onMounted(async () => {
     await getOrders()
     is.emit('join', 'bartender')
 
-    is.on('new-order', (data: Order) => {
-      data.items = data.items?.filter((i: Item) => parseInt(props.destinations) === i.destination_id)
-      if (data.items?.length) {
-        orders.value.push(data)
-        calculateMinPassed()
-        if (!selectedOrder.value.length) {
-          selectedOrder.value.push(data)
-        }
-
-        if (!data.items[0].done) {
-          snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
-          let audioToPlay = audio.value[Math.floor(Math.random() * audio.value.length)]
-          audioToPlay.play();
-        }
-      }
-    })
-
-    is.on('order-completed', () => {
-      getOrders()
-    })
-
-    is.on('item-updated', (data: Item) => {
-      const _order = orders.value.find((o: Order) => o.id = data.order_id)
-      if (_order) {
-        const _item = _order.items.find((i: Item) => i.id === data.id)
-        if (_item) {
-          _item.done = data.done
-        }
-      }
-    })
-
-    is.on('reload-table', () => {
-      getOrders()
-    })
-
-    is.on('item-removed', (data: number) => {
-      const order = orders.value.find((o: Order) => {
-        if (o.items.find((i: Item) => i.id === data)) {
-          return true
-        }
-      })
-      const _items = copy<Item[]>(order.items.filter((i: Item) => i.id !== data))
-      order.items = _items
-      if (_items.length === 0) {
-        if (order.id === selectedOrder.value[0].id) {
-          selectedOrder.value = []
-        }
-        orders.value = copy<Order[]>(orders.value.filter((o: Order) => o.id !== order.id))
-      }
-    })
+    is.on('new-order', newOrderHandler)
+    is.on('order-completed', orderCompletedHandler)
+    is.on('item-updated', itemUpdatedHandler)
+    is.on('reload-table', reloadTablehandler)
+    is.on('item-removed', itemRemovedHandler)
 
     interval = window.setInterval(calculateMinPassed, 1000 * 60)
   }
@@ -262,6 +268,12 @@ onBeforeUnmount(() => {
   window.clearInterval(interval)
   if (is) {
     is.emit('leave', 'bartender')
+
+    is.off('new-order', newOrderHandler)
+    is.off('order-completed', orderCompletedHandler)
+    is.off('item-updated', itemUpdatedHandler)
+    is.off('reload-table', reloadTablehandler)
+    is.off('item-removed', itemRemovedHandler)
   }
 })
 </script>
