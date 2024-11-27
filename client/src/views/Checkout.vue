@@ -182,6 +182,42 @@ function pay(partial: boolean) {
   dialogPay.value = true
 }
 
+function newOrderHandler(data: Table) {
+  const table = tables.value.find((t: Table) => t.id === data.id)
+  if (table) {
+    data.items.forEach((item: Item) => {
+      if (!table.items.find((i: Item) => i.id === item.id)) {
+        table.items.push(item)
+      }
+    });
+  }
+  else {
+    tables.value.push(data)
+    snackbarStore.show("Nuovo tavolo")
+  }
+}
+
+function itemRemovedHandler(data: number) {
+  const table = tables.value.find((o: Table) => {
+    if (o.items.find((i: Item) => i.id === data)) {
+      return true
+    }
+  })
+  const _items = copy<Item[]>(table.items.filter((i: Item) => i.id !== data))
+  table.items = _items
+}
+
+function orderCompletedHandler(data: CompleteOrderInput) {
+  const table = tables.value.find((t: Table) => t.id === data.table_id)
+  if (table) {
+    table.items.forEach((i: Item) => {
+      if (data.order_id === i.order_id) {
+        i.done = true
+      }
+    })
+  }
+}
+
 onMounted(async () => {
   loading.value = true
   types.value = await axios.GetSubTypes()
@@ -189,42 +225,9 @@ onMounted(async () => {
     await getTables()
 
     is.emit('join', 'checkout')
-
-    is.on('new-order', (data: Table) => {
-      const table = tables.value.find((t: Table) => t.id === data.id)
-      if (table) {
-        data.items.forEach((item: Item) => {
-          if (!table.items.find((i: Item) => i.id === item.id)) {
-            table.items.push(item)
-          }
-        });
-      }
-      else {
-        tables.value.push(data)
-        snackbarStore.show("Nuovo tavolo")
-      }
-    })
-
-    is.on('item-removed', (data: number) => {
-      const table = tables.value.find((o: Table) => {
-        if (o.items.find((i: Item) => i.id === data)) {
-          return true
-        }
-      })
-      const _items = copy<Item[]>(table.items.filter((i: Item) => i.id !== data))
-      table.items = _items
-    })
-
-    is.on('order-completed', (data: CompleteOrderInput) => {
-      const table = tables.value.find((t: Table) => t.id === data.table_id)
-      if (table) {
-        table.items.forEach((i: Item) => {
-          if (data.order_id === i.order_id) {
-            i.done = true
-          }
-        })
-      }
-    })
+    is.on('new-order', newOrderHandler)
+    is.on('item-removed', itemRemovedHandler)
+    is.on('order-completed', orderCompletedHandler)
   }
   loading.value = false
 })
@@ -232,6 +235,9 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   if (is) {
     is.emit('leave', 'checkout')
+    is.off('new-order', newOrderHandler)
+    is.off('item-removed', itemRemovedHandler)
+    is.off('order-completed', orderCompletedHandler)
   }
 })
 </script>
@@ -266,7 +272,8 @@ onBeforeUnmount(() => {
       <v-btn @click="changeTableSheet()" style="position: absolute; top: 74px; right: 25px;"
         v-if="selectedTable.length">Tavolo {{ selectedTable[0].name }}</v-btn>
     </v-container>
-    <ItemList :shownote="true" style="margin-top: 2px;" :showtype="true" subheader="DA PAGARE" v-model="computedSelectedTable.itemsToDo">
+    <ItemList :shownote="true" style="margin-top: 2px;" :showtype="true" subheader="DA PAGARE"
+      v-model="computedSelectedTable.itemsToDo">
       <template v-slot:prequantity="slotProps">
         <v-btn icon="mdi-delete" @click="deleteItemConfirm(slotProps.item.id)" variant="plain"></v-btn>
       </template>
