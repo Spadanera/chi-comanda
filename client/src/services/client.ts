@@ -1,5 +1,5 @@
 import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance, type AxiosProgressEvent } from 'axios'
-import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation, type Menu, type Type, type SubType, type Audit } from "../../../models/src"
+import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation, type Menu, type Type, type SubType, type Audit, type Broadcast } from "../../../models/src"
 import router from '@/router'
 import { UserStore, SnackbarStore, ProgressStore } from '@/stores'
 import type { StoreDefinition } from 'pinia'
@@ -310,6 +310,10 @@ export default class Axios {
 
     async EditProfileUsername(user: User): Promise<number> {
         return await this.put("/profile/username", user)
+    }
+
+    async BroadcastMessage(broadcast: Broadcast): Promise<number> {
+        return await this.post("/broadcast", broadcast)
     }
 
     async GetAvailableUsers(): Promise<User[]> {

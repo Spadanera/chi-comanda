@@ -144,7 +144,7 @@ class EventAPI {
 
     async update(event: Event): Promise<number> {
         if (event.users) {
-            return await db.executeTransaction(
+            const result = await db.executeTransaction(
                 [
                     'UPDATE events SET name = ?, date = ?, menu_id = ? WHERE id = ?',
                     'DELETE FROM user_event WHERE event_id = ?',
@@ -156,7 +156,11 @@ class EventAPI {
                     ...event.users.map((u:User) => [u.id, event.id])
                 ]
             )
-            
+            SocketIOService.instance().sendMessage({
+                room: "main",
+                event: "reload"
+            })
+            return result
         }
         throw new Error("Missing users")
     }

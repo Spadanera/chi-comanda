@@ -30,10 +30,11 @@ export interface Message {
   body?: any
 }
 
-export interface Broadcast {
+export interface Broadcast extends Repository {
   sender: User
+  event_id: number
   message: string
-  date_time: string
+  dateTime?: Date
   receivers: number[]
 }
 
