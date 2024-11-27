@@ -37,7 +37,7 @@ async function saveAvatar() {
             avatarReadOnly.value = true
             snackbarStore.show("Avatar aggiornato", 3000, 'bottom', 'success')
         } catch (error) {
-            console.log(error)
+            console.error(error)
         }
     }
 }
@@ -60,7 +60,7 @@ async function saveUsername() {
             usernameReadOnly.value = true
             snackbarStore.show("Nome utente aggiornato", 3000, 'bottom', 'success')
         } catch (error) {
-            console.log(error)
+            console.error(error)
         }
     }
 }

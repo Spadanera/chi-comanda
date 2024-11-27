@@ -30,6 +30,14 @@ export interface Message {
   body?: any
 }
 
+export interface Broadcast extends Repository {
+  sender: User
+  event_id: number
+  message: string
+  dateTime?: Date
+  receivers: number[]
+}
+
 export interface Repository extends RowDataPacket {
 
 }

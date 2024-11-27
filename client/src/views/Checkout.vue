@@ -1,22 +1,23 @@
 <script setup lang="ts">
-import { type Event, type Table, type Item, type SubType, type CompleteOrderInput, type MasterTable, type User } from "../../../models/src"
+import { type Table, type Item, type SubType, type CompleteOrderInput, type MasterTable, type User } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { copy, sortItem, sortTables } from "@/services/utils"
-import { io } from 'socket.io-client'
 import { RouterLink } from 'vue-router'
 import ItemList from "@/components/ItemList.vue"
 
+const props = defineProps(['is', 'event'])
+
 const axios = new Axios()
-var is: any
+const is = props.is
+const event = props.event
 const user = defineModel<User>()
 const snackbarStore = SnackbarStore()
 
 const emit = defineEmits(['login', 'reload'])
 
 const loading = ref<boolean>(true)
-const event = ref<Event>()
 const tables = ref<Table[]>([])
 const selectedTable = ref<Table[]>([])
 const confirm = ref<boolean>(false)
@@ -114,7 +115,7 @@ async function completeTable() {
       return
     }
     const discountAmout = tableTotalOrder.value - realPaid.value
-    await axios.InsertDiscount(event.value.id, selectedTable.value[0].id, discountAmout)
+    await axios.InsertDiscount(event.id, selectedTable.value[0].id, discountAmout)
   }
   await axios.CompleteTable(selectedTable.value[0].id)
   await getTables()
@@ -134,7 +135,7 @@ async function paySelectedItem() {
       return
     }
     const discountAmout = itemToBePaidBill.value - realPaid.value
-    await axios.InsertDiscount(event.value.id, selectedTable.value[0].id, discountAmout)
+    await axios.InsertDiscount(event.id, selectedTable.value[0].id, discountAmout)
   }
   await axios.PaySelectedItem(selectedTable.value[0].id, itemToBePaid.value)
   await getTables()
@@ -144,7 +145,7 @@ async function paySelectedItem() {
 }
 
 async function getTables() {
-  const _tables = await axios.GetTablesInEvent(event.value?.id || 0)
+  const _tables = await axios.GetTablesInEvent(event?.id || 0)
   _tables.forEach((t: Table) => {
     if (!t.items) {
       t.items = []
@@ -164,7 +165,7 @@ async function getTables() {
 }
 
 async function changeTableSheet() {
-  freeTables.value = await axios.GetFreeTables(event.value.id)
+  freeTables.value = await axios.GetFreeTables(event.id)
   tableSheet.value = true
 }
 
@@ -184,26 +185,10 @@ function pay(partial: boolean) {
 onMounted(async () => {
   loading.value = true
   types.value = await axios.GetSubTypes()
-  event.value = await axios.GetOnGoingEvent()
-  if (event.value.id) {
+  if (event.id) {
     await getTables()
 
-    is = io(window.location.origin, {
-      path: "/socket/socket.io"
-    })
-
-    is.on('connect', () => {
-      is.emit('join', 'checkout')
-    })
-
-    is.on('disconnect', () => {
-
-    })
-
-    is.on('connect_error', (err: any) => {
-      snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
-      is.emit('end')
-    })
+    is.emit('join', 'checkout')
 
     is.on('new-order', (data: Table) => {
       const table = tables.value.find((t: Table) => t.id === data.id)
@@ -246,7 +231,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   if (is) {
-    is.emit('end')
+    is.emit('leave', 'checkout')
   }
 })
 </script>

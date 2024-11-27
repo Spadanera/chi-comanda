@@ -45,7 +45,7 @@ export class SocketIOService {
         message.rooms.forEach((r: string) => this.getServer().to(r).emit(message.event, message.body))
       }
     } catch (error) {
-      console.log(error)
+      console.error(error)
     }
   }
 

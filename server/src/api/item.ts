@@ -35,7 +35,7 @@ class ItemApi {
     async delete(id: number): Promise<number> {
         const result = await db.executeUpdate('DELETE FROM items WHERE id = ?', [id])
         SocketIOService.instance().sendMessage({
-            rooms: ["bar", "checkout"],
+            rooms: ["bratender", "checkout"],
             event: "item-removed",
             body: id
         })
@@ -46,7 +46,7 @@ class ItemApi {
         const result = await db.executeUpdate('UPDATE items SET DONE = ?, PAID = ? WHERE id = ?', [item.done, item.paid, item.id])
 
         SocketIOService.instance().sendMessage({
-            rooms: ["bar"],
+            rooms: ["bartender"],
             event: "item-updated",
             body: item
         })

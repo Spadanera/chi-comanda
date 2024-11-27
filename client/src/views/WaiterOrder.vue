@@ -21,7 +21,7 @@ const alreadyPaid = ref<boolean>(false)
 
 const emit = defineEmits(['login', 'reload'])
 
-const props = defineProps(['event_id', 'table_id', 'master_table_id', 'menu_id'])
+const props = defineProps(['event_id', 'table_id', 'master_table_id', 'menu_id', 'is'])
 
 const open = ref(null)
 const loading = ref<boolean>(true)

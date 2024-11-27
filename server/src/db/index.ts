@@ -34,7 +34,7 @@ class Database {
             return rows
         }
         catch (error: any) {
-            console.log("Error executing query: ", query, values)
+            console.error("Error executing query: ", query, values)
             throw new Error(error)
         }
         finally {
@@ -60,7 +60,7 @@ class Database {
             return result.affectedRows
         }
         catch (error: any) {
-            console.log("Error executing query: ", query, values)
+            console.error("Error executing query: ", query, values)
             throw new Error(error)
         }
         finally {

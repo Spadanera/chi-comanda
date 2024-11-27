@@ -1,48 +1,32 @@
 <script setup lang="ts">
-import { type AvailableTable, type Event } from "../../../models/src"
+import { type AvailableTable } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import Axios from '@/services/client'
 import { sortAvailableTable } from "@/services/utils"
-import { io } from 'socket.io-client'
 import { SnackbarStore } from '@/stores'
 import { useRoute } from 'vue-router'
 
 const emit = defineEmits(['login', 'reload'])
+const props = defineProps(['is', 'event'])
 
 const route = useRoute()
 const queryToPass = route.query.origin ? `?origin=${route.query.origin}` : ''
-var is: any
+const is = props.is
+const event = props.event
 const tables = ref<AvailableTable[]>([])
 const snackbarStore = SnackbarStore()
-const event = ref<Event>()
 const axios = new Axios()
 const loading = ref<boolean>(true)
 const availableTable = computed<AvailableTable[]>(() => tables.value.filter(t => !t.event_id).sort(sortAvailableTable))
 const activeTable = computed<AvailableTable[]>(() => tables.value.filter(t => t.event_id).sort(sortAvailableTable))
 
 onMounted(async () => {
-  event.value = await axios.GetOnGoingEvent()
-  if (event.value.id) {
-    tables.value = await axios.GetAvailableTables(event.value.id)
-    is = io(window.location.origin, {
-      path: "/socket/socket.io"
-    })
-
-    is.on('connect', () => {
-      is.emit('join', 'waiter')
-    })
-
-    is.on('disconnect', () => {
-
-    })
-
-    is.on('connect_error', (err: any) => {
-      // snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
-      is.emit('end')
-    })
+  if (event.id) {
+    tables.value = await axios.GetAvailableTables(event.id)
+    is.emit('join', 'waiter')
 
     is.on('reload-table', async () => {
-      tables.value = await axios.GetAvailableTables(event.value.id)
+      tables.value = await axios.GetAvailableTables(event.id)
       snackbarStore.show("Tavoli aggiornati")
     })
   }
@@ -51,7 +35,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   if (is) {
-    is.emit('end')
+    is.emit('leave', 'waiter')
   }
 })
 </script>

@@ -1,5 +1,5 @@
 import db from "../db"
-import { Item, Order, CompleteOrderInput } from "../../../models/src"
+import { Item, Order, CompleteOrderInput, User } from "../../../models/src"
 import { SocketIOService } from "../socket"
 import tableApi from "./table"
 import { getCurrentDateTimeInItaly } from "../utils/helper"
@@ -89,9 +89,15 @@ class OrderAPI {
                 await this.completeOrder(order_id, { item_ids: [] })
             }
         }
+        if (userId) {
+            const user: User = await db.queryOne<User>('SELECT id, username, avatar FROM users WHERE id = ?', [userId])
+            if (user && user.id) {
+                order.user = user
+            }
+        }
         order.id = order_id
         SocketIOService.instance().sendMessage({
-            room: "bar",
+            room: "bartender",
             event: "new-order",
             body: order
         })
@@ -132,7 +138,7 @@ class OrderAPI {
         })
 
         SocketIOService.instance().sendMessage({
-            room: "bar",
+            room: "bartender",
             event: "order-completed",
             body: {}
         })

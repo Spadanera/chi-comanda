@@ -123,8 +123,12 @@ SocketIOService.instance().initialize(server, {
 })
 
 SocketIOService.instance().getServer().on('connection', function (socket) {
-    socket.on('end', function (room) {
+    socket.on('end', function () {
         socket.disconnect()
+    });
+
+    socket.on('leave', function (room) {
+        socket.leave(room)
     });
 
     socket.on('join', function (room) {

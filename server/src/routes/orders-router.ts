@@ -11,7 +11,7 @@ ordersRouter.get("/:eventid/:destinationsids", authorizationMiddleware(Roles.bar
         const result = await orderApi.getAll(+req.params.eventid, JSON.parse(req.params.destinationsids))
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -22,7 +22,7 @@ ordersRouter.post("/", authorizationMiddleware([Roles.waiter, Roles.bartender, R
         const result = await orderApi.create(req.body, +userId)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -33,7 +33,7 @@ ordersRouter.get("/:id/items", authorizationMiddleware([Roles.bartender, Roles.c
         const result = await itemApi.getByOrderId(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -43,7 +43,7 @@ ordersRouter.put("/:order_id/complete", authorizationMiddleware(Roles.bartender)
         const result = await orderApi.completeOrder(+req.params.order_id, req.body as CompleteOrderInput)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })

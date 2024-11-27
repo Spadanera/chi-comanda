@@ -22,7 +22,7 @@ async function login() {
       await axios.Login(credentials.value.email, credentials.value.password)
       emit("login")
     } catch (error) {
-      console.log(error)
+      console.error(error)
     }
   }
 }
