@@ -11,7 +11,7 @@ eventsRouter.get("/", authorizationMiddleware(Roles.admin), async (req: Request,
         const result = await eventApi.getAll()
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -22,7 +22,7 @@ eventsRouter.get("/ongoing", async (req: Request, res: Response) => {
         const result = await eventApi.getOnGoing(+userId)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -32,7 +32,7 @@ eventsRouter.get("/users", async (req: Request, res: Response) => {
         const result = await userApi.getAvailable()
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -47,7 +47,7 @@ eventsRouter.get("/:id", authorizationMiddleware(Roles.admin), async (req: Reque
             res.status(400).json('Resource not found')
         }
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -57,7 +57,7 @@ eventsRouter.post("/", authorizationMiddleware(Roles.admin), async (req: Request
         const result = await eventApi.create(req.body)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -67,7 +67,7 @@ eventsRouter.put("/setstatus/:id", authorizationMiddleware(Roles.admin), async (
         const result = await eventApi.updateStatus(req.body)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -77,7 +77,7 @@ eventsRouter.put("/", authorizationMiddleware(Roles.admin), async (req: Request,
         const result = await eventApi.update(req.body)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -87,7 +87,7 @@ eventsRouter.delete("/:id", authorizationMiddleware(Roles.admin), async (req: Re
         const result = await eventApi.delete(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -97,7 +97,7 @@ eventsRouter.get("/:id/tables/available", authorizationMiddleware([Roles.waiter,
         const result = await tableApi.getAvailableTable(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -107,7 +107,7 @@ eventsRouter.get("/:id/tables/free", authorizationMiddleware(Roles.checkout), as
         const result = await tableApi.getFreeTable(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -117,7 +117,7 @@ eventsRouter.get("/:id/tables", async (req: Request, res: Response) => {
         const result = await tableApi.getActiveTable(+req.params.id)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -127,7 +127,7 @@ eventsRouter.post("/:eventid/tables/:tableid/discount/:discount", authorizationM
         const result = await tableApi.insertDiscount(+req.params.eventid, +req.params.tableid, +req.params.discount)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })

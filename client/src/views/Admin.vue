@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue"
-import { type IUser } from '@/stores'
 import { RouterLink, RouterView } from 'vue-router';
+import { type User } from '../../../models/src'
 
 defineOptions({ inheritAttrs: false })
 
@@ -13,7 +13,7 @@ interface NavigationItem {
 }
 
 const emit = defineEmits(['login', 'reload'])
-const user = defineModel<IUser>()
+const user = defineModel<User>()
 
 const drawer = ref<boolean>()
 const selectedItem = ref<number[]>([0])

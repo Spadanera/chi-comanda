@@ -42,10 +42,10 @@ export class SocketIOService {
         this.getServer().to(message.room).emit(message.event, message.body)
       }
       else if (message.rooms) {
-        message.rooms.forEach(r => this.getServer().to(r).emit(message.event, message.body))
+        message.rooms.forEach((r: string) => this.getServer().to(r).emit(message.event, message.body))
       }
     } catch (error) {
-      console.log(error)
+      console.error(error)
     }
   }
 

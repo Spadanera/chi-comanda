@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { type Event, type Order, type Item, type SubType } from "../../../models/src"
+import { type Order, type Item, type SubType, type User } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import Axios from '@/services/client'
-import { SnackbarStore, type IUser } from '@/stores'
+import { SnackbarStore } from '@/stores'
 import { groupItems, copy, sortOrder } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
-import { io } from 'socket.io-client'
+import Avatar from "@/components/Avatar.vue"
 import fileAudio from '@/assets/nuovo-ordine.wav'
 import fileAudio1 from '@/assets/nuovo-ordine-1.ogg'
 import fileAudio2 from '@/assets/nuovo-ordine-2.ogg'
@@ -13,18 +13,17 @@ import fileAudio3 from '@/assets/nuovo-ordine-3.ogg'
 import fileAudio4 from '@/assets/nuovo-ordine-4.mp3'
 
 const axios = new Axios()
-var is: any
 var interval: number
-const user = defineModel<IUser>()
+const user = defineModel<User>()
 const snackbarStore = SnackbarStore()
 const types = ref<SubType[]>([])
 
 const emit = defineEmits(['login', 'reload'])
 
-const props = defineProps(['destinations', 'pagetitle', 'minutetoalert'])
+const props = defineProps(['destinations', 'pagetitle', 'minutetoalert', 'is', 'event'])
 
+const event = props.event
 const loading = ref<boolean>(true)
-const event = ref<Event>()
 const orders = ref<Order[]>([])
 const confirm = ref<boolean>(false)
 const deleteItemId = ref<number>(0)
@@ -33,6 +32,7 @@ const confirm2 = ref<boolean>(false)
 const drawer = ref<boolean>(true)
 const audio = ref([]);
 const origin = window.location.pathname
+const is = props.is
 
 const itemsToDo = computed(() => {
   if (selectedOrder.value.length) {
@@ -105,7 +105,6 @@ async function rollbackItem(item: Item) {
   } catch (error) {
     item.done = true
   }
-  // await getOrders()
 }
 
 async function deleteItemConfirm(item_id: number) {
@@ -123,7 +122,7 @@ async function deleteItem() {
 
 async function completeOrder() {
   await axios.CompleteOrder(selectedOrder.value[0].id || 0, {
-    event_id: event.value?.id || 0,
+    event_id: event?.id || 0,
     table_id: selectedOrder.value[0].table_id || 0,
     item_ids: selectedOrder.value[0].items?.map(i => i.id) || []
   })
@@ -139,7 +138,7 @@ async function completeOrder() {
 }
 
 async function getOrders() {
-  orders.value = await axios.GetOrdersInEvent(event.value?.id || 0, props.destinations)
+  orders.value = await axios.GetOrdersInEvent(event?.id || 0, props.destinations)
   calculateMinPassed()
   if (orders.value.length && !orders.value[0].done) {
     if (selectedOrder.value.length === 0) {
@@ -189,6 +188,57 @@ function calculateMinPassed() {
   })
 }
 
+function newOrderHandler(data: Order) {
+  data.items = data.items?.filter((i: Item) => parseInt(props.destinations) === i.destination_id)
+  if (data.items?.length) {
+    orders.value.push(data)
+    calculateMinPassed()
+    if (!selectedOrder.value.length) {
+      selectedOrder.value.push(data)
+    }
+
+    if (!data.items[0].done) {
+      snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
+      let audioToPlay = audio.value[Math.floor(Math.random() * audio.value.length)]
+      audioToPlay.play();
+    }
+  }
+}
+
+function orderCompletedHandler() {
+  getOrders()
+}
+
+function itemUpdatedHandler(data: Item) {
+  const _order = orders.value.find((o: Order) => o.id = data.order_id)
+  if (_order) {
+    const _item = _order.items.find((i: Item) => i.id === data.id)
+    if (_item) {
+      _item.done = data.done
+    }
+  }
+}
+
+function reloadTablehandler() {
+  getOrders()
+}
+
+function itemRemovedHandler(data: number) {
+  const order = orders.value.find((o: Order) => {
+    if (o.items.find((i: Item) => i.id === data)) {
+      return true
+    }
+  })
+  const _items = copy<Item[]>(order.items.filter((i: Item) => i.id !== data))
+  order.items = _items
+  if (_items.length === 0) {
+    if (order.id === selectedOrder.value[0].id) {
+      selectedOrder.value = []
+    }
+    orders.value = copy<Order[]>(orders.value.filter((o: Order) => o.id !== order.id))
+  }
+}
+
 onMounted(async () => {
   loading.value = true
   audio.value = [
@@ -199,78 +249,15 @@ onMounted(async () => {
     new Audio(fileAudio4),
   ]
   types.value = await axios.GetSubTypes()
-  event.value = await axios.GetOnGoingEvent()
-  if (event.value.id) {
+  if (event.id) {
     await getOrders()
+    is.emit('join', 'bartender')
 
-    is = io(window.location.origin, {
-      path: "/socket/socket.io"
-    })
-
-    is.on('connect', () => {
-      is.emit('join', 'bar')
-    })
-
-    is.on('disconnect', () => {
-
-    })
-
-    is.on('connect_error', (err: any) => {
-      snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
-      is.emit('end')
-    })
-
-    is.on('new-order', (data: Order) => {
-      data.items = data.items?.filter((i: Item) => parseInt(props.destinations) === i.destination_id)
-      if (data.items?.length) {
-        console.log(data)
-        orders.value.push(data)
-        calculateMinPassed()
-        if (!selectedOrder.value.length) {
-          selectedOrder.value.push(data)
-        }
-
-        if (!data.items[0].done) {
-          snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
-          let audioToPlay = audio.value[Math.floor(Math.random() * audio.value.length)]
-          audioToPlay.play();
-        }
-      }
-    })
-
-    is.on('order-completed', () => {
-      getOrders()
-    })
-
-    is.on('item-updated', (data: Item) => {
-      const _order = orders.value.find((o: Order) => o.id = data.order_id)
-      if (_order) {
-        const _item = _order.items.find((i: Item) => i.id === data.id)
-        if (_item) {
-          _item.done = data.done
-        }
-      }
-    })
-
-    is.on('reload-table', () => {
-      getOrders()
-    })
-
-    is.on('item-removed', (data: number) => {
-      const order = orders.value.find((o: Order) => {
-        if (o.items.find((i: Item) => i.id === data)) {
-          return true
-        }
-      })
-      const _items = copy<Item[]>(order.items.filter((i: Item) => i.id !== data))
-      order.items = _items
-      if (_items.length === 0) {
-        if (order.id === selectedOrder.value[0].id) {
-          selectedOrder.value = []
-        }
-        orders.value = copy<Order[]>(orders.value.filter((o: Order) => o.id !== order.id))
-      }
-    })
+    is.on('new-order', newOrderHandler)
+    is.on('order-completed', orderCompletedHandler)
+    is.on('item-updated', itemUpdatedHandler)
+    is.on('reload-table', reloadTablehandler)
+    is.on('item-removed', itemRemovedHandler)
 
     interval = window.setInterval(calculateMinPassed, 1000 * 60)
   }
@@ -280,7 +267,13 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.clearInterval(interval)
   if (is) {
-    is.emit('end')
+    is.emit('leave', 'bartender')
+
+    is.off('new-order', newOrderHandler)
+    is.off('order-completed', orderCompletedHandler)
+    is.off('item-updated', itemUpdatedHandler)
+    is.off('reload-table', reloadTablehandler)
+    is.off('item-removed', itemRemovedHandler)
   }
 })
 </script>
@@ -295,7 +288,8 @@ onBeforeUnmount(() => {
         :style="{ opacity: !order.done ? 'inherit' : 0.3 }">
         <v-list-item-title>
           <span :class="{ done: order.done }">Tavolo {{ order.table_name }}</span>
-          <v-btn variant="plain" v-if="!order.done && order.minPassed >= 0" :class="{ 'text-danger': order.minPassed >= minutetoalert, 'font-weight-bold': order.minPassed > 14}">
+          <v-btn variant="plain" v-if="!order.done && order.minPassed >= 0"
+            :class="{ 'text-danger': order.minPassed >= minutetoalert, 'font-weight-bold': order.minPassed > 14 }">
             {{ order.minPassed }} <span style="text-transform: lowercase;">m</span>
           </v-btn>
         </v-list-item-title>
@@ -316,7 +310,10 @@ onBeforeUnmount(() => {
     <v-container>
       <h3>{{ props.pagetitle }} <span v-if="selectedOrder.length"> - Tavolo {{ selectedOrder[0].table_name }}</span>
       </h3>
-      <v-chip>{{ selectedOrder[0].user.username }}</v-chip>
+      <v-chip v-if="selectedOrder.length">
+        <Avatar :user="selectedOrder[0].user" alt start></Avatar>
+        {{ selectedOrder[0].user.username }}
+      </v-chip>
     </v-container>
     <ItemList :quantitybefore="true" :showtype="true" subheader="DA FARE" v-model="itemsToDo" :shownote="true">
       <template v-slot:prequantity="slotProps">

@@ -9,7 +9,7 @@ masterTableRouter.get("/", authorizationMiddleware(Roles.admin), async (req: Req
         const result = await masterTableApi.getAll()
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -24,7 +24,7 @@ masterTableRouter.get("/:id", authorizationMiddleware([Roles.waiter, Roles.barte
             res.status(200).json(0)
         }
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -34,7 +34,7 @@ masterTableRouter.post("/", authorizationMiddleware(Roles.admin), async (req: Re
         const result = await masterTableApi.create(req.body)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })
@@ -44,7 +44,7 @@ masterTableRouter.put("/", authorizationMiddleware(Roles.admin), async (req: Req
         const result = await masterTableApi.update(req.body)
         res.status(200).json(result)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json(error)
     }
 })

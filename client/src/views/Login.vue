@@ -22,7 +22,7 @@ async function login() {
       await axios.Login(credentials.value.email, credentials.value.password)
       emit("login")
     } catch (error) {
-      console.log(error)
+      console.error(error)
     }
   }
 }
@@ -32,7 +32,7 @@ async function login() {
   <main>
     <v-container>
       <v-row justify="center">
-        <v-col sm="8" cols="12" lg="3">
+        <v-col sm="8" cols="12" lg="6" xl="4">
           <v-card>
             <v-card-text style="text-align: center;">
               <Logo></Logo>

@@ -23,7 +23,7 @@ async function reset() {
                 password: credentials.value.password
             } as Invitation)
         } catch (error) {
-            console.log(error)
+            console.error(error)
         }
     }
 }

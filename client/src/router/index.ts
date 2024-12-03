@@ -178,6 +178,12 @@ const router = createRouter({
         allowedRole: Roles.checkout
       }
     },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('@/views/Profile.vue'),
+      props: true
+    },
   ]
 })
 

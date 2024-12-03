@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onBeforeMount, onMounted } from 'vue';
-import { type IUser } from '@/stores'
-import { type Destination } from '../../../models/src';
+import { type Destination, type User } from '../../../models/src';
 import Axios from '@/services/client'
 import { Roles } from '@/services/utils';
 
@@ -37,7 +36,7 @@ const roles = ref<Role[]>([
 
 const emit = defineEmits(['login', 'reload'])
 
-const user = defineModel<IUser>()
+const user = defineModel<User>()
 
 const filteredRole = computed(() => {
   return roles.value.filter(r => user.value?.roles?.includes(r.role))

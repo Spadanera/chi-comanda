@@ -31,11 +31,19 @@ class TableApi {
             [table_name, table_id]
         ])
         SocketIOService.instance().sendMessage({
-            rooms: ["waiter", "bar"],
+            rooms: ["waiter", "bartender"],
             event: "reload-table",
             body: {}
         })
         return result
+    }
+
+    async insertDiscount(eventId: number, tableId: number, discount: number): Promise<number> {
+        return await db.executeInsert(`INSERT INTO items (
+                name, event_id, table_id, type, sub_type, price, done, paid, destination_id, icon
+            ) VALUES (
+                ?,?,?,?,?,?,?,?,?,?
+            )`, ['Sconto', eventId, tableId, 'Sconto', 'Sconto', discount * -1, true, true, 1, 'mdi-cart-percent'])
     }
 
     async getAvailableTable(eventId: number): Promise<MasterTable[]> {
@@ -163,14 +171,6 @@ class TableApi {
 
     async paySelectedItem(table_id: number, item_ids: number[]): Promise<number> {
         return await db.executeUpdate(`UPDATE items SET paid = TRUE WHERE table_id = ? AND id IN (${item_ids.join(',')})`, [table_id])
-    }
-
-    async insertDiscount(eventId: number, tableId: number, discount: number): Promise<number> {
-        return await db.executeInsert(`INSERT INTO items (
-                name, event_id, table_id, order_id, type, sub_type, price, done, paid, destination_id, icon
-            ) VALUES (
-                ?,?,?,?,?,?,?,?,?,?,?
-            )`, ['Sconto', eventId, tableId, 0, 'Sconto', 'Sconto', discount * -1, true, true, 1, 'mdi-cart-percent'])
     }
 
     async insertTransaction(input: InsertTransactionInput): Promise<number> {

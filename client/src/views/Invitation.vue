@@ -7,21 +7,37 @@ import { requiredRule, passwordMatchRule } from '@/services/utils';
 const props = defineProps(['token'])
 const axios: Axios = new Axios()
 const form = ref(null)
+const fileInput = ref<HTMLInputElement | null>(null)
+const files = ref()
 
 const credentials = ref({
   username: '',
   password: '',
   confirmPassword: '',
-  token: props.token
+  token: props.token,
+  avatar: ''
 } as Invitation)
+
+function handleFileChange() {
+  files.value = fileInput.value?.files
+}
 
 async function reset() {
   const { valid } = await form.value?.validate()
   if (valid) {
     try {
-      await axios.AcceptInvitation(credentials.value)
+      const formData = new FormData()
+      if (files.value && files.value.length) {
+        const file = files.value[0]
+        formData.append('avatar', file)
+      }
+      formData.append('username', credentials.value.username)
+      formData.append('password', credentials.value.password)
+      formData.append('confirmPassword', credentials.value.confirmPassword)
+      formData.append('token', credentials.value.token)
+      await axios.AcceptInvitation(formData)
     } catch (error) {
-      console.log(error)
+      console.error(error)
     }
   }
 }
@@ -31,7 +47,7 @@ async function reset() {
   <main>
     <v-container>
       <v-row justify="center">
-        <v-col sm="8" cols="12" lg="3">
+        <v-col sm="8" cols="12" lg="4" xl="4">
           <v-card>
             <v-card-text style="text-align: center;">
               <img alt="Chi Comanda" class="logo" src="@/assets/chicomanda.png" style="" width="240" height="240" />
@@ -40,8 +56,10 @@ async function reset() {
                   :rules="[requiredRule]"></v-text-field>
                 <v-text-field type="password" label="Password" v-model="credentials.password"
                   :rules="[requiredRule]"></v-text-field>
-                <v-text-field type="password" label="Conferma Password" :rules="[requiredRule, passwordMatchRule(credentials.password)]"
+                <v-text-field type="password" label="Conferma Password"
+                  :rules="[requiredRule, passwordMatchRule(credentials.password)]"
                   v-model="credentials.confirmPassword"></v-text-field>
+                <v-file-input @change="handleFileChange" label="Avatar" ref="fileInput" accept="image/*" show-size />
               </v-form>
             </v-card-text>
             <v-card-actions>

@@ -30,6 +30,14 @@ export interface Message {
   body?: any
 }
 
+export interface Broadcast extends Repository {
+  sender: User
+  event_id: number
+  message: string
+  dateTime?: Date
+  receivers: number[]
+}
+
 export interface Repository extends RowDataPacket {
 
 }
@@ -134,7 +142,8 @@ export interface User extends Repository {
   roles?: string[],
   status?: string,
   statusSwitch?: boolean,
-  creation_date?: string
+  creation_date?: string,
+  avatar?: any
 }
 
 export interface Role extends Repository {

@@ -11,7 +11,7 @@ class AuditApi {
             await db.executeUpdate('INSERT INTO audit (user_id, method, path, data, dateTime) VALUES (?,?,?,?,?)'
                 , [audit.user_id, audit.method, audit.path, audit.data, getCurrentDateTimeInItaly()])
         } catch (error: any) {
-            console.log("Error inserting audit", error.message)
+            console.error("Error inserting audit", error.message)
         }
     }
 
@@ -21,9 +21,8 @@ class AuditApi {
             sortBy = 'dateTime'
         }
         const offset = (page - 1) * itemsPerPage
-        console.log(offset)
         const data = await db.query(`
-            SELECT users.username, audit.method, audit.path, audit.dateTime, audit.data
+            SELECT users.avatar, users.username, audit.method, audit.path, audit.dateTime, audit.data
             FROM audit
             INNER JOIN users ON users.id = audit.user_id
             ORDER BY ${sortBy} ${sortDir}

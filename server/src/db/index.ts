@@ -34,7 +34,7 @@ class Database {
             return rows
         }
         catch (error: any) {
-            console.log("Error executing query: ", query, values)
+            console.error("Error executing query: ", query, values)
             throw new Error(error)
         }
         finally {
@@ -47,7 +47,6 @@ class Database {
     async queryOne<T extends RowDataPacket>(query: string, values?: any[]): Promise<T> {
         const result = await this.query<T>(query, this.safeNull(values))
         if (result.length) {
-            console.log(result)
             return result[0]
         }
         return {} as T
@@ -61,7 +60,7 @@ class Database {
             return result.affectedRows
         }
         catch (error: any) {
-            console.log("Error executing query: ", query, values)
+            console.error("Error executing query: ", query, values)
             throw new Error(error)
         }
         finally {

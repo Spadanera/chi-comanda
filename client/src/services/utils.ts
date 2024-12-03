@@ -104,9 +104,23 @@ export function sortTables(a: Table, b: Table): number {
 
 export const requiredRule = (value: any) => !!value || 'Inserire un valore'
 
+export const requireRuleArray = (value: any) => {
+    if (Array.isArray(value) && value.length === 0) {
+        return 'Selezionare un elemento';
+    }
+    return true;
+}
+
 export const positiveIntegerRule = (value: any) => {
     if (isNaN(parseFloat(value)) || !Number.isInteger(Number(value)) || Number(value) <= 0) {
         return 'Inserire un numero intero positivo';
+    }
+    return true;
+}
+
+export const fileRequiredRule = (value: any) => {
+    if (Array.isArray(value) && value.length === 0) {
+        return 'Selezionare un file';
     }
     return true;
 }

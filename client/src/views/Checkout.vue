@@ -1,22 +1,23 @@
 <script setup lang="ts">
-import { type Event, type Table, type Item, type SubType, type CompleteOrderInput, type MasterTable, type PaymentProvider } from "../../../models/src"
+import { type Table, type Item, type SubType, type CompleteOrderInput, type MasterTable, type User, type PaymentProvider } from "../../../models/src"
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"
 import Axios from '@/services/client'
-import { SnackbarStore, type IUser } from '@/stores'
+import { SnackbarStore } from '@/stores'
 import { copy, sortItem, sortTables } from "@/services/utils"
-import { io } from 'socket.io-client'
 import { RouterLink } from 'vue-router'
 import ItemList from "@/components/ItemList.vue"
 
+const props = defineProps(['is', 'event'])
+
 const axios = new Axios()
-var is: any
-const user = defineModel<IUser>()
+const is = props.is
+const event = props.event
+const user = defineModel<User>()
 const snackbarStore = SnackbarStore()
 
 const emit = defineEmits(['login', 'reload'])
 
 const loading = ref<boolean>(true)
-const event = ref<Event>()
 const tables = ref<Table[]>([])
 const selectedTable = ref<Table[]>([])
 const confirm = ref<boolean>(false)
@@ -115,7 +116,7 @@ async function completeTable() {
       return
     }
     const discountAmout = tableTotalOrder.value - realPaid.value
-    await axios.InsertDiscount(event.value.id, selectedTable.value[0].id, discountAmout)
+    await axios.InsertDiscount(event.id, selectedTable.value[0].id, discountAmout)
   }
   await axios.CompleteTable(selectedTable.value[0].id)
   await getTables()
@@ -135,8 +136,8 @@ async function paySelectedItem() {
     if (!realPaid.value) {
       return
     }
-    discountAmout = itemToBePaidBill.value - realPaid.value
-    await axios.InsertDiscount(event.value.id, selectedTable.value[0].id, discountAmout)
+    const discountAmout = itemToBePaidBill.value - realPaid.value
+    await axios.InsertDiscount(event.id, selectedTable.value[0].id, discountAmout)
   }
   await axios.PaySelectedItem(selectedTable.value[0].id, itemToBePaid.value)
   await getTables()
@@ -146,7 +147,7 @@ async function paySelectedItem() {
 }
 
 async function getTables() {
-  const _tables = await axios.GetTablesInEvent(event.value?.id || 0)
+  const _tables = await axios.GetTablesInEvent(event?.id || 0)
   _tables.forEach((t: Table) => {
     if (!t.items) {
       t.items = []
@@ -166,7 +167,7 @@ async function getTables() {
 }
 
 async function changeTableSheet() {
-  freeTables.value = await axios.GetFreeTables(event.value.id)
+  freeTables.value = await axios.GetFreeTables(event.id)
   tableSheet.value = true
 }
 
@@ -180,83 +181,65 @@ async function pay(partial: boolean) {
   partialPaid.value = partial
   discount.value = false
   realPaid.value = partial ? itemToBePaidBill.value : tableTotalOrder.value
-  if (!partial && realPaid.value === 0) {
-    await completeTable()
+  dialogPay.value = true
+}
+
+function newOrderHandler(data: Table) {
+  const table = tables.value.find((t: Table) => t.id === data.id)
+  if (table) {
+    data.items.forEach((item: Item) => {
+      if (!table.items.find((i: Item) => i.id === item.id)) {
+        table.items.push(item)
+      }
+    });
   }
   else {
-    paymentProviders.value = await axios.GetPaymentProviders()
-    paymentProvider.value = paymentProviders.value[0].id
-  
-    dialogPay.value = true
+    tables.value.push(data)
+    snackbarStore.show("Nuovo tavolo")
+  }
+}
+
+function itemRemovedHandler(data: number) {
+  const table = tables.value.find((o: Table) => {
+    if (o.items.find((i: Item) => i.id === data)) {
+      return true
+    }
+  })
+  const _items = copy<Item[]>(table.items.filter((i: Item) => i.id !== data))
+  table.items = _items
+}
+
+function orderCompletedHandler(data: CompleteOrderInput) {
+  const table = tables.value.find((t: Table) => t.id === data.table_id)
+  if (table) {
+    table.items.forEach((i: Item) => {
+      if (data.order_id === i.order_id) {
+        i.done = true
+      }
+    })
   }
 }
 
 onMounted(async () => {
   loading.value = true
   types.value = await axios.GetSubTypes()
-  event.value = await axios.GetOnGoingEvent()
-  if (event.value.id) {
+  if (event.id) {
     await getTables()
 
-    is = io(window.location.origin, {
-      path: "/socket/socket.io"
-    })
-
-    is.on('connect', () => {
-      is.emit('join', 'checkout')
-    })
-
-    is.on('disconnect', () => {
-
-    })
-
-    is.on('connect_error', (err: any) => {
-      snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
-      is.emit('end')
-    })
-
-    is.on('new-order', (data: Table) => {
-      const table = tables.value.find((t: Table) => t.id === data.id)
-      if (table) {
-        data.items.forEach((item: Item) => {
-          if (!table.items.find((i: Item) => i.id === item.id)) {
-            table.items.push(item)
-          }
-        });
-      }
-      else {
-        tables.value.push(data)
-        snackbarStore.show("Nuovo tavolo")
-      }
-    })
-
-    is.on('item-removed', (data: number) => {
-      const table = tables.value.find((o: Table) => {
-        if (o.items.find((i: Item) => i.id === data)) {
-          return true
-        }
-      })
-      const _items = copy<Item[]>(table.items.filter((i: Item) => i.id !== data))
-      table.items = _items
-    })
-
-    is.on('order-completed', (data: CompleteOrderInput) => {
-      const table = tables.value.find((t: Table) => t.id === data.table_id)
-      if (table) {
-        table.items.forEach((i: Item) => {
-          if (data.order_id === i.order_id) {
-            i.done = true
-          }
-        })
-      }
-    })
+    is.emit('join', 'checkout')
+    is.on('new-order', newOrderHandler)
+    is.on('item-removed', itemRemovedHandler)
+    is.on('order-completed', orderCompletedHandler)
   }
   loading.value = false
 })
 
 onBeforeUnmount(() => {
   if (is) {
-    is.emit('end')
+    is.emit('leave', 'checkout')
+    is.off('new-order', newOrderHandler)
+    is.off('item-removed', itemRemovedHandler)
+    is.off('order-completed', orderCompletedHandler)
   }
 })
 </script>
