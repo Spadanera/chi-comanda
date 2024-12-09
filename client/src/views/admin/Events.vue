@@ -57,13 +57,22 @@ async function openDialog(event?: Event) {
 async function upsertEvent() {
   const { valid } = await form.value?.validate()
   if (valid) {
-    dialogEvent.value.date.setHours(dialogEvent.value.date.getHours() + 4)
-    if (!dialogEvent.value.id) {
-      await axios.CreateEvent(dialogEvent.value)
+    const _event = copy<Event>(dialogEvent.value)
+    if (typeof _event.date === 'string') {
+      _event.date = new Date(_event.date)
+    }
+    _event.date.setHours(_event.date.getHours() + 4)
+    _event.users = _event.users.map((u:User) => {
+      return {
+        id: u.id
+      } as User
+    })
+    if (!_event.id) {
+      await axios.CreateEvent(_event)
       snackbarStore.show('Evento creato con successo', 3000, 'bottom', 'success')
     }
     else {
-      await axios.EditEvent(dialogEvent.value)
+      await axios.EditEvent(_event)
       snackbarStore.show('Evento modificato con successo', 3000, 'bottom', 'success')
     }
     await load()
