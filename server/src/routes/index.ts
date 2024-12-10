@@ -15,6 +15,7 @@ import subTypesRouter from "./sub-types-router"
 import auditRouter from "./audit-router"
 import profileRouter from "./profile-router"
 import broadcastRouter from "./broadcast-router"
+import userPublicRouter from "./users-public-routes"
 
 const apiRouter: Router = router()
 
@@ -32,6 +33,7 @@ apiRouter.use("/master-tables", masterTableRouter)
 apiRouter.use("/audit", authorizationMiddleware(Roles.superuser), auditRouter)
 apiRouter.use("/profile", profileRouter) 
 apiRouter.use("/broadcast", broadcastRouter) 
+apiRouter.use("/users-public", userPublicRouter)
 apiRouter.use("/public", publicApiRouter)
 
 export default apiRouter
