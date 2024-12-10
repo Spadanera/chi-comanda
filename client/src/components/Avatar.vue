@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { User } from '../../../models/src';
+import { onMounted } from 'vue';
+import type { User } from '../../../models/src'
+import Axios from '@/services/client'
+const axios = new Axios()
 
 const props = defineProps<{
     user: User,
@@ -7,6 +10,10 @@ const props = defineProps<{
     alt?: boolean,
     start?: boolean
 }>()
+
+onMounted(async () => {
+    props.user.avatar = await axios.GetUserAvatar(props.user.id)
+})
 </script>
 
 <template>

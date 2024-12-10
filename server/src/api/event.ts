@@ -17,8 +17,7 @@ class EventAPI {
             (
                 SELECT JSON_ARRAYAGG(JSON_OBJECT(
                     'id', users.id, 
-                    'username', users.username,
-                    'avatar', users.avatar
+                    'username', users.username
                 ))
                 FROM users 
                 INNER JOIN user_event ON user_event.user_id = users.id
@@ -118,8 +117,8 @@ class EventAPI {
         const eventId = await db.executeInsert('INSERT INTO events (name, date, status, menu_id) VALUES (?,?,?,?)', [event.name, (event.date + "").split('T')[0], 'PLANNED', event.menu_id])
         if (event.users) {
             await db.executeTransaction(
-                event.users.map((u:User) => 'INSERT INTO user_event (user_id, event_id) VALUES (?,?)'),
-                event.users.map((u:User) => [u.id, eventId])
+                event.users.map((u: User) => 'INSERT INTO user_event (user_id, event_id) VALUES (?,?)'),
+                event.users.map((u: User) => [u.id, eventId])
             )
         }
         return eventId
@@ -148,12 +147,12 @@ class EventAPI {
                 [
                     'UPDATE events SET name = ?, date = ?, menu_id = ? WHERE id = ?',
                     'DELETE FROM user_event WHERE event_id = ?',
-                    ...event.users.map((u:User) => 'INSERT INTO user_event (user_id, event_id) VALUES (?,?)')
+                    ...event.users.map((u: User) => 'INSERT INTO user_event (user_id, event_id) VALUES (?,?)')
                 ],
                 [
                     [event.name, (event.date + "").split('T')[0], event.menu_id, event.id],
                     [event.id],
-                    ...event.users.map((u:User) => [u.id, event.id])
+                    ...event.users.map((u: User) => [u.id, event.id])
                 ]
             )
             SocketIOService.instance().sendMessage({

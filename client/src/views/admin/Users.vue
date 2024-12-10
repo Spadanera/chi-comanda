@@ -86,6 +86,7 @@ function updateUserStatusConfirm(user: User) {
 async function updateUserStatus() {
   const _user = copy<User>(selectedUser.value)
   _user.status = _user.status === 'ACTIVE' ? 'BLOCKED' : 'ACTIVE'
+  delete _user.avatar
   await axios.UpdateUser(_user)
   await getUsers()
   confirm.value = false
@@ -111,7 +112,11 @@ async function updateUserRole() {
     else {
       selectedUser.value.roles = selectedRoles.value
     }
-    await axios.UpdateUserRoles(selectedUser.value)
+    const _user: User = {
+      id: selectedUser.value.id,
+      roles: selectedUser.value.roles
+    } as User
+    await axios.UpdateUserRoles(_user)
     await getUsers()
     dialog.value = false
   }

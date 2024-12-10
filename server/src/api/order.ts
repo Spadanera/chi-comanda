@@ -45,8 +45,7 @@ class OrderAPI {
                     (
 					    SELECT JSON_OBJECT(
                             'id', users.id, 
-                            'username', users.username,
-                            'avatar', users.avatar
+                            'username', users.username
                         )
                         FROM users 
                         WHERE users.id = orders.user_id

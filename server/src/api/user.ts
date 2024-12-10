@@ -62,6 +62,10 @@ class UserApi {
         return await db.query('SELECT * FROM users WHERE ID = ?', [id])
     }
 
+    async getAvatar(id: number): Promise<string> {
+        return (await db.queryOne<User>('SELECT avatar FROM users WHERE ID = ?', [id])).avatar
+    }
+
     async delete(id: number): Promise<void> {
         await db.executeTransaction([
             'DELETE FROM user_role WHERE user_id = ?',

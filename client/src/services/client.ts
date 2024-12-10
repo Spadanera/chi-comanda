@@ -295,6 +295,10 @@ export default class Axios {
         return await this.get(`/audit?page=${page}&itemsperpage=${itemsPerPage}&sortby=${sortBy}&sortdir=${sortDir}`)
     }
 
+    async GetUserAvatar(id: number) {
+        return await this.get(`/users-public/avatar/${id}`)
+    }
+
     async GetProfile(id: number): Promise<User> {
         return await this.getSingle<User>(`/profile/${id}`)
     }
