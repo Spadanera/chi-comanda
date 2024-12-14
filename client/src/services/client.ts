@@ -118,6 +118,13 @@ export default class Axios {
     }
 
     async SetEventStatus(event: Event): Promise<number> {
+        if (event.users) {
+            event.users = event.users.map((u: User) => {
+                return {
+                    id: u.id
+                } as User
+            })
+        }
         return await this.put(`/events/setstatus/${event.id}`, event)
     }
 
