@@ -129,7 +129,15 @@ class EventAPI {
         if (tables.length) {
             throw new Error("Can't delete the event. Tables connected")
         }
-        return await db.executeUpdate('DELETE FROM events WHERE id = ?', [id])
+        return await db.executeTransaction(
+            [
+                'DELETE FROM user_event WHERE event_id = ?',
+                'DELETE FROM events WHERE id = ?'
+            ]
+            , [
+                [id],
+                [id]
+            ])
     }
 
     async updateStatus(event: Event): Promise<number> {

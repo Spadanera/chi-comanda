@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { type Event } from "../../../models/src"
+import { type Event, type User } from "../../../models/src"
 import Axios from '@/services/client'
 import { copy } from "@/services/utils"
 import EventDetails from '@/components/EventDetails.vue'
@@ -44,6 +44,13 @@ async function deleteEvent() {
 async function setEventStatus(event: Event, status: string) {
     const _event = copy<Event>(event)
     _event.status = status
+    if (_event.users) {
+        _event.users = _event.users.map((u:User) => {
+            return {
+                id: u.id
+            } as User
+        })
+    }
     await axios.SetEventStatus(_event)
     emit('reload', true)
 }
