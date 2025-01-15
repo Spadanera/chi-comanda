@@ -7,7 +7,7 @@ import { UserStore, SnackbarStore, ProgressStore, ThemeStore } from '@/stores'
 import { type User, type Event, type Broadcast } from '../../models/src'
 import Avatar from './components/Avatar.vue'
 import { io, Socket } from 'socket.io-client'
-import { requiredRule, requireRuleArray } from './services/utils'
+import { requiredRule, requireRuleArray, copy } from './services/utils'
 import bendingString from '@/assets/bending-string.mp3'
 
 const messageSound = new Audio(bendingString)
@@ -64,11 +64,13 @@ function closeMessageDialogReceived() {
 async function sendMessage() {
   const { valid } = await messageForm.value?.validate()
   if (valid && event.value.id) {
+    const sender = copy<User>(user.value as User)
+    delete sender.avatar
     const broad = {
       event_id: event.value.id,
       message: message.value,
       receivers: messageReceivers.value,
-      sender: (user.value as User)
+      sender: sender
     } as Broadcast
     await axios.BroadcastMessage(broad)
     messageDialog.value = false
@@ -181,9 +183,9 @@ onBeforeUnmount(() => {
           </template>
 
           <v-list>
-            <v-list-item>
+            <v-list-item v-if="event.id">
               <v-list-item-title>
-                <v-btn @click="broadcastListDialog = true" v-if="event.id" variant="text">
+                <v-btn @click="broadcastListDialog = true" variant="text">
                   MESSAGGI
                   <template v-slot:prepend>
                     <v-icon>mdi-message-bulleted</v-icon>
