@@ -15,7 +15,7 @@ const items = defineModel({ default: [] })
                 <v-list-item-subtitle v-if="item.sub_type !== 'Sconto' && !props.showtype">
                     <span :class="{ done: done }"><span v-if="item.type">{{ item.type }} - </span>{{ item.sub_type }}</span>
                 </v-list-item-subtitle>
-                <v-list-item-subtitle v-if="props.shownote && item.note" style="font-weight: bold; font-size: 400; color: red; opacity: 1; height: 20px;">
+                <v-list-item-subtitle v-if="props.shownote && item.note" style="font-weight: bold; font-size: 400; color: red; opacity: 1; line-clamp: none;">
                     <span :class="{ done: done }">{{ item.note }}</span>
                 </v-list-item-subtitle>
                 <v-list-item-subtitle v-if="item.sub_type === 'Sconto'">

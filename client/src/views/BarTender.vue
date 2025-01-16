@@ -249,7 +249,7 @@ onMounted(async () => {
     new Audio(fileAudio4),
   ]
   types.value = await axios.GetSubTypes()
-  if (event.id) {
+  if (event && event.id) {
     await getOrders()
     is.emit('join', 'bartender')
 
