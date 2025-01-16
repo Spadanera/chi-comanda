@@ -27,7 +27,7 @@ async function reloadTableHandlerasync() {
 }
 
 onMounted(async () => {
-  if (event.id) {
+  if (event && event.id) {
     tables.value = await axios.GetAvailableTables(event.id)
     is.emit('join', 'waiter')
 

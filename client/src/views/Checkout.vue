@@ -221,7 +221,7 @@ function orderCompletedHandler(data: CompleteOrderInput) {
 onMounted(async () => {
   loading.value = true
   types.value = await axios.GetSubTypes()
-  if (event.id) {
+  if (event && event.id) {
     await getTables()
 
     is.emit('join', 'checkout')

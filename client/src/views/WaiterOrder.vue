@@ -194,6 +194,9 @@ onMounted(async () => {
             <v-list-item-title>
               {{ item.name }}
             </v-list-item-title>
+            <v-list-item-subtitle>
+              {{ item.sub_type }}
+            </v-list-item-subtitle>
             <template v-slot:append>
               <v-btn icon="mdi-star-circle" v-if="item.sub_type === 'Cocktail'" variant="text"
                 @click="openNoteDialog(item, true)"></v-btn>
