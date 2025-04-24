@@ -49,6 +49,7 @@ export interface Invitation extends User {
 export interface Audit extends Repository {
   id?: number,
   user_id?: number,
+  username?: string,
   method?: string,
   path?: string,
   data?: any,

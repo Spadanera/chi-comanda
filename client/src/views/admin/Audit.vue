@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Audit } from "../../../../models/src";
+import { type Audit, type User } from "../../../../models/src";
 import { onMounted, ref } from 'vue';
 import Axios from '@/services/client'
 import Avatar from "@/components/Avatar.vue";
@@ -17,7 +17,6 @@ const headers = [
     { title: 'Metodo', key: 'method' },
     { title: 'Percorso', key: 'path' },
     { title: 'Date e Ora', key: 'dateTime' },
-    { title: 'Dati', key: 'data' },
 ]
 
 async function loadItems(input: { page: number, itemsPerPage: number, sortBy: { key: string, order: 'asc' | 'desc' }[] }) {
@@ -49,15 +48,37 @@ function formatTimestamp(timestamp: string) {
     return formattedDateTime;
 }
 
+function formatJson(json: string) {
+    try {
+        return JSON.stringify(json, null, 2);
+    } catch (error) {
+        console.error("Invalid JSON:", error);
+        return json;
+    }
+}
+
 onMounted(() => {
 })
 </script>
 <template>
     <v-data-table-server class="audit-page" v-model:items-per-page="itemsPerPage" :headers="headers"
-        :items="serverItems" :items-length="totalItems" :loading="loading" :search="search" item-value="name"
-        @update:options="loadItems" fixed-header fixed-footer height="100%">
+        :items="serverItems" :items-length="totalItems" :loading="loading" :search="search" item.key="id"
+        @update:options="loadItems" fixed-header fixed-footer height="100%" show-expand>
+        <template v-slot:item.data-table-expand="{ internalItem, isExpanded, toggleExpand }">
+            <v-btn :append-icon="isExpanded(internalItem) ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                :text="isExpanded(internalItem) ? 'Chiudi' : 'Maggiori informazioni'" class="text-none" color="medium-emphasis"
+                size="small" variant="text" slim @click="toggleExpand(internalItem)"></v-btn>
+        </template>
+
+        <template v-slot:expanded-row="{ columns, item }">
+            <tr>
+                <td :colspan="columns.length" class="py-2">
+                    <pre>{{ formatJson(item.data) }}</pre>
+                </td>
+            </tr>
+        </template>
         <template v-slot:item.username="{ item }">
-            <Avatar :user="item" alt start size="small"></Avatar>
+            <Avatar :user="{ id: item.user_id, username: item.username } as User" alt start size="small"></Avatar>
             {{ item.username }}
         </template>
         <template v-slot:item.dateTime="{ item }">

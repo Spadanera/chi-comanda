@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Table, type Item, type SubType, type CompleteOrderInput, type MasterTable, type User } from "../../../models/src"
-import { ref, onMounted, computed, onBeforeUnmount } from "vue"
+import { ref, onMounted, computed, onUnmounted } from "vue"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { copy, sortItem, sortTables } from "@/services/utils"
@@ -232,7 +232,7 @@ onMounted(async () => {
   loading.value = false
 })
 
-onBeforeUnmount(() => {
+onUnmounted(() => {
   if (is) {
     is.emit('leave', 'checkout')
     is.off('new-order', newOrderHandler)

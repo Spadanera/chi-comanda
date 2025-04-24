@@ -34,6 +34,7 @@ const socketConnected = ref<boolean>(false)
 
 function login() {
   user.value = userStore.user
+  getOnGoingEvent()
   router.push("/")
 }
 

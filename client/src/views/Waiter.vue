@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type AvailableTable } from "../../../models/src"
-import { ref, onMounted, computed, onBeforeUnmount } from "vue"
+import { ref, onMounted, computed, onUnmounted } from "vue"
 import Axios from '@/services/client'
 import { sortAvailableTable } from "@/services/utils"
 import { SnackbarStore } from '@/stores'
@@ -36,7 +36,7 @@ onMounted(async () => {
   loading.value = false
 })
 
-onBeforeUnmount(() => {
+onUnmounted(() => {
   if (is) {
     is.emit('leave', 'waiter')
     is.off('reload-table', reloadTableHandlerasync)

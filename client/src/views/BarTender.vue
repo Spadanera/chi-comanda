@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Order, type Item, type SubType, type User } from "../../../models/src"
-import { ref, onMounted, computed, onBeforeUnmount } from "vue"
+import { ref, onMounted, computed, onUnmounted } from "vue"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { groupItems, copy, sortOrder } from "@/services/utils"
@@ -189,8 +189,9 @@ function calculateMinPassed() {
 }
 
 function newOrderHandler(data: Order) {
+  console.log('new order', data);
   data.items = data.items?.filter((i: Item) => parseInt(props.destinations) === i.destination_id)
-  if (data.items?.length) {
+  if (data.items?.length && orders.value.find((o: Order) => o.id === data.id) === undefined) {
     orders.value.push(data)
     calculateMinPassed()
     if (!selectedOrder.value.length) {
@@ -252,6 +253,7 @@ onMounted(async () => {
   if (event && event.id) {
     await getOrders()
     is.emit('join', 'bartender')
+    console.log('join bartender');
 
     is.on('new-order', newOrderHandler)
     is.on('order-completed', orderCompletedHandler)
@@ -264,9 +266,11 @@ onMounted(async () => {
   loading.value = false
 })
 
-onBeforeUnmount(() => {
+onUnmounted(() => {
   window.clearInterval(interval)
+  console.log('unmounted bartender');
   if (is) {
+    console.log('leave bartender');
     is.emit('leave', 'bartender')
 
     is.off('new-order', newOrderHandler)
