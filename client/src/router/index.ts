@@ -148,7 +148,7 @@ const router = createRouter({
       component: () => import('@/views/BarTender.vue'),
       props: true,
       meta: {
-        allowedRole: Roles.bartender
+        allowedRole: [Roles.bartender, Roles.waiter]
       }
     },
     {
