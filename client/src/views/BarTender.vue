@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { type Order, type Item, type SubType, type User } from "../../../models/src"
 import { ref, onMounted, computed, onUnmounted } from "vue"
+import { Roles } from '@/services/utils'
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { groupItems, copy, sortOrder } from "@/services/utils"
@@ -30,7 +31,8 @@ const deleteItemId = ref<number>(0)
 const selectedOrder = ref<Order[]>([])
 const confirm2 = ref<boolean>(false)
 const drawer = ref<boolean>(true)
-const audio = ref([]);
+const audio = ref([])
+const readonly = ref(false)
 const origin = window.location.pathname
 const is = props.is
 
@@ -242,6 +244,7 @@ function itemRemovedHandler(data: number) {
 
 onMounted(async () => {
   loading.value = true
+  readonly.value = !user.value?.roles?.includes(Roles.bartender) && !user.value?.roles?.includes(Roles.superuser)
   audio.value = [
     new Audio(fileAudio),
     new Audio(fileAudio1),
@@ -253,7 +256,6 @@ onMounted(async () => {
   if (event && event.id) {
     await getOrders()
     is.emit('join', 'bartender')
-    console.log('join bartender');
 
     is.on('new-order', newOrderHandler)
     is.on('order-completed', orderCompletedHandler)
@@ -270,7 +272,6 @@ onUnmounted(() => {
   window.clearInterval(interval)
   console.log('unmounted bartender');
   if (is) {
-    console.log('leave bartender');
     is.emit('leave', 'bartender')
 
     is.off('new-order', newOrderHandler)
@@ -321,11 +322,11 @@ onUnmounted(() => {
     </v-container>
     <ItemList :quantitybefore="true" :showtype="true" subheader="DA FARE" v-model="itemsToDo" :shownote="true">
       <template v-slot:prequantity="slotProps">
-        <v-btn icon="mdi-delete" v-if="!slotProps.item.paid" @click="deleteItemConfirm(slotProps.item.id)"
+        <v-btn icon="mdi-delete" v-if="!slotProps.item.paid && !readonly" @click="deleteItemConfirm(slotProps.item.id)"
           variant="plain"></v-btn>
-        <v-btn variant="plain" v-if="slotProps.item.quantity > 1" icon="mdi-check-all"
+        <v-btn variant="plain" v-if="slotProps.item.quantity > 1 && !readonly" icon="mdi-check-all"
           @click="doneItem(slotProps.item.grouped_ids, true)"></v-btn>
-        <v-btn variant="plain" icon="mdi-check" @click="doneItem(slotProps.item.grouped_ids)"></v-btn>
+        <v-btn variant="plain" v-if="!readonly" icon="mdi-check" @click="doneItem(slotProps.item.grouped_ids)"></v-btn>
       </template>
       <template v-slot:postquantity="slotProps">
       </template>
@@ -333,7 +334,7 @@ onUnmounted(() => {
     <v-divider></v-divider>
     <ItemList :quantitybefore="true" subheader="COMPLETATI" v-model="itemsDone" :done="true" shownote>
       <template v-slot:postquantity="slotProps">
-        <v-btn variant="plain" icon="mdi-arrow-up-thin" @click="rollbackItem(slotProps.item)"></v-btn>
+        <v-btn variant="plain" v-if="!readonly" icon="mdi-arrow-up-thin" @click="rollbackItem(slotProps.item)"></v-btn>
       </template>
     </ItemList>
     <v-bottom-navigation>
@@ -348,7 +349,7 @@ onUnmounted(() => {
       </template>
       <v-spacer></v-spacer>
       <v-btn class="show-xs" variant="plain" @click="confirm = true"
-        v-if="selectedOrder.length && !selectedOrder[0].done">
+        v-if="selectedOrder.length && !selectedOrder[0].done && !readonly">
         COMPLETA
       </v-btn>
       <v-btn class="hide-xs" icon="mdi-check-all" variant="plain" @click="confirm = true"
