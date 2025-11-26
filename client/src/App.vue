@@ -108,9 +108,6 @@ function getLocalTime(dateString: string) {
 }
 
 onBeforeMount(async () => {
-  await userStore.checkAuthentication()
-  user.value = userStore.user
-
   is.value = io(window.location.origin, {
     path: "/socket/socket.io"
   })
@@ -126,17 +123,21 @@ onBeforeMount(async () => {
 })
 
 onMounted(async () => {
-  await getOnGoingEvent()
+  await userStore.checkAuthentication()
+  user.value = userStore.user
+  if (user.value?.id) {
+    await getOnGoingEvent()
+  }
 
-  is.value.emit('join', 'main')
+  is.value?.emit('join', 'main')
 
-  is.value.on('reload', async () => {
+  is.value?.on('reload', async () => {
     if (user.value?.id) {
       getOnGoingEvent()
     }
   })
 
-  is.value.on('broadcast', async (data: Broadcast) => {
+  is.value?.on('broadcast', async (data: Broadcast) => {
     if (data.receivers.includes(user.value?.id)) {
       data.dateTime = new Date()
       broadcasts.value.unshift(data)
@@ -184,7 +185,7 @@ onBeforeUnmount(() => {
           </template>
 
           <v-list>
-            <v-list-item v-if="event.id">
+            <v-list-item v-if="event && event.id">
               <v-list-item-title>
                 <v-btn @click="broadcastListDialog = true" variant="text">
                   MESSAGGI
