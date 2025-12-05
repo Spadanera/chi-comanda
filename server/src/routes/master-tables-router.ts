@@ -4,6 +4,28 @@ import { authorizationMiddleware, Roles } from "../utils/helper"
 
 const masterTableRouter: Router = router()
 
+// layout section
+
+masterTableRouter.get("/layout", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
+    try {
+        const result = await masterTableApi.getLayout()
+        res.status(200).json(result)
+    } catch (error) {
+        console.error(error)
+        res.status(500).json(error)
+    }
+})
+
+masterTableRouter.put("/layout", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
+    try {
+        const result = await masterTableApi.saveLayout(req.body)
+        res.status(200).json(result)
+    } catch (error) {
+        console.error(error)
+        res.status(500).json(error)
+    }
+})
+
 masterTableRouter.get("/", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
         const result = await masterTableApi.getAll()

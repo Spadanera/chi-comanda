@@ -80,7 +80,7 @@ const router = createRouter({
         {
           path: "tables",
           name: "tables",
-          component: () => import('@/views/admin/Tables.vue'),
+          component: () => import('@/views/admin/Tables-v2.vue'),
           props: true,
           meta: {
             allowedRole: Roles.admin

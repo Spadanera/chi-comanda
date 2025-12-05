@@ -12,6 +12,7 @@ import '@mdi/font/css/materialdesignicons.css'
 import 'vuetify/styles'
 import Confirm from './components/Confirm.vue'
 import { it } from 'vuetify/locale'
+import VueKonva from 'vue-konva';
 
 const vuetify = createVuetify({
     components,
@@ -33,6 +34,7 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 app.use(vuetify)
+app.use(VueKonva);
 app.component("Confirm", Confirm)
 
 app.mount('#app')

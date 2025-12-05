@@ -147,6 +147,21 @@ CREATE TABLE `user_event` (
   `event_id` integer
 );
 
+CREATE TABLE `railway`.`rooms` (
+  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
+  `name` VARCHAR(255) NULL,
+  `width` DOUBLE NULL,
+  `height` DOUBLE NULL
+);
+
+ALTER TABLE `railway`.`master_tables` 
+ADD COLUMN `room_id` VARCHAR(45) NULL AFTER `status`,
+ADD COLUMN `x` DOUBLE NULL AFTER `room_id`,
+ADD COLUMN `y` DOUBLE NULL AFTER `x`,
+ADD COLUMN `width` DOUBLE NULL AFTER `y`,
+ADD COLUMN `height` DOUBLE NULL AFTER `width`,
+ADD COLUMN `shape` VARCHAR(45) NULL AFTER `height`;
+
 ALTER TABLE `user_role` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 ALTER TABLE `user_role` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`);
 ALTER TABLE `tables` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
@@ -196,6 +211,9 @@ INSERT INTO `sub_types` (name, type_id, icon) VALUES ('Special', 2, 'mdi-french-
 INSERT INTO `sub_types` (name, type_id, icon) VALUES ('Piadina', 2, 'mdi-taco');
 INSERT INTO `sub_types` (name, type_id, icon) VALUES ('Panino', 2, 'mdi-food-hot-dog');
 
+INSERT INTO `rooms` (name, width, height) VALUES ('Sala 1', 4, 15);
+INSERT INTO `rooms` (name, width, height) VALUES ('Sala 2', 5, 12);
+
 INSERT INTO master_tables (name, default_seats, status) VALUES ('1', 6, 'ACTIVE');
 INSERT INTO master_tables (name, default_seats, status) VALUES ('2', 6, 'ACTIVE');
 INSERT INTO master_tables (name, default_seats, status) VALUES ('3', 6, 'ACTIVE');
@@ -217,6 +235,9 @@ INSERT INTO master_tables (name, default_seats, status) VALUES ('Bara', 8, 'ACTI
 INSERT INTO master_tables (name, default_seats, status) VALUES ('Cor 1', 8, 'ACTIVE');
 INSERT INTO master_tables (name, default_seats, status) VALUES ('Cor 2', 8, 'ACTIVE');
 INSERT INTO master_tables (name, default_seats, status) VALUES ('Cor 3', 8, 'ACTIVE');
+
+UPDATE `master_tables` SET room_id = 2, height = 100, width = 100, x = 50, y = 50;
+UPDATE `master_tables` SET room_id = 1 WHERE name in ('Bagni Dx','Bagni Sx','Noire','Bara','Cor 1','Cor 2','Cor 3');
 
 INSERT INTO destinations (name, status, minute_to_alert) VALUES ('Bar Ludoteca', 'ACTIVE', 15);
 INSERT INTO destinations (name, status, minute_to_alert) VALUES ('Cucina Libra', 'ACTIVE', 15);

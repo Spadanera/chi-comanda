@@ -1,5 +1,7 @@
 import { RowDataPacket } from "mysql2"
 
+export type shape = 'rect' | 'circle'
+
 export interface Type extends RowDataPacket {
   id?: number
   name: string
@@ -133,6 +135,31 @@ export interface MasterTable extends Repository {
   default_seats?: number
   status?: string
   inUse?: boolean
+  room_id?: number
+  x: number
+  y: number
+  width: number
+  height: number
+  shape: shape
+}
+
+export interface Room extends Repository {
+  id: number
+  name: string
+  width: number
+  height: number
+  tables: Table[]
+}
+
+export interface RestaurantLayout extends Repository {
+  rooms: Room[],
+  tables: MasterTable[]
+}
+
+export interface TableUpdatePayload {
+  id: number;
+  x: number;
+  y: number;
 }
 
 export interface User extends Repository {
