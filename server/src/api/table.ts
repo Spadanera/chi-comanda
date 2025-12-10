@@ -11,14 +11,14 @@ class TableApi {
             SELECT 
             master_tables.id table_id, 
             master_tables.name table_name
-            FROM master_tables
+            FROM master_tables_event master_tables
             WHERE id NOT IN (
 				SELECT master_table_id from table_master_table
 				WHERE table_id IN (
 					SELECT id FROM tables WHERE event_id = ? AND status = 'ACTIVE'
 				)
-            )
-            `, [eventId])
+            ) AND master_tables.event_id = ?
+            `, [eventId, eventId])
     }
 
     async changeTable(table_id: number, master_table_id: number): Promise<number> {
@@ -64,8 +64,8 @@ class TableApi {
                 FROM tables
                 INNER JOIN table_master_table ON tables.id = table_master_table.table_id
                 WHERE tables.status = 'ACTIVE' AND tables.event_id = ?) available_tables
-            RIGHT JOIN master_tables ON available_tables.master_table_id = master_tables.id
-            WHERE master_tables.status = 'ACTIVE'
+            RIGHT JOIN master_tables_event master_tables ON available_tables.master_table_id = master_tables.id
+            WHERE master_tables.status = 'ACTIVE' AND master_tables.event_id = ?
             UNION
             SELECT 
                 tables.id table_id, 
@@ -83,7 +83,7 @@ class TableApi {
             FROM tables
             WHERE tables.status = 'ACTIVE' AND event_id = ?
             AND id NOT IN (SELECT table_id FROM table_master_table)
-            ORDER BY table_name DESC, master_table_name`, [eventId, eventId])
+            ORDER BY table_name DESC, master_table_name`, [eventId, eventId, eventId])
     }
 
     async getActiveTable(eventId: number): Promise<Table[]> {

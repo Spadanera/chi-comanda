@@ -36,6 +36,14 @@ CREATE TABLE `master_tables` (
   `status`varchar(255)
 );
 
+CREATE TABLE `master_tables_event` (
+  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
+  `name` varchar(255),
+  `default_seats` integer,
+  `status`varchar(255),
+  `event_id` integer
+);
+
 CREATE TABLE `tables` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `event_id` integer,
@@ -182,6 +190,7 @@ ALTER TABLE `user_event` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 ALTER TABLE `user_event` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
 ALTER TABLE `orders` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 ALTER TABLE `tables` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
+ALTER TABLE `master_tables_event` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
 
 INSERT INTO users (email, username, status) VALUES ('ziro84@gmail.com', 'Superuser', 'ACTIVE');
 

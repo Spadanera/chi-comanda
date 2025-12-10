@@ -141,7 +141,35 @@ class EventAPI {
     }
 
     async updateStatus(event: Event): Promise<number> {
-        const result = await db.executeUpdate('UPDATE events SET status = ? WHERE id = ?', [event.status, event.id])
+        let result
+        if (event.status === 'ONGOING') {
+            result = await db.executeTransaction(
+            [
+                'DELETE FROM master_tables_event WHERE event_id = ?',
+                'UPDATE events SET status = ? WHERE id = ?',
+                `INSERT INTO master_tables_event
+                    SELECT *, ${event.id}
+                    FROM master_tables`
+            ], 
+            [
+                [event.id],
+                [event.status, event.id],
+                []
+            ])
+        } else if (event.status === 'CLOSED') {
+            result = await db.executeTransaction(
+            [
+                'DELETE FROM master_tables_event WHERE event_id = ?',
+                'UPDATE events SET status = ? WHERE id = ?'
+            ], 
+            [
+                [event.id],
+                [event.status, event.id]
+            ])
+        }
+        else {
+            result = await db.executeUpdate('UPDATE events SET status = ? WHERE id = ?', [event.status, event.id])
+        }
         SocketIOService.instance().sendMessage({
             room: "main",
             event: "reload"
