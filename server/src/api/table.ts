@@ -1,5 +1,5 @@
 import db from "../db"
-import { MasterTable, Table } from "../../../models/src"
+import { MasterTable, RestaurantLayout, Room, Table } from "../../../models/src"
 import { SocketIOService } from "../socket"
 
 class TableApi {
@@ -51,9 +51,15 @@ class TableApi {
             available_tables.id table_id, 
             available_tables.name table_name, 
             master_tables.id master_table_id, 
-            master_tables.name master_table_name, 
+            master_tables.name master_table_name,
             master_tables.default_seats,
-            available_tables.event_id
+            IFNULL(master_tables.room_id, 0) room_id,
+            master_tables.x,
+            master_tables.y,
+            master_tables.width,
+            master_tables.height,
+            available_tables.event_id,
+            IF(available_tables.event_id IS NULL, 0, 1) inUse
             FROM (SELECT tables.id, tables.name, table_master_table.master_table_id, tables.event_id
                 FROM tables
                 INNER JOIN table_master_table ON tables.id = table_master_table.table_id
@@ -67,7 +73,13 @@ class TableApi {
                 null master_table_id, 
                 null master_table_name,
                 null default_seats,
-                tables.event_id
+                null room_id,
+                null x,
+                null y,
+                null width,
+                null height,
+                tables.event_id,
+                1 inUse
             FROM tables
             WHERE tables.status = 'ACTIVE' AND event_id = ?
             AND id NOT IN (SELECT table_id FROM table_master_table)
@@ -111,6 +123,14 @@ class TableApi {
             WHERE event_id = ?
             ORDER BY paid, tables.id
             `, [eventId])
+    }
+
+    async getLayout(eventId: number): Promise<RestaurantLayout> {
+        const rooms = await db.query<Room>('SELECT * FROM rooms')
+        return {
+            rooms,
+            tables: await this.getAvailableTable(eventId)
+        } as RestaurantLayout
     }
 
     async getAll(): Promise<Table[]> {

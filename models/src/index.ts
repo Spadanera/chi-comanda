@@ -88,7 +88,7 @@ export interface Table extends Repository {
   discuntItems?: Item[]
 }
 
-export interface AvailableTable extends Repository {
+export interface AvailableTable extends MasterTable {
   table_id?: number
   table_name?: string
   master_table_id?: number
@@ -135,7 +135,7 @@ export interface MasterTable extends Repository {
   default_seats?: number
   status?: string
   inUse?: boolean
-  room_id?: number
+  room_id: number
   x: number
   y: number
   width: number

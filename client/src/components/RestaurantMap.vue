@@ -144,7 +144,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="viewport-scroller bg-grey-lighten-3">
+  <div class="viewport-scroller bg-grey-lighten-3" style="max-height: calc(100vh - 112px);">
     <div class="canvas-centering-wrapper">
       <div v-if="room" class="room-scaler" :style="{
         width: (room.width * 100 * zoom) + 'px',
@@ -164,7 +164,8 @@ onUnmounted(() => {
               'elevation-6 ring-active': selectedTableId === table.id,
               'elevation-2': selectedTableId !== table.id,
               'cursor-grab': editable,
-              'cursor-default': !editable
+              'cursor-pointer': !editable,
+              'in-use': table.inUse
             }" :style="{
               top: table.y + 'px',
               left: table.x + 'px',
@@ -173,7 +174,7 @@ onUnmounted(() => {
             }" @mousedown.stop="startDrag($event, table)" @touchstart.stop="startTouchDrag($event, table)"
             @click.stop="handleTableClick(table)">
             <div class="text-center unselectable">
-              <div class="text-subtitle-2 font-weight-bold" style="font-size: 0.8rem">{{ table.name }}</div>
+              <div class="text-subtitle-2 font-weight-bold" style="font-size: 0.8rem">{{ table.name || table.table_name || table.master_table_name }}</div>
               <div class="text-caption" style="font-size: 0.6rem">{{ table.default_seats }}p</div>
             </div>
           </div>
@@ -239,7 +240,11 @@ onUnmounted(() => {
   border: 2px solid #424242;
   user-select: none;
   transition: box-shadow 0.1s;
-  touch-action: none
+  touch-action: none;
+}
+
+.in-use {
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgb(126 118 118 / 20%) 10px, rgba(255, 255, 255, 0.2) 20px);
 }
 
 .table-item.cursor-grab:active {

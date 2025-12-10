@@ -2,17 +2,18 @@
 import { ref, computed, reactive, onMounted } from 'vue'
 import type { MasterTable, RestaurantLayout, Room, TableUpdatePayload } from '../../../../models/src'
 import RestaurantMap from '../../components/RestaurantMap.vue'
+import RoomTabs from '../../components/RoomTabs.vue'
+import RoomDialog from '@/components/RoomDialog.vue'
+import TableDialog from '@/components/TableDialog.vue'
+
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
 
 const axios = new Axios()
 const snackbarStore = SnackbarStore()
 
-// --- DATA ---
 const rooms = ref<Room[]>([])
-
 const tables = ref<MasterTable[]>([])
-
 const editing = ref<boolean>(false)
 
 const activeRoomId = ref<number>()
@@ -20,47 +21,44 @@ const selectedTableId = ref<number>(0)
 const zoomLevel = ref(1)
 const deleteConfirmDialog = ref(false)
 
-// --- DIALOG STATE ---
 const roomDialog = ref(false)
 const isEditingRoom = ref(false)
-const newTable = ref<MasterTable>(null)
-const roomForm = reactive({ name: '', width: 10, height: 8 } as Room)
-
 const tableDialog = ref(false)
-const tableForm = reactive<MasterTable>({
+
+const tempRoom = reactive<Room>({ name: '', width: 10, height: 8 } as Room)
+const tempTable = reactive<MasterTable>({
     name: '', default_seats: 0, x: 0, y: 0, width: 0, height: 0, shape: 'rect'
 } as MasterTable)
 
-// --- COMPUTED ---
 const currentRoom = computed(() => rooms.value.find(r => r.id === activeRoomId.value))
-const roomTables = computed(() => tables.value.filter(t => t.room_id === activeRoomId.value))
 const roomSelected = computed(() => activeRoomId.value && rooms.value.length)
 
-// --- ROOM LOGIC ---
 const openRoomDialog = (room?: Room) => {
     if (room) {
         isEditingRoom.value = true
-        Object.assign(roomForm, room)
+        Object.assign(tempRoom, room)
     } else {
         isEditingRoom.value = false
-        roomForm.id = Date.now() * -1
-        roomForm.name = ''
-        roomForm.width = 10
-        roomForm.height = 8
+        Object.assign(tempRoom, {
+            id: Date.now() * -1,
+            name: '',
+            width: 10,
+            height: 8
+        })
     }
     roomDialog.value = true
 }
 
-const saveRoom = () => {
+const onSaveRoom = (roomData: Room) => {
     if (isEditingRoom.value) {
-        const index = rooms.value.findIndex(r => r.id === roomForm.id)
-        if (index !== -1) rooms.value[index] = { ...roomForm }
+        const index = rooms.value.findIndex(r => r.id === roomData.id)
+        if (index !== -1) rooms.value[index] = roomData
     } else {
-        rooms.value.push({ ...roomForm })
-        activeRoomId.value = roomForm.id
+        rooms.value.push(roomData)
+        activeRoomId.value = roomData.id
     }
-    roomDialog.value = false
     editing.value = true
+    roomDialog.value = false
 }
 
 const deleteRoom = () => {
@@ -73,15 +71,14 @@ const deleteRoom = () => {
     editing.value = true
 }
 
-// --- TABLE LOGIC ---
 const addTable = () => {
-    editing.value = true
     if (!activeRoomId.value) return
+    editing.value = true
 
-    newTable.value = {
+    const newTableData: MasterTable = {
         id: Date.now() * -1,
         room_id: activeRoomId.value,
-        name: `T${roomTables.value.length + 1}`,
+        name: ``,
         default_seats: 4,
         x: 50,
         y: 50,
@@ -91,14 +88,33 @@ const addTable = () => {
         status: 'ACTIVE'
     } as MasterTable
 
-    selectedTableId.value = newTable.value.id
-    onTableClick(newTable.value)
+    onTableClick(newTableData)
 }
 
 const onTableClick = (table: MasterTable) => {
     selectedTableId.value = table.id
-    Object.assign(tableForm, table)
+    Object.assign(tempTable, table)
     tableDialog.value = true
+}
+
+const onSaveTable = (tableData: MasterTable) => {
+    editing.value = true
+    const index = tables.value.findIndex(t => t.id === tableData.id)
+    if (index !== -1) {
+        tables.value[index] = tableData
+    } else {
+        tables.value.push(tableData)
+        // Aggiorniamo l'ID selezionato se era un nuovo tavolo
+        selectedTableId.value = tableData.id
+    }
+    tableDialog.value = false
+}
+
+const onDeleteTable = (tableId: number) => {
+    tables.value = tables.value.filter(t => t.id !== tableId)
+    tableDialog.value = false
+    selectedTableId.value = 0
+    editing.value = true
 }
 
 const onTableUpdate = (payload: TableUpdatePayload) => {
@@ -110,25 +126,6 @@ const onTableUpdate = (payload: TableUpdatePayload) => {
     }
 }
 
-const saveTableConfig = () => {
-    editing.value = true
-    const index = tables.value.findIndex(t => t.id === tableForm.id)
-    if (index !== -1) {
-        tables.value[index] = { ...tableForm }
-    }
-    else {
-        tables.value.push(newTable.value)
-    }
-    tableDialog.value = false
-}
-
-const deleteTable = () => {
-    tables.value = tables.value.filter(t => t.id !== tableForm.id)
-    tableDialog.value = false
-    selectedTableId.value = null
-    editing.value = true
-}
-
 const saveLayout = () => {
     axios.SaveLayout({ rooms: rooms.value, tables: tables.value } as RestaurantLayout)
     editing.value = false
@@ -137,8 +134,8 @@ const saveLayout = () => {
 
 const getLayout = async () => {
     const layout = await axios.GetLayout()
-    Object.assign(rooms.value, layout.rooms)
-    Object.assign(tables.value, layout.tables)
+    rooms.value = layout.rooms || []
+    tables.value = layout.tables || []
     editing.value = false
 }
 
@@ -156,8 +153,7 @@ onMounted(async () => {
             <v-col cols="12" class="d-flex flex-column relative overflow-hidden fill-height">
                 <v-toolbar density="compact" color="white" class="border-b pr-4" style="z-index: 10">
                     <v-btn-group class="ml-1" variant="text">
-                        <v-btn prepend-icon="mdi-plus" @click="openRoomDialog()">Nuovo Stanza</v-btn>
-                        <v-btn v-if="roomSelected" prepend-icon="mdi-plus" @click="addTable()">Nuovo Tavolo</v-btn>
+                        <v-btn prepend-icon="mdi-plus" @click="openRoomDialog()">Nuova Stanza</v-btn>
                     </v-btn-group>
 
                     <div v-if="roomSelected" class="d-flex align-center" style="width: 200px">
@@ -174,21 +170,8 @@ onMounted(async () => {
                         @click="saveLayout">Salva</v-btn>
 
                     <template v-slot:extension>
-                        <div class="d-flex align-center w-100">
-
-                            <v-tabs v-model="activeRoomId" align-tabs="start" class="flex-grow-1">
-                                <v-tab v-for="room in rooms" :key="room.id" :text="room.name" :value="room.id"></v-tab>
-                            </v-tabs>
-
-                            <div class="d-flex px-2 ga-2" v-if="roomSelected">
-                                <v-btn icon="mdi-pencil" size="small" variant="text"
-                                    @click="openRoomDialog(rooms.find(r => r.id === activeRoomId))"
-                                    title="Modifica"></v-btn>
-                                <v-btn icon="mdi-delete" size="small" variant="text" color="error"
-                                    @click="deleteConfirmDialog = true" title="Elimina"></v-btn>
-                            </div>
-
-                        </div>
+                        <RoomTabs v-model="activeRoomId" :editing="true" :rooms="rooms" @edit="openRoomDialog($event)"
+                            @delete="deleteConfirmDialog = true" />
                     </template>
                 </v-toolbar>
 
@@ -197,63 +180,12 @@ onMounted(async () => {
                     @update-table="onTableUpdate" />
             </v-col>
         </v-row>
+        <v-fab @click="addTable()" v-if="roomSelected" icon="mdi-plus" app
+            style="position: fixed; right: 15px; bottom: 15px;" location="bottom right"></v-fab>
+        <RoomDialog v-model="roomDialog" :room="tempRoom" :is-editing="isEditingRoom" @save="onSaveRoom" />
 
-        <v-dialog v-model="roomDialog" max-width="400">
-            <v-card>
-                <v-card-title>{{ isEditingRoom ? 'Modifica Sala' : 'Nuova Sala' }}</v-card-title>
-                <v-card-text>
-                    <v-form @submit.prevent="saveRoom">
-                        <v-text-field v-model="roomForm.name" label="Nome Sala" autofocus></v-text-field>
-                        <v-row>
-                            <v-col cols="6">
-                                <v-text-field v-model.number="roomForm.width" type="number" suffix="m"
-                                    label="Larghezza"></v-text-field>
-                            </v-col>
-                            <v-col cols="6">
-                                <v-text-field v-model.number="roomForm.height" type="number" suffix="m"
-                                    label="Altezza"></v-text-field>
-                            </v-col>
-                        </v-row>
-                    </v-form>
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer></v-spacer>
-                    <v-btn color="grey" variant="text" @click="roomDialog = false">Annulla</v-btn>
-                    <v-btn color="primary" @click="saveRoom">Salva</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
+        <TableDialog v-model="tableDialog" :table="tempTable" @save="onSaveTable" @delete="onDeleteTable" />
 
-        <v-dialog v-model="tableDialog" max-width="400">
-            <v-card>
-                <v-card-title>Configura Tavolo</v-card-title>
-                <v-card-text>
-                    <v-text-field v-model="tableForm.name" label="Etichetta"></v-text-field>
-                    <v-text-field v-model.number="tableForm.default_seats" type="number" label="Posti"></v-text-field>
-                    <v-row>
-                        <v-col cols="6">
-                            <v-text-field v-model.number="tableForm.width" type="number" suffix="cm"
-                                label="Larghezza"></v-text-field>
-                        </v-col>
-                        <v-col cols="6">
-                            <v-text-field v-model.number="tableForm.height" type="number" suffix="cm"
-                                label="Altezza"></v-text-field>
-                        </v-col>
-                        <v-select label="Forma"
-                            :items="[{ title: 'Rettangolare', value: 'rect' }, { title: 'Ovale', value: 'circle' }]"
-                            v-model="tableForm.shape">
-
-                        </v-select>
-                    </v-row>
-                </v-card-text>
-                <v-card-actions>
-                    <v-btn color="error" variant="text" @click="deleteTable">Elimina</v-btn>
-                    <v-spacer></v-spacer>
-                    <v-btn color="grey" variant="text" @click="tableDialog = false">Annulla</v-btn>
-                    <v-btn color="primary" @click="saveTableConfig">OK</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
         <Confirm v-model="deleteConfirmDialog">
             <template v-slot:action>
                 <v-btn text="Conferma" color="red" variant="plain" @click="deleteRoom"></v-btn>

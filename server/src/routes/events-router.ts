@@ -102,6 +102,16 @@ eventsRouter.get("/:id/tables/available", authorizationMiddleware([Roles.waiter,
     }
 })
 
+eventsRouter.get("/:id/tables/layout", authorizationMiddleware([Roles.waiter, Roles.bartender, Roles.checkout]), async (req: Request, res: Response) => {
+    try {
+        const result = await tableApi.getLayout(+req.params.id)
+        res.status(200).json(result)
+    } catch (error) {
+        console.error(error)
+        res.status(500).json(error)
+    }
+})
+
 eventsRouter.get("/:id/tables/free", authorizationMiddleware(Roles.checkout), async (req: Request, res: Response) => {
     try {
         const result = await tableApi.getFreeTable(+req.params.id)

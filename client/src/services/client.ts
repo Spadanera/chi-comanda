@@ -140,6 +140,10 @@ export default class Axios {
         return await this.get<AvailableTable>(`/events/${event_id}/tables/available`)
     }
 
+    async GetWaiterLayout(event_id: number): Promise<RestaurantLayout> {
+        return await this.getSingle<RestaurantLayout>(`/events/${event_id}/tables/layout`)
+    }
+
     async GetFreeTables(event_id: number): Promise<AvailableTable[]> {
         return await this.get<AvailableTable>(`/events/${event_id}/tables/free`)
     }

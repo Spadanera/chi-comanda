@@ -151,7 +151,8 @@ CREATE TABLE `railway`.`rooms` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `name` VARCHAR(255) NULL,
   `width` DOUBLE NULL,
-  `height` DOUBLE NULL
+  `height` DOUBLE NULL,
+  `status` VARCHAR(255) NULL
 );
 
 ALTER TABLE `railway`.`master_tables` 
@@ -236,7 +237,7 @@ INSERT INTO master_tables (name, default_seats, status) VALUES ('Cor 1', 8, 'ACT
 INSERT INTO master_tables (name, default_seats, status) VALUES ('Cor 2', 8, 'ACTIVE');
 INSERT INTO master_tables (name, default_seats, status) VALUES ('Cor 3', 8, 'ACTIVE');
 
-UPDATE `master_tables` SET room_id = 2, height = 100, width = 100, x = 50, y = 50;
+UPDATE `master_tables` SET room_id = 2, height = 100, width = 100, x = 50, y = 50, shape = 'rect';
 UPDATE `master_tables` SET room_id = 1 WHERE name in ('Bagni Dx','Bagni Sx','Noire','Bara','Cor 1','Cor 2','Cor 3');
 
 INSERT INTO destinations (name, status, minute_to_alert) VALUES ('Bar Ludoteca', 'ACTIVE', 15);
