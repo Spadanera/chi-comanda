@@ -20,6 +20,26 @@ ADD COLUMN `shape` VARCHAR(45) NULL AFTER `height`;
 
 ALTER TABLE `master_tables` ADD FOREIGN KEY (`room_id`) REFERENCES `rooms` (`id`);
 
+CREATE TABLE `master_tables_event` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `master_table_id` int DEFAULT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `default_seats` int DEFAULT NULL,
+  `status` varchar(255) DEFAULT NULL,
+  `room_id` int DEFAULT NULL,
+  `x` double DEFAULT NULL,
+  `y` double DEFAULT NULL,
+  `width` double DEFAULT NULL,
+  `height` double DEFAULT NULL,
+  `shape` varchar(45) DEFAULT NULL,
+  `event_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_UNIQUE` (`id`),
+  KEY `master_tables_event_ibfk_1` (`event_id`),
+  CONSTRAINT `master_tables_event_ibfk_1` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`)
+);
+
+
 DROP TABLE table_master_table;
 
 CREATE TABLE `table_master_table` (
@@ -37,8 +57,30 @@ CREATE TABLE `table_master_table` (
 INSERT INTO `rooms` (name, width, height) VALUES ('Sala 1', 4, 15);
 INSERT INTO `rooms` (name, width, height) VALUES ('Sala 2', 5, 12);
 
-UPDATE `master_tables` SET room_id = 2, height = 100, width = 100, x = 50, y = 50, shape = 'rect';
-UPDATE `master_tables` SET room_id = 1 WHERE name in ('Bagni Dx','Bagni Sx','Noire','Bara','Cor 1','Cor 2','Cor 3');
+TRUNCATE TABLE master_tables;
+
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Tav. 3/4',4,'ACTIVE',2,200,1000,100,100,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Tav. 2',4,'ACTIVE',2,45,850,100,100,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Tav. 3',4,'ACTIVE',2,45,1000,100,100,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Tav. 4',4,'ACTIVE',2,355,1000,100,100,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Tav. 5',6,'ACTIVE',2,310,815,150,100,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Tav. 6',6,'ACTIVE',2,310,655,150,100,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Tav. 7',6,'ACTIVE',2,310,495,150,100,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Tav. 8',6,'ACTIVE',2,310,340,150,100,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Tav. 9',6,'ACTIVE',2,310,190,150,100,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Tav. 10',6,'ACTIVE',2,45,190,150,100,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Tav. 11',6,'ACTIVE',2,45,340,150,100,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Palco Dx',4,'ACTIVE',2,360,25,100,100,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Palco Centro',4,'ACTIVE',2,205,25,100,100,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Palco Sx',4,'ACTIVE',2,50,25,100,100,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Bagni',8,'ACTIVE',1,25,30,200,200,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Fronte Spine',4,'ACTIVE',1,290,305,80,80,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Noire',8,'ACTIVE',1,20,500,100,100,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Bara',8,'ACTIVE',1,255,760,100,200,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Cor 1',4,'ACTIVE',1,225,490,150,80,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Cor 2',4,'ACTIVE',1,225,620,150,80,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Cor 3',2,'ACTIVE',1,30,675,80,80,'rect');
+INSERT INTO master_tables (name, default_seats, status, room_id, x, y, width, height, shape) VALUES ('Tav. 1',8,'ACTIVE',2,45,620,100,200,'rect');
 
 
 SET SQL_SAFE_UPDATES = 1;
