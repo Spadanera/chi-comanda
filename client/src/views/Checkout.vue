@@ -11,7 +11,6 @@ const props = defineProps(['is', 'event'])
 
 const axios = new Axios()
 const is = props.is
-const event = props.event
 const user = defineModel<User>()
 const snackbarStore = SnackbarStore()
 
@@ -115,7 +114,7 @@ async function completeTable() {
       return
     }
     const discountAmout = tableTotalOrder.value - realPaid.value
-    await axios.InsertDiscount(event.id, selectedTable.value[0].id, discountAmout)
+    await axios.InsertDiscount(props.event.id, selectedTable.value[0].id, discountAmout)
   }
   await axios.CompleteTable(selectedTable.value[0].id)
   await getTables()
@@ -135,7 +134,7 @@ async function paySelectedItem() {
       return
     }
     const discountAmout = itemToBePaidBill.value - realPaid.value
-    await axios.InsertDiscount(event.id, selectedTable.value[0].id, discountAmout)
+    await axios.InsertDiscount(props.event.id, selectedTable.value[0].id, discountAmout)
   }
   await axios.PaySelectedItem(selectedTable.value[0].id, itemToBePaid.value)
   await getTables()
@@ -145,7 +144,7 @@ async function paySelectedItem() {
 }
 
 async function getTables() {
-  const _tables = await axios.GetTablesInEvent(event?.id || 0)
+  const _tables = await axios.GetTablesInEvent(props.event?.id || 0)
   _tables.forEach((t: Table) => {
     if (!t.items) {
       t.items = []
@@ -165,7 +164,7 @@ async function getTables() {
 }
 
 async function changeTableSheet() {
-  freeTables.value = await axios.GetFreeTables(event.id)
+  freeTables.value = await axios.GetFreeTables(props.event.id)
   tableSheet.value = true
 }
 
@@ -221,7 +220,7 @@ function orderCompletedHandler(data: CompleteOrderInput) {
 onMounted(async () => {
   loading.value = true
   types.value = await axios.GetSubTypes()
-  if (event && event.id) {
+  if (props.event && props.event.id) {
     await getTables()
 
     is.emit('join', 'checkout')
@@ -243,7 +242,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <v-navigation-drawer v-if="event?.id" v-model="drawer" mobile-breakpoint="sm">
+  <v-navigation-drawer v-if="props.event?.id" v-model="drawer" mobile-breakpoint="sm">
     <RouterLink to="/waiter?origin=/checkout">
       <v-btn style="margin-top: 8px; margin-left: 15px;">Nuovo Ordine</v-btn>
     </RouterLink>
@@ -262,7 +261,7 @@ onUnmounted(() => {
     </v-list>
   </v-navigation-drawer>
   <v-skeleton-loader type="card" v-if="loading"></v-skeleton-loader>
-  <v-container v-else-if="!event?.id">
+  <v-container v-else-if="!props.event?.id">
     <h3>Cassa</h3>
     <p>Nessun evento attivo</p>
   </v-container>

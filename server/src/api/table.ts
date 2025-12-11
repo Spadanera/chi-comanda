@@ -1,5 +1,5 @@
 import db from "../db"
-import { MasterTable, Table } from "../../../models/src"
+import { MasterTable, RestaurantLayout, Room, Table } from "../../../models/src"
 import { SocketIOService } from "../socket"
 
 class TableApi {
@@ -11,14 +11,14 @@ class TableApi {
             SELECT 
             master_tables.id table_id, 
             master_tables.name table_name
-            FROM master_tables
+            FROM master_tables_event master_tables
             WHERE id NOT IN (
 				SELECT master_table_id from table_master_table
 				WHERE table_id IN (
 					SELECT id FROM tables WHERE event_id = ? AND status = 'ACTIVE'
 				)
-            )
-            `, [eventId])
+            ) AND master_tables.event_id = ?
+            `, [eventId, eventId])
     }
 
     async changeTable(table_id: number, master_table_id: number): Promise<number> {
@@ -50,28 +50,44 @@ class TableApi {
         return await db.query(`SELECT 
             available_tables.id table_id, 
             available_tables.name table_name, 
-            master_tables.id master_table_id, 
-            master_tables.name master_table_name, 
+            master_tables.id master_table_id,
+            master_tables.id id, 
+            master_tables.name master_table_name,
             master_tables.default_seats,
-            available_tables.event_id
+            IFNULL(master_tables.room_id, 0) room_id,
+            master_tables.x,
+            master_tables.y,
+            master_tables.width,
+            master_tables.height,
+            master_tables.shape,
+            available_tables.event_id,
+            IF(available_tables.id IS NULL, 0, 1) inUse
             FROM (SELECT tables.id, tables.name, table_master_table.master_table_id, tables.event_id
                 FROM tables
                 INNER JOIN table_master_table ON tables.id = table_master_table.table_id
                 WHERE tables.status = 'ACTIVE' AND tables.event_id = ?) available_tables
-            RIGHT JOIN master_tables ON available_tables.master_table_id = master_tables.id
-            WHERE master_tables.status = 'ACTIVE'
+            RIGHT JOIN master_tables_event master_tables ON available_tables.master_table_id = master_tables.id
+            WHERE master_tables.status = 'ACTIVE' AND master_tables.event_id = ?
             UNION
             SELECT 
                 tables.id table_id, 
                 tables.name table_name, 
                 null master_table_id, 
-                null master_table_name,
+                null id, 
+                tables.name master_table_name,
                 null default_seats,
-                tables.event_id
+                0 room_id,
+                null x,
+                null y,
+                null width,
+                null height,
+                null shape,
+                tables.event_id,
+                1 inUse
             FROM tables
             WHERE tables.status = 'ACTIVE' AND event_id = ?
             AND id NOT IN (SELECT table_id FROM table_master_table)
-            ORDER BY table_name DESC, master_table_name`, [eventId, eventId])
+            ORDER BY table_name DESC, master_table_name`, [eventId, eventId, eventId])
     }
 
     async getActiveTable(eventId: number): Promise<Table[]> {
@@ -111,6 +127,35 @@ class TableApi {
             WHERE event_id = ?
             ORDER BY paid, tables.id
             `, [eventId])
+    }
+
+    async getLayout(eventId: number): Promise<RestaurantLayout> {
+        const rooms = await db.query<Room>('SELECT * FROM rooms WHERE status = ?', ['ACTIVE'])
+        return {
+            rooms,
+            tables: await this.getAvailableTable(eventId)
+        } as RestaurantLayout
+    }
+
+    async saveLayout(layout: RestaurantLayout, event_id: number): Promise<number> {
+        let transactionQueries: [string] = ['UPDATE master_tables_event SET status = ? WHERE event_id = ?']
+        let transactionParams: [any[]] = [['DELETED', event_id]]
+        layout.tables.filter(t => layout.rooms.map(r => r.id).includes(t.room_id)).forEach(async t => {
+            const params = [t.default_seats, 'ACTIVE', t.room_id, t.x, t.y, t.width, t.height, t.shape, event_id]
+            if (t.id !== undefined && t.id < 0) {
+                transactionQueries.push(`INSERT INTO master_tables_event 
+                    (name, default_seats, status, room_id, x, y, width, height, shape, event_id) VALUES (?,?,?,?,?,?,?,?,?,?)`)
+                transactionParams.push([t.name,...params])
+            } else {
+                transactionQueries.push(`UPDATE master_tables_event SET name = ?, default_seats = ?, status = ?, room_id = ?, x = ?, y = ?, width = ?, height = ?, shape = ? 
+                    WHERE event_id = ? AND id = ?`)
+                transactionParams.push([t.master_table_name,...params, t.id])
+            }
+        })
+
+        await db.executeTransaction(transactionQueries, transactionParams)
+
+        return 1
     }
 
     async getAll(): Promise<Table[]> {

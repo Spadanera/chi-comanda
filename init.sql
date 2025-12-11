@@ -36,6 +36,26 @@ CREATE TABLE `master_tables` (
   `status`varchar(255)
 );
 
+CREATE TABLE `master_tables_event` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `master_table_id` int DEFAULT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `default_seats` int DEFAULT NULL,
+  `status` varchar(255) DEFAULT NULL,
+  `room_id` int DEFAULT NULL,
+  `x` double DEFAULT NULL,
+  `y` double DEFAULT NULL,
+  `width` double DEFAULT NULL,
+  `height` double DEFAULT NULL,
+  `shape` varchar(45) DEFAULT NULL,
+  `event_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_UNIQUE` (`id`),
+  KEY `master_tables_event_ibfk_1` (`event_id`),
+  CONSTRAINT `master_tables_event_ibfk_1` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`)
+);
+
+
 CREATE TABLE `tables` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `event_id` integer,
@@ -46,9 +66,14 @@ CREATE TABLE `tables` (
 );
 
 CREATE TABLE `table_master_table` (
-  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
-  `table_id` integer,
-  `master_table_id` integer
+  `id` int NOT NULL AUTO_INCREMENT,
+  `table_id` int DEFAULT NULL,
+  `master_table_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`),
+  KEY `table_id` (`table_id`),
+  CONSTRAINT `table_master_table_ibfk_1` FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`),
+  CONSTRAINT `table_master_table_ibfk_2` FOREIGN KEY (`id`) REFERENCES `master_tables_event` (`id`)
 );
 
 CREATE TABLE `events` (
@@ -147,6 +172,22 @@ CREATE TABLE `user_event` (
   `event_id` integer
 );
 
+CREATE TABLE `railway`.`rooms` (
+  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
+  `name` VARCHAR(255) NULL,
+  `width` DOUBLE NULL,
+  `height` DOUBLE NULL,
+  `status` VARCHAR(255) NULL
+);
+
+ALTER TABLE `railway`.`master_tables` 
+ADD COLUMN `room_id` VARCHAR(45) NULL AFTER `status`,
+ADD COLUMN `x` DOUBLE NULL AFTER `room_id`,
+ADD COLUMN `y` DOUBLE NULL AFTER `x`,
+ADD COLUMN `width` DOUBLE NULL AFTER `y`,
+ADD COLUMN `height` DOUBLE NULL AFTER `width`,
+ADD COLUMN `shape` VARCHAR(45) NULL AFTER `height`;
+
 ALTER TABLE `user_role` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 ALTER TABLE `user_role` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`);
 ALTER TABLE `tables` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
@@ -196,6 +237,9 @@ INSERT INTO `sub_types` (name, type_id, icon) VALUES ('Special', 2, 'mdi-french-
 INSERT INTO `sub_types` (name, type_id, icon) VALUES ('Piadina', 2, 'mdi-taco');
 INSERT INTO `sub_types` (name, type_id, icon) VALUES ('Panino', 2, 'mdi-food-hot-dog');
 
+INSERT INTO `rooms` (name, width, height) VALUES ('Sala 1', 4, 15);
+INSERT INTO `rooms` (name, width, height) VALUES ('Sala 2', 5, 12);
+
 INSERT INTO master_tables (name, default_seats, status) VALUES ('1', 6, 'ACTIVE');
 INSERT INTO master_tables (name, default_seats, status) VALUES ('2', 6, 'ACTIVE');
 INSERT INTO master_tables (name, default_seats, status) VALUES ('3', 6, 'ACTIVE');
@@ -217,6 +261,9 @@ INSERT INTO master_tables (name, default_seats, status) VALUES ('Bara', 8, 'ACTI
 INSERT INTO master_tables (name, default_seats, status) VALUES ('Cor 1', 8, 'ACTIVE');
 INSERT INTO master_tables (name, default_seats, status) VALUES ('Cor 2', 8, 'ACTIVE');
 INSERT INTO master_tables (name, default_seats, status) VALUES ('Cor 3', 8, 'ACTIVE');
+
+UPDATE `master_tables` SET room_id = 2, height = 100, width = 100, x = 50, y = 50, shape = 'rect';
+UPDATE `master_tables` SET room_id = 1 WHERE name in ('Bagni Dx','Bagni Sx','Noire','Bara','Cor 1','Cor 2','Cor 3');
 
 INSERT INTO destinations (name, status, minute_to_alert) VALUES ('Bar Ludoteca', 'ACTIVE', 15);
 INSERT INTO destinations (name, status, minute_to_alert) VALUES ('Cucina Libra', 'ACTIVE', 15);

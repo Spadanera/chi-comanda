@@ -1,5 +1,5 @@
 import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance, type AxiosProgressEvent } from 'axios'
-import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation, type Menu, type Type, type SubType, type Audit, type Broadcast } from "../../../models/src"
+import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation, type Menu, type Type, type SubType, type Audit, type Broadcast, type RestaurantLayout } from "../../../models/src"
 import router from '@/router'
 import { UserStore, SnackbarStore, ProgressStore } from '@/stores'
 import type { StoreDefinition } from 'pinia'
@@ -140,6 +140,14 @@ export default class Axios {
         return await this.get<AvailableTable>(`/events/${event_id}/tables/available`)
     }
 
+    async GetWaiterLayout(event_id: number): Promise<RestaurantLayout> {
+        return await this.getSingle<RestaurantLayout>(`/events/${event_id}/tables/layout`)
+    }
+
+    async SaveLayoutInEvent(layout: RestaurantLayout, event_id: number): Promise<number> {
+        return await this.put<RestaurantLayout>(`/events/${event_id}/tables/layout`, layout)
+    }
+
     async GetFreeTables(event_id: number): Promise<AvailableTable[]> {
         return await this.get<AvailableTable>(`/events/${event_id}/tables/free`)
     }
@@ -150,6 +158,14 @@ export default class Axios {
 
     async GetMasterTable(master_id: string): Promise<MasterTable> {
         return await this.getSingle<MasterTable>(`/master-tables/${master_id}`)
+    }
+
+    async GetLayout(): Promise<RestaurantLayout> {
+        return await this.getSingle<RestaurantLayout>(`/master-tables/layout`)
+    }
+
+    async SaveLayout(layout: RestaurantLayout): Promise<number> {
+        return await this.put<RestaurantLayout>(`/master-tables/layout`, layout)
     }
 
     async GetTable(master_id: string): Promise<MasterTable> {

@@ -23,7 +23,6 @@ const emit = defineEmits(['login', 'reload'])
 
 const props = defineProps(['destinations', 'pagetitle', 'minutetoalert', 'is', 'event'])
 
-const event = props.event
 const loading = ref<boolean>(true)
 const orders = ref<Order[]>([])
 const confirm = ref<boolean>(false)
@@ -124,7 +123,7 @@ async function deleteItem() {
 
 async function completeOrder() {
   await axios.CompleteOrder(selectedOrder.value[0].id || 0, {
-    event_id: event?.id || 0,
+    event_id: props.event?.id || 0,
     table_id: selectedOrder.value[0].table_id || 0,
     item_ids: selectedOrder.value[0].items?.map(i => i.id) || []
   })
@@ -140,7 +139,7 @@ async function completeOrder() {
 }
 
 async function getOrders() {
-  orders.value = await axios.GetOrdersInEvent(event?.id || 0, props.destinations)
+  orders.value = await axios.GetOrdersInEvent(props.event?.id || 0, props.destinations)
   calculateMinPassed()
   if (orders.value.length && !orders.value[0].done) {
     if (selectedOrder.value.length === 0) {
@@ -253,7 +252,7 @@ onMounted(async () => {
     new Audio(fileAudio4),
   ]
   types.value = await axios.GetSubTypes()
-  if (event && event.id) {
+  if (props.event && props.event.id) {
     await getOrders()
     is.emit('join', 'bartender')
 
@@ -284,7 +283,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <v-navigation-drawer v-model="drawer" mobile-breakpoint="sm" v-if="event?.id">
+  <v-navigation-drawer v-model="drawer" mobile-breakpoint="sm" v-if="props.event?.id">
     <RouterLink :to="`/waiter?origin=${origin}`">
       <v-btn style="margin-top: 8px; margin-left: 15px;">Nuovo Ordine</v-btn>
     </RouterLink>
@@ -307,7 +306,7 @@ onUnmounted(() => {
     </v-list>
   </v-navigation-drawer>
   <v-skeleton-loader type="card" v-if="loading"></v-skeleton-loader>
-  <v-container v-else-if="!event?.id">
+  <v-container v-else-if="!props.event?.id">
     <h3>{{ props.pagetitle }}</h3>
     <p>Nessun evento attivo</p>
   </v-container>

@@ -80,7 +80,7 @@ const router = createRouter({
         {
           path: "tables",
           name: "tables",
-          component: () => import('@/views/admin/Tables.vue'),
+          component: () => import('@/views/admin/Tables-v2.vue'),
           props: true,
           meta: {
             allowedRole: Roles.admin
@@ -158,6 +158,15 @@ const router = createRouter({
       props: true,
       meta: {
         allowedRole: Roles.checkout
+      }
+    },
+    {
+      path: '/tables',
+      name: 'Tables',
+      component: () => import('@/views/Tables.vue'),
+      props: true,
+      meta: {
+        allowedRole: [Roles.checkout, Roles.waiter]
       }
     },
     {
