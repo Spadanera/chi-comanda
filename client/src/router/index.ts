@@ -161,6 +161,15 @@ const router = createRouter({
       }
     },
     {
+      path: '/tables',
+      name: 'Tables',
+      component: () => import('@/views/Tables.vue'),
+      props: true,
+      meta: {
+        allowedRole: [Roles.checkout, Roles.waiter]
+      }
+    },
+    {
       path: '/profile',
       name: 'Profile',
       component: () => import('@/views/Profile.vue'),

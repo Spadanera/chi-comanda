@@ -31,6 +31,12 @@ const roles = ref<Role[]>([
     route: "/waiter",
     text: "Inviare ordini al bar e alla cucina",
     role: Roles.waiter
+  },
+  {
+    title: 'Gestione Tavoli',
+    route: "/tables",
+    text: "Modifica la struttura dei tavoli all'interno dell'evento",
+    role: [Roles.waiter, Roles.checkout]
   }
 ])
 

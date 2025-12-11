@@ -37,12 +37,24 @@ CREATE TABLE `master_tables` (
 );
 
 CREATE TABLE `master_tables_event` (
-  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
-  `name` varchar(255),
-  `default_seats` integer,
-  `status`varchar(255),
-  `event_id` integer
+  `id` int NOT NULL AUTO_INCREMENT,
+  `master_table_id` int DEFAULT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `default_seats` int DEFAULT NULL,
+  `status` varchar(255) DEFAULT NULL,
+  `room_id` int DEFAULT NULL,
+  `x` double DEFAULT NULL,
+  `y` double DEFAULT NULL,
+  `width` double DEFAULT NULL,
+  `height` double DEFAULT NULL,
+  `shape` varchar(45) DEFAULT NULL,
+  `event_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_UNIQUE` (`id`),
+  KEY `master_tables_event_ibfk_1` (`event_id`),
+  CONSTRAINT `master_tables_event_ibfk_1` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`)
 );
+
 
 CREATE TABLE `tables` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
@@ -54,9 +66,14 @@ CREATE TABLE `tables` (
 );
 
 CREATE TABLE `table_master_table` (
-  `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
-  `table_id` integer,
-  `master_table_id` integer
+  `id` int NOT NULL AUTO_INCREMENT,
+  `table_id` int DEFAULT NULL,
+  `master_table_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`),
+  KEY `table_id` (`table_id`),
+  CONSTRAINT `table_master_table_ibfk_1` FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`),
+  CONSTRAINT `table_master_table_ibfk_2` FOREIGN KEY (`id`) REFERENCES `master_tables_event` (`id`)
 );
 
 CREATE TABLE `events` (
@@ -190,7 +207,6 @@ ALTER TABLE `user_event` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 ALTER TABLE `user_event` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
 ALTER TABLE `orders` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 ALTER TABLE `tables` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
-ALTER TABLE `master_tables_event` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
 
 INSERT INTO users (email, username, status) VALUES ('ziro84@gmail.com', 'Superuser', 'ACTIVE');
 

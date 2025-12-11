@@ -49,7 +49,7 @@ const remove = () => {
       <v-card-text>
         <v-form @submit.prevent ref="formRef">
           <v-text-field 
-            v-model="localTable.name" 
+            v-model="localTable.master_table_name" 
             label="Etichetta" 
             :rules="[requiredRule]"
             autofocus

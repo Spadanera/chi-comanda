@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { reactive, onUnmounted, computed } from 'vue'
 import type { MasterTable, Room, TableUpdatePayload } from '../../../models/src'
+import { useDisplay } from 'vuetify'
+
+const { mdAndUp, smAndUp } = useDisplay()
 
 const props = defineProps<{
   room: Room | undefined
@@ -145,8 +148,8 @@ onUnmounted(() => {
 
 <template>
   <div class="viewport-scroller bg-grey-lighten-3" style="max-height: calc(100vh - 112px);">
-    <div class="canvas-centering-wrapper">
-      <div v-if="room" class="room-scaler" :style="{
+    <div :class="{ 'canvas-centering-wrapper': smAndUp }" style="width: 100%;">
+      <div v-if="room && room.id > 0" class="room-scaler" :style="{
         width: (room.width * 100 * zoom) + 'px',
         height: (room.height * 100 * zoom) + 'px'
       }">
@@ -174,13 +177,24 @@ onUnmounted(() => {
             }" @mousedown.stop="startDrag($event, table)" @touchstart.stop="startTouchDrag($event, table)"
             @click.stop="handleTableClick(table)">
             <div class="text-center unselectable">
-              <div class="text-subtitle-2 font-weight-bold" style="font-size: 0.8rem">{{ table.name || table.table_name || table.master_table_name }}</div>
+              <div class="text-subtitle-2 font-weight-bold" style="font-size: 0.8rem">{{ table.name || table.table_name
+                || table.master_table_name }}</div>
               <div class="text-caption" style="font-size: 0.6rem">{{ table.default_seats }}p</div>
             </div>
           </div>
         </div>
       </div>
-
+      <div v-else-if="room && room.id === 0">
+        <v-container>
+          <v-row>
+            <v-col v-for="table in activeTables" cols="4">
+                <v-card style="padding: 10px; text-align: center;" @click.stop="handleTableClick(table)">
+                  {{ table.table_name }}
+                </v-card>
+            </v-col>
+          </v-row>
+        </v-container>
+      </div>
       <v-alert v-else type="info" variant="tonal" class="ma-auto" style="max-width: 400px">
         Nessuna sala selezionata.
       </v-alert>
