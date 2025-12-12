@@ -86,8 +86,8 @@ function changeItemQuantity(item: Item, quantity: number) {
   if (quantity === -1) {
     for (let i = 0; i < orderItems.value.length; i++) {
       if (orderItems.value[i].master_item_id == item.master_item_id && orderItems.value[i].note === item.note && orderItems.value[i].name === item.name) {
-        orderItems.value.splice(i, 1);
-        break;
+        orderItems.value.splice(i, 1)
+        break
       }
     }
   }
@@ -240,8 +240,6 @@ onMounted(async () => {
           </v-btn>
         </v-card-actions>
       </v-card>
-      <!-- <v-bottom-navigation :name="'inner-button-nav-bar'">
-      </v-bottom-navigation> -->
     </v-bottom-sheet>
   </div>
   <v-dialog v-model="dialogTable" max-width="600">

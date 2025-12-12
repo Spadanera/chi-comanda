@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue"
-import { RouterLink, RouterView } from 'vue-router';
+import { RouterLink, RouterView } from 'vue-router'
 import { type User } from '../../../models/src'
 
 defineOptions({ inheritAttrs: false })
@@ -47,7 +47,7 @@ const navigationItems = ref<NavigationItem[]>([
 
 onMounted(() => {
   try {
-    if (user.value.roles.includes('superuser')) {
+    if (user.value?.roles?.includes('superuser')) {
       navigationItems.value.push({
         title: "Utenti",
         prependIcon: "mdi-account-group",
@@ -61,14 +61,22 @@ onMounted(() => {
         value: 5
       })
     }
+
+    // Logica ottimizzata per evitare crash su regex falliti
     if (/\/items\//.test(window.location.pathname)) {
       selectedItem.value = [navigationItems.value[2].value]
     }
     else {
-      selectedItem.value = [navigationItems.value.find(n => n.to === /\/admin\/?(\w*)/.exec(window.location.pathname)[1]).value]
+      const match = /\/admin\/?(\w*)/.exec(window.location.pathname)
+      if (match && match[1] !== undefined) {
+        const found = navigationItems.value.find(n => n.to === match[1])
+        if (found) {
+          selectedItem.value = [found.value]
+        }
+      }
     }
   } catch (error) {
-
+    // Silent fail safe
   }
 })
 
@@ -77,7 +85,8 @@ onMounted(() => {
 <template>
   <v-navigation-drawer v-model="drawer" mobile-breakpoint="sm" width="150">
     <v-list nav v-model:selected="selectedItem">
-      <RouterLink :to="`/admin/${item.to}`" v-for="item in navigationItems">
+      <RouterLink :to="`/admin/${item.to}`" v-for="item in navigationItems" :key="item.value"
+        style="text-decoration: none; color: inherit;">
         <v-list-item :prepend-icon="item.prependIcon" :title="item.title" :value="item.value" rounded="0"></v-list-item>
       </RouterLink>
     </v-list>

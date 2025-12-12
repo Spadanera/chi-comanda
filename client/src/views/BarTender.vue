@@ -15,6 +15,7 @@ import fileAudio4 from '@/assets/nuovo-ordine-4.mp3'
 
 const axios = new Axios()
 var interval: number
+let reloadTimeout: ReturnType<typeof setTimeout>
 const user = defineModel<User>()
 const snackbarStore = SnackbarStore()
 const types = ref<SubType[]>([])
@@ -109,7 +110,7 @@ async function rollbackItem(item: Item) {
 }
 
 async function deleteItemConfirm(item_id: number) {
-  deleteItemId.value = item_id;
+  deleteItemId.value = item_id
   confirm2.value = true
 }
 
@@ -156,21 +157,21 @@ async function getOrders() {
 
 function getMinutesPassed(datetimeString: string): number {
   try {
-    const [datePart, timePart] = datetimeString.split(/T| /);
-    const [year, month, day] = datePart.split('-').map(Number);
-    const [hours, minutes, seconds] = timePart.split('.')[0].split(':').map(Number);
+    const [datePart, timePart] = datetimeString.split(/T| /)
+    const [year, month, day] = datePart.split('-').map(Number)
+    const [hours, minutes, seconds] = timePart.split('.')[0].split(':').map(Number)
 
 
-    const then = new Date(year, month - 1, day, hours, minutes, seconds);
+    const then = new Date(year, month - 1, day, hours, minutes, seconds)
 
-    const now = new Date().toLocaleString("en-US", { timeZone: "Europe/Rome" });
-    const nowItaly = new Date(now);
+    const now = new Date().toLocaleString("en-US", { timeZone: "Europe/Rome" })
+    const nowItaly = new Date(now)
 
-    const differenceMs = nowItaly.getTime() - then.getTime();
+    const differenceMs = nowItaly.getTime() - then.getTime()
 
-    const minutesPassed = Math.floor(differenceMs / (1000 * 60));
+    const minutesPassed = Math.floor(differenceMs / (1000 * 60))
 
-    return minutesPassed;
+    return minutesPassed
   } catch (error) {
     return 0
   }
@@ -190,7 +191,7 @@ function calculateMinPassed() {
 }
 
 function newOrderHandler(data: Order) {
-  console.log('new order', data);
+  console.log('new order', data)
   data.items = data.items?.filter((i: Item) => parseInt(props.destinations) === i.destination_id)
   if (data.items?.length && orders.value.find((o: Order) => o.id === data.id) === undefined) {
     orders.value.push(data)
@@ -202,7 +203,7 @@ function newOrderHandler(data: Order) {
     if (!data.items[0].done) {
       snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
       let audioToPlay = audio.value[Math.floor(Math.random() * audio.value.length)]
-      audioToPlay.play();
+      audioToPlay.play()
     }
   }
 }
@@ -222,7 +223,10 @@ function itemUpdatedHandler(data: Item) {
 }
 
 function reloadTablehandler() {
-  getOrders()
+  clearTimeout(reloadTimeout)
+  reloadTimeout = setTimeout(() => {
+    getOrders()
+  }, 300)
 }
 
 function itemRemovedHandler(data: number) {
@@ -238,6 +242,13 @@ function itemRemovedHandler(data: number) {
       selectedOrder.value = []
     }
     orders.value = copy<Order[]>(orders.value.filter((o: Order) => o.id !== order.id))
+  }
+}
+
+async function handleReconnection() {
+  if (is) {
+    is.emit('join', 'bartender')
+    await getOrders()
   }
 }
 
@@ -261,6 +272,7 @@ onMounted(async () => {
     is.on('item-updated', itemUpdatedHandler)
     is.on('reload-table', reloadTablehandler)
     is.on('item-removed', itemRemovedHandler)
+    is.on('connect', handleReconnection)
 
     interval = window.setInterval(calculateMinPassed, 1000 * 60)
   }
@@ -269,7 +281,8 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.clearInterval(interval)
-  console.log('unmounted bartender');
+  clearTimeout(reloadTimeout)
+  console.log('unmounted bartender')
   if (is) {
     is.emit('leave', 'bartender')
 
@@ -278,6 +291,7 @@ onUnmounted(() => {
     is.off('item-updated', itemUpdatedHandler)
     is.off('reload-table', reloadTablehandler)
     is.off('item-removed', itemRemovedHandler)
+    is.off('connect', handleReconnection)
   }
 })
 </script>

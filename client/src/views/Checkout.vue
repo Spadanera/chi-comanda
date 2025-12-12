@@ -26,7 +26,7 @@ const itemToBePaid = ref<number[]>([])
 const tableSheet = ref<boolean>(false)
 const freeTables = ref<MasterTable[]>([])
 const discount = ref<boolean>(false)
-const realPaid = ref<number>(null)
+const realPaid = ref<number | null>(null)
 const partialPaid = ref<boolean>(false)
 const dialogPay = ref<boolean>(false)
 const types = ref<SubType[]>([])
@@ -95,7 +95,7 @@ async function rollbackItem(item: Item) {
 }
 
 async function deleteItemConfirm(item_id: number) {
-  deleteItemId.value = item_id;
+  deleteItemId.value = item_id
   confirm.value = true
 }
 
@@ -188,7 +188,7 @@ function newOrderHandler(data: Table) {
       if (!table.items.find((i: Item) => i.id === item.id)) {
         table.items.push(item)
       }
-    });
+    })
   }
   else {
     tables.value.push(data)
@@ -217,6 +217,13 @@ function orderCompletedHandler(data: CompleteOrderInput) {
   }
 }
 
+async function handleReconnection() {
+  if (is) {
+    is.emit('join', 'checkout')
+    await getTables()
+  }
+}
+
 onMounted(async () => {
   loading.value = true
   types.value = await axios.GetSubTypes()
@@ -227,6 +234,7 @@ onMounted(async () => {
     is.on('new-order', newOrderHandler)
     is.on('item-removed', itemRemovedHandler)
     is.on('order-completed', orderCompletedHandler)
+    is.on('connect', handleReconnection)
   }
   loading.value = false
 })
@@ -237,6 +245,7 @@ onUnmounted(() => {
     is.off('new-order', newOrderHandler)
     is.off('item-removed', itemRemovedHandler)
     is.off('order-completed', orderCompletedHandler)
+    is.off('connect', handleReconnection)
   }
 })
 </script>
@@ -295,7 +304,7 @@ onUnmounted(() => {
       </v-btn>
       <v-spacer></v-spacer>
       <v-btn variant="plain" @click="pay(true)" v-if="itemToBePaid.length">PARZIALE {{ itemToBePaidBill
-        }}
+      }}
         €</v-btn>
       <v-btn class="show-xs" variant="plain" @click="pay(false)" v-if="selectedTable.length && !selectedTable[0].paid"
         :readonly="onGoing">
