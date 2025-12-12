@@ -184,10 +184,10 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
-      <div v-else-if="room && room.id === 0">
+      <div v-else-if="room && room.id === 0" style="width: 100%;">
         <v-container>
-          <v-row>
-            <v-col v-for="table in activeTables" cols="4">
+          <v-row justify="center">
+            <v-col v-for="table in activeTables" cols="12" sm="6" md="4" lg="3" xl="2" >
                 <v-card style="padding: 10px; text-align: center;" @click.stop="handleTableClick(table)">
                   {{ table.table_name }}
                 </v-card>

@@ -87,6 +87,7 @@ const addTable = () => {
         id: Date.now() * -1,
         room_id: activeRoomId.value,
         name: ``,
+        master_table_name: ``,
         default_seats: 4,
         x: 50,
         y: 50,

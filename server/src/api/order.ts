@@ -109,7 +109,7 @@ class OrderAPI {
         })
 
         SocketIOService.instance().sendMessage({
-            room: "waiter",
+            rooms: ["waiter","table"],
             event: "reload-table",
             body: {}
         })

@@ -14,13 +14,14 @@ const reloadTable = () => {
 }
 
 onMounted(async () => {
-  is.emit('join', 'waiter')
+  is.emit('join', 'table')
 
   is.on('reload-table', reloadTable)
 })
 
 onUnmounted(() => {
   if (is) {
+    is.emit('leave', 'table')
     is.off('reload-table', reloadTable)
   }
 })

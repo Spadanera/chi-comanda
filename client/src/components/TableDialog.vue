@@ -91,7 +91,7 @@ const remove = () => {
         </v-form>
       </v-card-text>
       <v-card-actions>
-        <v-btn color="error" variant="text" @click="remove">Elimina</v-btn>
+        <v-btn color="error" v-if="localTable.id > 0 && !localTable.inUse" variant="text" @click="remove">Elimina</v-btn>
         <v-spacer></v-spacer>
         <v-btn color="grey" variant="text" @click="close">Annulla</v-btn>
         <v-btn color="primary" @click="save">OK</v-btn>

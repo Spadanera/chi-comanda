@@ -236,7 +236,7 @@ onMounted(async () => {
           </v-btn>
           <v-spacer></v-spacer>
           <v-btn style="font-size: x-large;" icon="mdi-send" variant="plain" @click="sendOrder">
-    
+
           </v-btn>
         </v-card-actions>
       </v-card>
