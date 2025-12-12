@@ -5,12 +5,16 @@ import RestaurantMap from '@/components/RestaurantMap.vue'
 import RoomTabs from '@/components/RoomTabs.vue'
 import RoomDialog from '@/components/RoomDialog.vue'
 import TableDialog from '@/components/TableDialog.vue'
+import { useDisplay } from 'vuetify'
+
+const { smAndUp } = useDisplay()
 
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
 
 const props = defineProps<{
-  event?: Event
+    event?: Event,
+    editRoom?: boolean
 }>()
 
 const axios = new Axios()
@@ -131,7 +135,7 @@ const onTableUpdate = (payload: TableUpdatePayload) => {
 }
 
 const saveLayout = () => {
-    const layout:RestaurantLayout = { rooms: rooms.value, tables: tables.value } as RestaurantLayout
+    const layout: RestaurantLayout = { rooms: rooms.value, tables: tables.value } as RestaurantLayout
 
     if (props.event) {
         axios.SaveLayoutInEvent(layout, props.event.id)
@@ -154,6 +158,14 @@ const getLayout = async () => {
     editing.value = false
 }
 
+const zoomIn = () => {
+    zoomLevel.value = Math.min(2.0, zoomLevel.value + 0.05)
+}
+
+const zoomOut = () => {
+    zoomLevel.value = Math.max(0.3, zoomLevel.value - 0.05)
+}
+
 onMounted(async () => {
     await getLayout()
     if (rooms.value.length) {
@@ -162,7 +174,7 @@ onMounted(async () => {
 })
 
 defineExpose({
-  getLayout
+    getLayout
 });
 </script>
 
@@ -170,17 +182,17 @@ defineExpose({
     <v-container fluid class="bg-grey-lighten-4 pa-0" style="height: calc(100vh - 64px) !important">
         <v-row no-gutters class="fill-height">
             <v-col cols="12" class="d-flex flex-column relative overflow-hidden fill-height">
-                <v-toolbar v-if="!props.event" density="compact" color="white" class="border-b pr-4" style="z-index: 10">
-                    <v-btn-group class="ml-1" variant="text">
-                        <v-btn prepend-icon="mdi-plus" @click="openRoomDialog()">Nuova Stanza</v-btn>
+                <v-toolbar density="compact" color="white" class="border-b pr-4" style="z-index: 10">
+                    <v-btn-group class="ml-1" variant="text" v-if="props.editRoom">
+                        <v-btn prepend-icon="mdi-plus" @click="openRoomDialog()">Stanza</v-btn>
                     </v-btn-group>
 
-                    <div v-if="roomSelected" class="d-flex align-center" style="width: 200px">
-                        <v-icon icon="mdi-magnify-minus-outline" size="small" class="mr-2"></v-icon>
-                        <v-slider v-model="zoomLevel" :min="0.3" :max="2.0" :step="0.1" hide-details
+                    <div v-if="roomSelected && (smAndUp || !editing)" class="d-flex align-center" style="width: 200px; padding-left: 10px;">
+                        <v-icon icon="mdi-magnify-minus-outline" size="small" class="mr-2" @click="zoomOut"></v-icon>
+                        <v-slider v-model="zoomLevel" :min="0.3" :max="2.0" :step="0.05" hide-details
                             density="compact"></v-slider>
-                        <v-icon icon="mdi-magnify-plus-outline" size="small" class="ml-2"></v-icon>
-                        <span class="text-caption ml-2" style="width: 40px">{{ Math.round(zoomLevel * 100) }}%</span>
+                        <v-icon icon="mdi-magnify-plus-outline" size="small" class="ml-2" @click="zoomIn"></v-icon>
+                        <span v-show="smAndUp" class="text-caption ml-2" style="width: 40px">{{ Math.round(zoomLevel * 100) }}%</span>
                     </div>
 
                     <v-spacer></v-spacer>
@@ -189,12 +201,10 @@ defineExpose({
                         @click="saveLayout">Salva</v-btn>
 
                     <template v-slot:extension>
-                        <RoomTabs v-model="activeRoomId" :editing="true" :rooms="rooms" @edit="openRoomDialog($event)"
-                            @delete="deleteConfirmDialog = true" />
+                        <RoomTabs v-model="activeRoomId" :editing="props.editRoom" :rooms="rooms"
+                            @edit="openRoomDialog($event)" @delete="deleteConfirmDialog = true" />
                     </template>
                 </v-toolbar>
-                <RoomTabs v-else v-model="activeRoomId" :editing="false" :rooms="rooms" @edit="openRoomDialog($event)"
-                            @delete="deleteConfirmDialog = true" />
 
                 <RestaurantMap :room="currentRoom" :tables="tables" :zoom="zoomLevel"
                     :selected-table-id="selectedTableId" :editable="true" @click-table="onTableClick"
@@ -203,7 +213,7 @@ defineExpose({
         </v-row>
         <v-fab @click="addTable()" v-if="roomSelected" icon="mdi-plus" app
             style="position: fixed; right: 15px; bottom: 15px;" location="bottom right"></v-fab>
-            
+
         <RoomDialog v-model="roomDialog" :room="tempRoom" :is-editing="isEditingRoom" @save="onSaveRoom" />
 
         <TableDialog v-model="tableDialog" :table="tempTable" @save="onSaveTable" @delete="onDeleteTable" />
