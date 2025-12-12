@@ -3,7 +3,7 @@ import { reactive, onUnmounted, computed } from 'vue'
 import type { MasterTable, Room, TableUpdatePayload } from '../../../models/src'
 import { useDisplay } from 'vuetify'
 
-const { mdAndUp, smAndUp } = useDisplay()
+const { smAndUp } = useDisplay()
 
 const props = defineProps<{
   room: Room | undefined

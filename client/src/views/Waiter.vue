@@ -80,7 +80,7 @@ onUnmounted(() => {
   <main>
     <v-skeleton-loader v-if="loading" type="card"></v-skeleton-loader>
     <v-container v-else-if="!props.event?.id">
-      <h3>Gestione Tavoli</h3>
+      <h3>Cameriere</h3>
       <p>Nessun evento attivo</p>
     </v-container>
     <v-container v-else style="margin: 0; padding: 0; min-width: 100%; max-height: calc(100vh - 64px);">

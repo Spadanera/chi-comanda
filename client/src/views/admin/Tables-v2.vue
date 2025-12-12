@@ -3,5 +3,5 @@
 </script>
 
 <template>
-    <Layout></Layout>
+    <Layout :edit-room="true"></Layout>
 </template>
