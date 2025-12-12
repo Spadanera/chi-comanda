@@ -49,10 +49,10 @@ const filteredRole = computed(() => {
     return roles.value
   }
   return roles.value.filter(r => {
-    const userRoles = user.value?.roles ?? [];
-    const roleList = Array.isArray(r.role) ? r.role : [r.role];
-    return roleList.some(role => userRoles.includes(role));
-  });
+    const userRoles = user.value?.roles ?? []
+    const roleList = Array.isArray(r.role) ? r.role : [r.role]
+    return roleList.some(role => userRoles.includes(role))
+  })
 })
 
 onMounted(async () => {
@@ -76,9 +76,9 @@ onBeforeMount(() => {
 <template>
   <v-container>
     <v-row>
-      <v-col cols="12" md="4" v-for="role in filteredRole">
-        <RouterLink :to="role.route">
-          <v-card>
+      <v-col cols="12" md="4" v-for="role in filteredRole" :key="role.route">
+        <RouterLink :to="role.route" style="text-decoration: none; color: inherit;">
+          <v-card hover>
             <v-card-title>
               {{ role.title }}
             </v-card-title>

@@ -25,6 +25,7 @@ const activeRoomId = ref<number>()
 const rooms = ref<Room[]>([])
 const selectedTableId = ref<number>(0)
 const zoomLevel = ref(1)
+let reloadTimeout: ReturnType<typeof setTimeout>
 
 const currentRoom = computed(() => rooms.value.find(r => r.id === activeRoomId.value))
 const roomTables = computed(() => tables.value.filter(t => t.room_id === activeRoomId.value))
@@ -38,9 +39,12 @@ const extraTableClick = () => {
   router.push(`/waiter/${props.event?.id}/mastertable/0/table/0/menu/${props.event.menu_id}`)
 }
 
-async function reloadTableHandlerasync() {
-  await getTables()
-  snackbarStore.show("Tavoli aggiornati")
+function reloadTableHandlerasync() {
+  clearTimeout(reloadTimeout)
+  reloadTimeout = setTimeout(async () => {
+    await getTables()
+    snackbarStore.show("Tavoli aggiornati")
+  }, 300)
 }
 
 async function getTables() {
@@ -55,6 +59,13 @@ async function getTables() {
   }
 }
 
+async function handleReconnection() {
+  if (is) {
+    is.emit('join', 'waiter')
+    await getTables()
+  }
+}
+
 onMounted(async () => {
   if (props.event && props.event.id) {
     await getTables()
@@ -64,14 +75,17 @@ onMounted(async () => {
     is.emit('join', 'waiter')
 
     is.on('reload-table', reloadTableHandlerasync)
+    is.on('connect', handleReconnection)
   }
   loading.value = false
 })
 
 onUnmounted(() => {
+  clearTimeout(reloadTimeout)
   if (is) {
     is.emit('leave', 'waiter')
     is.off('reload-table', reloadTableHandlerasync)
+    is.off('connect', handleReconnection)
   }
 })
 </script>

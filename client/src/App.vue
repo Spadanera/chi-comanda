@@ -104,7 +104,7 @@ function getLocalTime(dateString: string) {
     timeZone: 'Europe/Rome',
     hour: '2-digit',
     minute: '2-digit'
-  });
+  })
 }
 
 onBeforeMount(async () => {
@@ -114,6 +114,7 @@ onBeforeMount(async () => {
 
   is.value.on('connect', () => {
     socketConnected.value = true
+    is.value?.emit('join', 'main')
   })
 
   is.value.on('connect_error', (err: any) => {
@@ -145,7 +146,11 @@ onMounted(async () => {
       if (!messageDialogReviced.value) {
         broadcast.value = data
         messageDialogReviced.value = true
-        messageSound.play()
+        try {
+          await messageSound.play()
+        } catch (e) {
+          // Gestione errore autoplay su mobile
+        }
       } else {
         broadcastsQueue.value.push(data)
       }
