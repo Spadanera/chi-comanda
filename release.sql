@@ -54,8 +54,8 @@ CREATE TABLE `table_master_table` (
 );
 
 
-INSERT INTO `rooms` (name, width, height) VALUES ('Sala 1', 4, 15);
-INSERT INTO `rooms` (name, width, height) VALUES ('Sala 2', 5, 12);
+INSERT INTO `rooms` (name, width, height, status) VALUES ('Sala 1', 4, 15, 'ACTIVE');
+INSERT INTO `rooms` (name, width, height, status) VALUES ('Sala 2', 5, 12, 'ACTIVE');
 
 TRUNCATE TABLE master_tables;
 
