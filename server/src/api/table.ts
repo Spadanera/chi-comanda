@@ -17,12 +17,12 @@ class TableApi {
 				WHERE table_id IN (
 					SELECT id FROM tables WHERE event_id = ? AND status = 'ACTIVE'
 				)
-            ) AND master_tables.event_id = ?
+            ) AND master_tables.event_id = ? AND master_tables.status = 'ACTIVE'
             `, [eventId, eventId])
     }
 
     async changeTable(table_id: number, master_table_id: number): Promise<number> {
-        const table_name = (await db.queryOne<MasterTable>("SELECT name FROM master_tables WHERE id = ?", [master_table_id])).name
+        const table_name = (await db.queryOne<MasterTable>("SELECT name FROM master_tables_event WHERE id = ?", [master_table_id])).name
         const result = await db.executeTransaction([
             "UPDATE table_master_table SET master_table_id = ? WHERE table_id = ?",
             "UPDATE tables SET name = ? WHERE id = ?"
@@ -31,7 +31,7 @@ class TableApi {
             [table_name, table_id]
         ])
         SocketIOService.instance().sendMessage({
-            rooms: ["waiter", "bartender"],
+            rooms: ["waiter", "bartender", "table"],
             event: "reload-table",
             body: {}
         })
@@ -145,15 +145,25 @@ class TableApi {
             if (t.id !== undefined && t.id < 0) {
                 transactionQueries.push(`INSERT INTO master_tables_event 
                     (name, default_seats, status, room_id, x, y, width, height, shape, event_id) VALUES (?,?,?,?,?,?,?,?,?,?)`)
-                transactionParams.push([t.name,...params])
+                transactionParams.push([t.name || t.master_table_name, ...params])
             } else {
                 transactionQueries.push(`UPDATE master_tables_event SET name = ?, default_seats = ?, status = ?, room_id = ?, x = ?, y = ?, width = ?, height = ?, shape = ? 
                     WHERE event_id = ? AND id = ?`)
-                transactionParams.push([t.master_table_name,...params, t.id])
+                transactionParams.push([t.master_table_name, ...params, t.id])
+                if (t.table_name !== t.master_table_name) {
+                    transactionQueries.push(`UPDATE tables SET name = ? WHERE tables.id = ?`)
+                    transactionParams.push([t.master_table_name, t.table_id])
+                }
             }
         })
 
         await db.executeTransaction(transactionQueries, transactionParams)
+
+        SocketIOService.instance().sendMessage({
+            rooms: ["waiter", "bartender", "table"],
+            event: "reload-table",
+            body: {}
+        })
 
         return 1
     }
@@ -169,7 +179,7 @@ class TableApi {
     async create(table: Table, userId: number): Promise<number> {
         const table_id = await db.executeInsert('INSERT INTO tables (name, event_id, status, user_id) VALUES (?,?,?)', [table.name, table.event_id, 'ACTIVE', userId])
         if (table.master_table_id) {
-            const transactionInput: { queries: string[], values: any[]} = {
+            const transactionInput: { queries: string[], values: any[] } = {
                 queries: [],
                 values: []
             }
@@ -207,7 +217,7 @@ class TableApi {
             [table_id]
         ])
         SocketIOService.instance().sendMessage({
-            room: "waiter",
+            rooms: ["waiter", "table"],
             event: "reload-table",
             body: {}
         })
