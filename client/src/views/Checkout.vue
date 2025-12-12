@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Table, type Item, type SubType, type CompleteOrderInput, type MasterTable, type User } from "../../../models/src"
-import { ref, onMounted, computed, onUnmounted } from "vue"
+import { ref, computed, onUnmounted, watch } from "vue"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { copy, sortItem, sortTables } from "@/services/utils"
@@ -224,10 +224,10 @@ async function handleReconnection() {
   }
 }
 
-onMounted(async () => {
-  loading.value = true
-  types.value = await axios.GetSubTypes()
+async function init() {
   if (props.event && props.event.id) {
+    loading.value = true
+    types.value = await axios.GetSubTypes()
     await getTables()
 
     is.emit('join', 'checkout')
@@ -235,9 +235,11 @@ onMounted(async () => {
     is.on('item-removed', itemRemovedHandler)
     is.on('order-completed', orderCompletedHandler)
     is.on('connect', handleReconnection)
+    loading.value = false
   }
-  loading.value = false
-})
+}
+
+watch(() => props.event, init, { immediate: true })
 
 onUnmounted(() => {
   if (is) {

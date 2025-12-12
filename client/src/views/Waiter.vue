@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RestaurantLayout, AvailableTable, Room } from "../../../models/src"
-import { ref, onMounted, computed, onUnmounted } from "vue"
+import { ref, computed, onUnmounted, watch } from "vue"
 import Axios from '@/services/client'
 import { sortAvailableTable } from "@/services/utils"
 import { SnackbarStore } from '@/stores'
@@ -66,19 +66,23 @@ async function handleReconnection() {
   }
 }
 
-onMounted(async () => {
+async function init() {
   if (props.event && props.event.id) {
+    loading.value = true
     await getTables()
     if (rooms.value.length) {
       activeRoomId.value = rooms.value[0].id
     }
-    is.emit('join', 'waiter')
-
-    is.on('reload-table', reloadTableHandlerasync)
-    is.on('connect', handleReconnection)
+    if (is) {
+      is.emit('join', 'waiter')
+      is.on('reload-table', reloadTableHandlerasync)
+      is.on('connect', handleReconnection)
+    }
+    loading.value = false
   }
-  loading.value = false
-})
+}
+
+watch(() => props.event, init, { immediate: true })
 
 onUnmounted(() => {
   clearTimeout(reloadTimeout)
