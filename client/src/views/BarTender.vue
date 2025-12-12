@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Order, type Item, type SubType, type User } from "../../../models/src"
-import { ref, onMounted, computed, onUnmounted } from "vue"
+import { ref, onMounted, computed, onUnmounted, watch } from "vue"
 import { Roles } from '@/services/utils'
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
@@ -252,18 +252,10 @@ async function handleReconnection() {
   }
 }
 
-onMounted(async () => {
-  loading.value = true
-  readonly.value = !user.value?.roles?.includes(Roles.bartender) && !user.value?.roles?.includes(Roles.superuser)
-  audio.value = [
-    new Audio(fileAudio),
-    new Audio(fileAudio1),
-    new Audio(fileAudio2),
-    new Audio(fileAudio3),
-    new Audio(fileAudio4),
-  ]
-  types.value = await axios.GetSubTypes()
+async function init() {
   if (props.event && props.event.id) {
+    loading.value = true
+    types.value = await axios.GetSubTypes()
     await getOrders()
     is.emit('join', 'bartender')
 
@@ -274,10 +266,24 @@ onMounted(async () => {
     is.on('item-removed', itemRemovedHandler)
     is.on('connect', handleReconnection)
 
+    window.clearInterval(interval)
     interval = window.setInterval(calculateMinPassed, 1000 * 60)
+    loading.value = false
   }
-  loading.value = false
+}
+
+onMounted(() => {
+  readonly.value = !user.value?.roles?.includes(Roles.bartender) && !user.value?.roles?.includes(Roles.superuser)
+  audio.value = [
+    new Audio(fileAudio),
+    new Audio(fileAudio1),
+    new Audio(fileAudio2),
+    new Audio(fileAudio3),
+    new Audio(fileAudio4),
+  ]
 })
+
+watch(() => props.event, init, { immediate: true })
 
 onUnmounted(() => {
   window.clearInterval(interval)
