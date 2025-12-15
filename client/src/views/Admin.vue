@@ -4,6 +4,7 @@ import { RouterLink, RouterView } from 'vue-router'
 import { type User } from '../../../models/src'
 
 defineOptions({ inheritAttrs: false })
+const props = defineProps(['event'])
 
 interface NavigationItem {
   title: string
@@ -91,7 +92,7 @@ onMounted(() => {
       </RouterLink>
     </v-list>
   </v-navigation-drawer>
-  <RouterView></RouterView>
+  <RouterView :event="props.event"></RouterView>
   <v-fab v-show="!drawer" class="hide-xs" icon="mdi-menu" app style="position: fixed; left: 10px; bottom: 10px;"
     location="bottom left" @click="drawer = !drawer"></v-fab>
 </template>

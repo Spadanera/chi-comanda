@@ -18,6 +18,8 @@ const emit = defineEmits<{
   (e: 'update-table', payload: TableUpdatePayload): void
 }>()
 
+let rafId: number | null = null
+
 const draggingState = reactive({
   isDragging: false,
   hasMoved: false,
@@ -25,7 +27,9 @@ const draggingState = reactive({
   startY: 0,
   initialTableX: 0,
   initialTableY: 0,
-  activeTableId: null as number,
+  activeTableId: null as number | null,
+  currentX: 0,
+  currentY: 0
 })
 
 const activeTables = computed(() => {
@@ -59,14 +63,8 @@ const updatePosition = (clientX: number, clientY: number) => {
   const roomWidthCm = props.room.width * 100
   const roomHeightCm = props.room.height * 100
 
-  newX = Math.max(0, Math.min(newX, roomWidthCm - currentTable.width))
-  newY = Math.max(0, Math.min(newY, roomHeightCm - currentTable.height))
-
-  emit('update-table', {
-    id: draggingState.activeTableId,
-    x: newX,
-    y: newY
-  })
+  draggingState.currentX = Math.max(0, Math.min(newX, roomWidthCm - currentTable.width))
+  draggingState.currentY = Math.max(0, Math.min(newY, roomHeightCm - currentTable.height))
 }
 
 const startDrag = (event: MouseEvent, table: MasterTable) => {
@@ -79,11 +77,15 @@ const startDrag = (event: MouseEvent, table: MasterTable) => {
 }
 
 const onGlobalMouseMove = (event: MouseEvent) => {
-  updatePosition(event.clientX, event.clientY)
+  if (rafId) return
+  rafId = requestAnimationFrame(() => {
+    updatePosition(event.clientX, event.clientY)
+    rafId = null
+  })
 }
 
 const onGlobalMouseUp = () => {
-  cleanupListeners()
+  finishDrag()
 }
 
 const startTouchDrag = (event: TouchEvent, table: MasterTable) => {
@@ -100,16 +102,29 @@ const startTouchDrag = (event: TouchEvent, table: MasterTable) => {
 const onGlobalTouchMove = (event: TouchEvent) => {
   if (event.cancelable) event.preventDefault()
 
+  if (rafId) return
   const touch = event.touches[0]
-  updatePosition(touch.clientX, touch.clientY)
+  rafId = requestAnimationFrame(() => {
+    updatePosition(touch.clientX, touch.clientY)
+    rafId = null
+  })
 }
 
 const onGlobalTouchEnd = (event: TouchEvent) => {
-  if (!draggingState.hasMoved && draggingState.activeTableId) {
+  finishDrag()
+}
+
+const finishDrag = () => {
+  if (draggingState.activeTableId && draggingState.hasMoved) {
+    emit('update-table', {
+      id: draggingState.activeTableId,
+      x: draggingState.currentX,
+      y: draggingState.currentY
+    })
+  } else if (draggingState.activeTableId && !draggingState.hasMoved) {
     const table = props.tables.find(t => t.id === draggingState.activeTableId)
     if (table) emit('click-table', table)
   }
-
   cleanupListeners()
 }
 
@@ -121,11 +136,17 @@ const prepareDragState = (table: MasterTable, clientX: number, clientY: number) 
   draggingState.startY = clientY
   draggingState.initialTableX = table.x
   draggingState.initialTableY = table.y
+  draggingState.currentX = table.x
+  draggingState.currentY = table.y
 }
 
 const cleanupListeners = () => {
   draggingState.isDragging = false
   draggingState.activeTableId = null
+  if (rafId) {
+    cancelAnimationFrame(rafId)
+    rafId = null
+  }
 
   window.removeEventListener('mousemove', onGlobalMouseMove)
   window.removeEventListener('mouseup', onGlobalMouseUp)
@@ -147,8 +168,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="viewport-scroller bg-grey-lighten-3" style="max-height: calc(100vh - 112px);">
-    <div :class="{ 'canvas-centering-wrapper': smAndUp }" style="width: 100%;">
+  <div class="viewport-scroller bg-grey-lighten-3" style="max-height: calc(100vh - 112px)">
+    <div :class="{ 'canvas-centering-wrapper': smAndUp }" style="width: 100%">
       <div v-if="room && room.id > 0" class="room-scaler" :style="{
         width: (room.width * 100 * zoom) + 'px',
         height: (room.height * 100 * zoom) + 'px'
@@ -168,10 +189,11 @@ onUnmounted(() => {
               'elevation-2': selectedTableId !== table.id,
               'cursor-grab': editable,
               'cursor-pointer': !editable,
-              'in-use': table.inUse
+              'in-use': table.inUse,
+              'is-dragging': draggingState.activeTableId === table.id
             }" :style="{
-              top: table.y + 'px',
-              left: table.x + 'px',
+              top: (draggingState.activeTableId === table.id ? draggingState.currentY : table.y) + 'px',
+              left: (draggingState.activeTableId === table.id ? draggingState.currentX : table.x) + 'px',
               width: table.width + 'px',
               height: table.height + 'px',
             }" @mousedown.stop="startDrag($event, table)" @touchstart.stop="startTouchDrag($event, table)"
@@ -184,13 +206,13 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
-      <div v-else-if="room && room.id === 0" style="width: 100%;">
+      <div v-else-if="room && room.id === 0" style="width: 100%">
         <v-container>
           <v-row justify="center">
-            <v-col v-for="table in activeTables" cols="12" sm="6" md="4" lg="3" xl="2" >
-                <v-card style="padding: 10px; text-align: center;" @click.stop="handleTableClick(table)">
-                  {{ table.table_name }}
-                </v-card>
+            <v-col v-for="table in activeTables" cols="12" sm="6" md="4" lg="3" xl="2">
+              <v-card style="padding: 10px; text-align: center" @click.stop="handleTableClick(table)">
+                {{ table.table_name }}
+              </v-card>
             </v-col>
           </v-row>
         </v-container>
@@ -231,7 +253,8 @@ onUnmounted(() => {
   top: 0;
   left: 0;
   overflow: hidden;
-  transform-origin: 0 0
+  transform-origin: 0 0;
+  will-change: transform
 }
 
 .grid-overlay {
@@ -255,6 +278,12 @@ onUnmounted(() => {
   user-select: none;
   transition: box-shadow 0.1s;
   touch-action: none;
+  will-change: top, left
+}
+
+.is-dragging {
+  z-index: 100;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3) !important
 }
 
 .in-use {

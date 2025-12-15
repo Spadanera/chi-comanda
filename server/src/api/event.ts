@@ -6,30 +6,99 @@ class EventAPI {
     constructor() {
     }
 
-    async getAll(): Promise<Event[]> {
-        return await db.query(`
-            SELECT events.id, events.name name, events.date, events.status, menu.name manu_name,
-            (SELECT count(tables.id) FROM tables WHERE event_id = events.id) tableCount,
-            (SELECT sum(items.price) FROM items WHERE items.event_id = events.id AND type != 'Sconto') revenue,
-            (SELECT sum(items.price) FROM items WHERE items.event_id = events.id AND type = 'Sconto') discount,
-            (SELECT sum(items.price) FROM items WHERE items.event_id = events.id AND type != 'Sconto' AND items.paid = 1) currentPaid,
-            (SELECT count(tables.id) FROM tables WHERE tables.event_id = events.id AND tables.status = 'ACTIVE') tablesOpen,
-            (
-                SELECT JSON_ARRAYAGG(JSON_OBJECT(
-                    'id', users.id, 
-                    'username', users.username
-                ))
-                FROM users 
-                INNER JOIN user_event ON user_event.user_id = users.id
-                WHERE user_event.event_id = events.id
-            ) users
-            FROM events
-            INNER JOIN menu ON events.menu_id = menu.id
-            ORDER BY date DESC`
-            , [])
+    async getAll(status: string, query?: any): Promise<Event[] | { events: Event[], totalPages: number }> {
+        let tables = 'tables'
+        let items = 'items'
+        if (status === 'CLOSED') {
+            tables = 'tables_history'
+            items = 'items_history'
+        }
+
+        // Array dei parametri per i prepared statements (solo per WHERE)
+        const params: any[] = [status]
+        let whereClause = 'WHERE e.status = ?'
+
+        // Gestione filtri opzionali
+        if (query?.start_date) {
+            whereClause += ' AND e.date >= ?'
+            params.push(query.start_date)
+        }
+        if (query?.end_date) {
+            whereClause += ' AND e.date <= ?'
+            params.push(query.end_date)
+        }
+
+        const baseQuery = `
+        SELECT
+            e.id,
+            e.name,
+            e.date,
+            e.status,
+            m.name AS menu_name,
+            COALESCE(t_stats.tableCount, 0) AS tableCount,
+            COALESCE(t_stats.tablesOpen, 0) AS tablesOpen,
+            COALESCE(i_stats.revenue, 0) AS revenue,
+            COALESCE(i_stats.discount, 0) AS discount,
+            COALESCE(i_stats.currentPaid, 0) AS currentPaid,
+            u_stats.users
+        FROM events e
+        INNER JOIN menu m ON e.menu_id = m.id
+        LEFT JOIN (
+            SELECT
+                event_id,
+                COUNT(id) AS tableCount,
+                COUNT(CASE WHEN status = 'ACTIVE' THEN 1 END) AS tablesOpen
+            FROM ${tables}
+            GROUP BY event_id
+        ) t_stats ON t_stats.event_id = e.id
+        LEFT JOIN (
+            SELECT
+                event_id,
+                SUM(CASE WHEN type != 'Sconto' THEN price ELSE 0 END) AS revenue,
+                SUM(CASE WHEN type = 'Sconto' THEN price ELSE 0 END) AS discount,
+                SUM(CASE WHEN type != 'Sconto' AND paid = 1 THEN price ELSE 0 END) AS currentPaid
+            FROM ${items}
+            GROUP BY event_id
+        ) i_stats ON i_stats.event_id = e.id
+        LEFT JOIN (
+            SELECT
+                ue.event_id,
+                JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', u.id,
+                    'username', u.username
+                )) AS users
+            FROM users u
+            INNER JOIN user_event ue ON ue.user_id = u.id
+            GROUP BY ue.event_id
+        ) u_stats ON u_stats.event_id = e.id
+        ${whereClause}`
+
+        if (query?.page) {
+            const page = parseInt(query.page, 10) || 1
+            const limit = 20
+            const offset = (page - 1) * limit
+
+            const countResult = await db.query(`SELECT COUNT(*) as total FROM events e ${whereClause}`, params)
+            const totalPages = Math.ceil((countResult[0]?.total || 0) / limit)
+
+            const events = await db.query(
+                `${baseQuery} ORDER BY e.date DESC LIMIT ${limit} OFFSET ${offset}`,
+                params
+            )
+            console.log(whereClause, params)
+            return { events, totalPages }
+        }
+
+        return await db.query(`${baseQuery} ORDER BY e.date DESC`, params)
     }
 
-    async get(id: number): Promise<Event[]> {
+    async get(id: number, status: string): Promise<Event[]> {
+        let tables = 'tables'
+        let items = 'items'
+        if (status === 'CLOSED') {
+            tables = 'tables_history'
+            items = 'items_history'
+        }
         return await db.query(`
             SELECT 
                 events.id,
@@ -42,7 +111,7 @@ class EventAPI {
                         FROM 
                         (SELECT 
                             tables.id, tables.name table_name,
-                            (SELECT SUM(price) FROM items WHERE items.table_id = tables.id) revenue, (
+                            (SELECT SUM(price) FROM ${items} items WHERE items.table_id = tables.id) revenue, (
                                 SELECT JSON_ARRAYAGG(JSON_OBJECT(
                                     'name', grouped_items.name, 
                                     'type', grouped_items.type, 
@@ -52,7 +121,7 @@ class EventAPI {
                                 )) 
                                 FROM (
                                     SELECT items.name, IFNULL(types.name, items.type) type, IFNULL(sub_types.name, items.sub_type) sub_type, items.price, COUNT(items.id) quantity
-                                    FROM items
+                                    FROM ${items} items
                                     LEFT JOIN sub_types ON sub_types.id = items.sub_type_id
                                     LEFT JOIN types ON sub_types.type_id = types.id
                                     WHERE items.table_id = tables.id
@@ -60,9 +129,9 @@ class EventAPI {
                                     ORDER BY IFNULL(types.name, items.type), IFNULL(sub_types.name, items.sub_type), items.name
                                 ) grouped_items
                             ) items
-                        FROM tables 
+                        FROM ${tables} tables
                         WHERE tables.event_id = events.id
-                        AND EXISTS (SELECT id FROM items WHERE items.table_id = tables.id)
+                        AND EXISTS (SELECT id FROM ${items} items WHERE items.table_id = tables.id)
                     ) grouped_tables
                 ) tables,
                 (
@@ -144,17 +213,52 @@ class EventAPI {
         let result
         if (event.status === 'ONGOING') {
             result = await db.executeTransaction(
-            [
-                'DELETE FROM master_tables_event WHERE event_id = ?',
-                'UPDATE events SET status = ? WHERE id = ?',
-                `INSERT INTO master_tables_event (master_table_id, name, default_seats, status, room_id, x, y, width, height, shape, event_id)
+                [
+                    'DELETE FROM table_master_table',
+                    'DELETE FROM master_tables_event',
+                    'UPDATE events SET status = ? WHERE id = ?',
+                    `INSERT INTO master_tables_event (master_table_id, name, default_seats, status, room_id, x, y, width, height, shape, event_id)
                     SELECT id, name, default_seats, status, room_id, x, y, width, height, shape, ${event.id}
                     FROM master_tables WHERE status = 'ACTIVE'`
-            ], 
-            [
+                ],
+                [
+                    [],
+                    [],
+                    [event.status, event.id],
+                    []
+                ])
+        }
+        else if (event.status === 'CLOSED') {
+            result = await db.executeTransaction([
+                `INSERT INTO items_history (
+                    id, event_id, table_id, order_id, master_item_id, type, sub_type, sub_type_id, icon, name, price, note, done, paid, destination_id, menu_id
+                    )
+                    SELECT 
+                    id, event_id, table_id, order_id, master_item_id, type, sub_type, sub_type_id, icon, name, price, note, done, paid, destination_id, menu_id
+                    FROM items 
+                    WHERE event_id = ?`,
+                'DELETE FROM items WHERE event_id = ?',
+                `INSERT INTO orders_history (id, event_id, table_id, done, order_date, user_id)
+                    SELECT id, event_id, table_id, done, order_date, user_id
+                    FROM orders 
+                    WHERE event_id = ?`,
+                'DELETE FROM orders WHERE event_id = ?',
+                `INSERT INTO tables_history (id, event_id, name, paid, status, user_id)
+                    SELECT id, event_id, name, paid, status, user_id 
+                    FROM tables 
+                    WHERE event_id = ?`,
+                'TRUNCATE TABLE table_master_table',
+                'DELETE FROM tables WHERE event_id = ?',
+                'UPDATE events SET status = ? WHERE id = ?'
+            ], [
                 [event.id],
-                [event.status, event.id],
-                []
+                [event.id],
+                [event.id],
+                [event.id],
+                [event.id],
+                [],
+                [event.id],
+                [event.status, event.id]
             ])
         }
         else {

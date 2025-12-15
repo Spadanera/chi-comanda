@@ -16,7 +16,7 @@ const snackbarStore = SnackbarStore()
 
 const emit = defineEmits(['login', 'reload'])
 
-const loading = ref<boolean>(true)
+const loading = ref<boolean>(false)
 const tables = ref<Table[]>([])
 const selectedTable = ref<Table[]>([])
 const confirm = ref<boolean>(false)

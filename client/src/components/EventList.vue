@@ -32,7 +32,7 @@ function deleteEventConfirm(event: Event) {
 async function closeEvent() {
     await axios.SetEventStatus(selectedEvent.value)
     confirmCloseEvent.value = false
-    emit('reload', true)
+    emit('reload', 'CLOSED')
 }
 
 async function deleteEvent() {
@@ -52,13 +52,13 @@ async function setEventStatus(event: Event, status: string) {
         })
     }
     await axios.SetEventStatus(_event)
-    emit('reload', true)
+    emit('reload', status)
 }
 
 async function showEvent(event: Event) {
     if (event.status !== 'PLANNED') {
         selectedEvent.value = copy<Event>(event)
-        const _event: Event = await axios.GetEvent(event.id)
+        const _event: Event = await axios.GetEvent(event.id, event.status)
         selectedEvent.value.tables = _event.tables
         bottomSheet.value = true
     }

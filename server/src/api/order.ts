@@ -64,9 +64,14 @@ class OrderAPI {
 
     async create(order: Order, userId: number): Promise<number> {
         if (!order.table_id) {
-            order.table_id = await db.executeInsert('INSERT INTO tables (name, event_id, status) VALUES (?, ?, ?)', [order.table_name, order.event_id, 'ACTIVE'])
-            if (order.master_table_id) {
-                await db.executeInsert('INSERT INTO table_master_table (table_id, master_table_id) VALUES (?, ?)', [order.table_id, order.master_table_id])
+            order.table_id = await db.executeInsert('INSERT INTO tables (name, event_id, status, user_id) VALUES (?, ?, ?, ?)', [order.table_name, order.event_id, 'ACTIVE', userId])
+            try {
+                if (order.master_table_id) {
+                    await db.executeInsert('INSERT INTO table_master_table (table_id, master_table_id) VALUES (?, ?)', [order.table_id, order.master_table_id])
+                }
+            } catch (error) {
+                await db.executeUpdate('DELETE FROM tables WHERE id = ?', [order.table_id])
+                throw(error)
             }
         }
         order.order_date = getCurrentDateTimeInItaly()

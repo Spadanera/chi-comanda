@@ -24,7 +24,7 @@ const emit = defineEmits(['login', 'reload'])
 
 const props = defineProps(['destinations', 'pagetitle', 'minutetoalert', 'is', 'event'])
 
-const loading = ref<boolean>(true)
+const loading = ref<boolean>(false)
 const orders = ref<Order[]>([])
 const confirm = ref<boolean>(false)
 const deleteItemId = ref<number>(0)
@@ -191,7 +191,6 @@ function calculateMinPassed() {
 }
 
 function newOrderHandler(data: Order) {
-  console.log('new order', data)
   data.items = data.items?.filter((i: Item) => parseInt(props.destinations) === i.destination_id)
   if (data.items?.length && orders.value.find((o: Order) => o.id === data.id) === undefined) {
     orders.value.push(data)
@@ -288,7 +287,6 @@ watch(() => props.event, init, { immediate: true })
 onUnmounted(() => {
   window.clearInterval(interval)
   clearTimeout(reloadTimeout)
-  console.log('unmounted bartender')
   if (is) {
     is.emit('leave', 'bartender')
 
