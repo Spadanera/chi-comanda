@@ -231,10 +231,10 @@ class EventAPI {
         else if (event.status === 'CLOSED') {
             result = await db.executeTransaction([
                 `INSERT INTO items_history (
-                    id, event_id, table_id, order_id, master_item_id, type, sub_type, sub_type_id, icon, name, price, note, done, paid, destination_id, menu_id
+                    id, event_id, table_id, order_id, master_item_id, type, sub_type, sub_type_id, icon, name, price, note, done, paid, destination_id
                     )
                     SELECT 
-                    id, event_id, table_id, order_id, master_item_id, type, sub_type, sub_type_id, icon, name, price, note, done, paid, destination_id, menu_id
+                    id, event_id, table_id, order_id, master_item_id, type, sub_type, sub_type_id, icon, name, price, note, done, paid, destination_id
                     FROM items 
                     WHERE event_id = ?`,
                 'DELETE FROM items WHERE event_id = ?',
