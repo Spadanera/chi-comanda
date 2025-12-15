@@ -30,7 +30,6 @@ CREATE TABLE `items_history` (
   `done` bool,
   `paid` bool,
   `destination_id` integer, 
-  `menu_id` integer,
   `archived_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -46,10 +45,10 @@ CREATE TABLE `orders_history` (
 );
 
 INSERT INTO items_history (
-      id, event_id, table_id, order_id, master_item_id, type, sub_type, sub_type_id, icon, name, price, note, done, paid, destination_id, menu_id
+      id, event_id, table_id, order_id, master_item_id, type, sub_type, sub_type_id, icon, name, price, note, done, paid, destination_id
     )
     SELECT 
-      id, event_id, table_id, order_id, master_item_id, type, sub_type, sub_type_id, icon, name, price, note, done, paid, destination_id, menu_id
+      id, event_id, table_id, order_id, master_item_id, type, sub_type, sub_type_id, icon, name, price, note, done, paid, destination_id
     FROM items;
 
 DELETE FROM items;

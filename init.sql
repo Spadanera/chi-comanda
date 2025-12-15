@@ -176,7 +176,7 @@ CREATE TABLE `items_history` (
   `done` bool,
   `paid` bool,
   `destination_id` integer, 
-  `menu_id` integer,
+  `menu_id` integer
   `archived_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
