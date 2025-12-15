@@ -6,16 +6,6 @@ import userApi from "../api/user"
 
 const eventsRouter: Router = router()
 
-eventsRouter.get("/", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
-    try {
-        const result = await eventApi.getAll()
-        res.status(200).json(result)
-    } catch (error) {
-        console.error(error)
-        res.status(500).json(error)
-    }
-})
-
 eventsRouter.get("/ongoing", async (req: Request, res: Response) => {
     try {
         const userId = (req.user as any).id
@@ -37,9 +27,19 @@ eventsRouter.get("/users", async (req: Request, res: Response) => {
     }
 })
 
-eventsRouter.get("/:id", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
+eventsRouter.get("/status/:status", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
-        const result = await eventApi.get(+req.params.id)
+        const result = await eventApi.getAll(req.params.status)
+        res.status(200).json(result)
+    } catch (error) {
+        console.error(error)
+        res.status(500).json(error)
+    }
+})
+
+eventsRouter.get("/:id/status/:status", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
+    try {
+        const result = await eventApi.get(+req.params.id, req.params.status)
         if (result.length) {
             res.status(200).json(result[0])
         }

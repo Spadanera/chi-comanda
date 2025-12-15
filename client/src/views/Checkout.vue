@@ -16,7 +16,7 @@ const snackbarStore = SnackbarStore()
 
 const emit = defineEmits(['login', 'reload'])
 
-const loading = ref<boolean>(true)
+const loading = ref<boolean>(false)
 const tables = ref<Table[]>([])
 const selectedTable = ref<Table[]>([])
 const confirm = ref<boolean>(false)
@@ -145,6 +145,7 @@ async function paySelectedItem() {
 
 async function getTables() {
   const _tables = await axios.GetTablesInEvent(props.event?.id || 0)
+  console.log(_tables)
   _tables.forEach((t: Table) => {
     if (!t.items) {
       t.items = []
@@ -226,9 +227,12 @@ async function handleReconnection() {
 
 async function init() {
   if (props.event && props.event.id) {
+    console.log(1)
     loading.value = true
     types.value = await axios.GetSubTypes()
     await getTables()
+
+    console.log(2)
 
     is.emit('join', 'checkout')
     is.on('new-order', newOrderHandler)
@@ -236,6 +240,8 @@ async function init() {
     is.on('order-completed', orderCompletedHandler)
     is.on('connect', handleReconnection)
     loading.value = false
+
+    console.log(3)
   }
 }
 

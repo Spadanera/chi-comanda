@@ -65,6 +65,17 @@ CREATE TABLE `tables` (
   `user_id` INT NULL
 );
 
+CREATE TABLE `tables_history` (
+  `history_id` integer PRIMARY KEY AUTO_INCREMENT,
+  `id` integer,
+  `event_id` integer,
+  `name` varchar(255),
+  `paid` bool,
+  `status` varchar(255),
+  `user_id` INT NULL,
+  `archived_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+
 CREATE TABLE `table_master_table` (
   `id` int NOT NULL AUTO_INCREMENT,
   `table_id` int DEFAULT NULL,
@@ -98,6 +109,17 @@ CREATE TABLE `orders` (
   `done` bool,
   `order_date` datetime,
   `user_id` INT NULL
+);
+
+CREATE TABLE `orders_history` (
+  `history_id` integer PRIMARY KEY AUTO_INCREMENT,
+  `id` integer,
+  `event_id` integer,
+  `table_id` integer,
+  `done` bool,
+  `order_date` datetime,
+  `user_id` INT NULL,
+  `archived_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE `destinations` (
@@ -135,6 +157,27 @@ CREATE TABLE `items` (
   `paid` bool,
   `destination_id` integer, 
   `menu_id` integer
+);
+
+CREATE TABLE `items_history` (
+  `history_id` integer PRIMARY KEY AUTO_INCREMENT,
+  `id` integer,
+  `event_id` integer,
+  `table_id` integer,
+  `order_id` integer,
+  `master_item_id` integer,
+  `type` varchar(255),
+  `sub_type` varchar(255),
+  `sub_type_id` VARCHAR(255) NULL,
+  `icon` VARCHAR(255) NULL,
+  `name` VARCHAR(255),
+  `price` DOUBLE,
+  `note` varchar(255),
+  `done` bool,
+  `paid` bool,
+  `destination_id` integer, 
+  `menu_id` integer,
+  `archived_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE `audit` (

@@ -101,12 +101,12 @@ export default class Axios {
         return response.data
     }
 
-    async GetAllEvents(): Promise<Event[]> {
-        return await this.get<Event>("/events")
+    async GetAllEvents(status: string): Promise<Event[]> {
+        return await this.get<Event>(`/events/status/${status}`)
     }
 
-    async GetEvent(event_id: number): Promise<Event> {
-        return await this.getSingle<Event>(`/events/${event_id}`)
+    async GetEvent(event_id: number, status: string): Promise<Event> {
+        return await this.getSingle<Event>(`/events/${event_id}/status/${status}`)
     }
 
     async GetOnGoingEvent(): Promise<Event> {

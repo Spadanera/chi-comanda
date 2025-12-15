@@ -112,6 +112,7 @@ function openExtraItemDialog() {
 }
 
 async function sendOrder() {
+  loading.value = true
   if (alreadyDone.value) {
     orderItems.value.forEach((i: Item) => { i.done = true })
   }
@@ -126,6 +127,7 @@ async function sendOrder() {
     table_name: table_name.value
   } as Order
   await axios.CreateOrder(_order)
+  loading.value = false
   snackbarStore.show("Ordine inviato con successo", 3000, 'top', 'success')
   router.push(origin)
 }
