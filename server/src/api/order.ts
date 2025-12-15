@@ -67,7 +67,6 @@ class OrderAPI {
             order.table_id = await db.executeInsert('INSERT INTO tables (name, event_id, status, user_id) VALUES (?, ?, ?, ?)', [order.table_name, order.event_id, 'ACTIVE', userId])
             try {
                 if (order.master_table_id) {
-                    console.log([order.table_id, order.master_table_id])
                     await db.executeInsert('INSERT INTO table_master_table (table_id, master_table_id) VALUES (?, ?)', [order.table_id, order.master_table_id])
                 }
             } catch (error) {

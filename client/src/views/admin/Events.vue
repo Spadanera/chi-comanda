@@ -9,6 +9,14 @@ import Avatar from "@/components/Avatar.vue"
 
 const props = defineProps(['event'])
 
+const menuStart = ref(false)
+const menuEnd = ref(false)
+
+function formatDate(date: any) {
+  if (!date) return null
+  return new Date(date).toLocaleDateString('it-IT')
+}
+
 const axios = new Axios()
 const snackbarStore = SnackbarStore()
 const tab = ref('ONGOING')
@@ -20,9 +28,30 @@ const form = ref(null)
 const menu = ref([])
 const users = ref<User[]>([])
 
+const page = ref(1)
+const totalPages = ref(1)
+const dateRange = ref({ start: null, end: null })
+
 async function getAllEvents(status: string) {
-  const data = await axios.GetAllEvents(status)
-  events.value = data
+  let end: Date | null = dateRange.value.end ? new Date(dateRange.value.end) : null
+  let endString: string | undefined
+
+  if (end) {
+    end.setHours(23, 59, 59, 999)
+    endString = end.toISOString()
+  }
+
+  const filters = status === 'CLOSED'
+    ? { page: page.value, start: dateRange.value.start, end: endString }
+    : undefined
+  const data = await axios.GetAllEvents(status, filters)
+
+  if ('events' in data) {
+    events.value = data.events
+    totalPages.value = data.totalPages || 1
+  } else {
+    events.value = data
+  }
 }
 
 async function openDialog(event?: Event) {
@@ -76,14 +105,24 @@ async function upsertEvent() {
 async function load(status?: string) {
   if (!tab.value) return
   loading.value = true
-  if (status) {
+  if (status && typeof status === 'string') {
     tab.value = status
   }
   await getAllEvents(tab.value)
   loading.value = false
 }
 
-watch(tab, load)
+watch(tab, (val) => {
+  if (val !== 'CLOSED') {
+    page.value = 1
+    dateRange.value = { start: null, end: null }
+  }
+  load()
+})
+
+watch([page, () => dateRange.value.start, () => dateRange.value.end], () => {
+  if (tab.value === 'CLOSED') load()
+})
 
 onMounted(async () => {
   await load()
@@ -92,19 +131,49 @@ onMounted(async () => {
   }
 })
 </script>
+
 <template>
   <v-tabs v-model="tab" grow>
     <v-tab value="ONGOING">Eventi Attivo</v-tab>
     <v-tab value="PLANNED">Eventi Programmati</v-tab>
     <v-tab value="CLOSED">Eventi Chiusi</v-tab>
   </v-tabs>
-  <v-tabs-window v-model="tab">
+
+  <v-tabs-window v-model="tab" style="padding-bottom: 80px;">
     <v-tabs-window-item v-for="item in ['ONGOING', 'PLANNED', 'CLOSED']" :key="item" :value="item">
       <v-skeleton-loader type="card" v-if="loading"></v-skeleton-loader>
       <EventList :ongoing="props.event.id > 0" v-else v-model="events" @reload="load" @editevent="openDialog">
       </EventList>
     </v-tabs-window-item>
   </v-tabs-window>
+
+  <v-footer app v-if="tab === 'CLOSED'" class="d-flex flex-column align-center pa-2 bg-grey-lighten-4" elevation="4">
+    <div class="d-flex w-100 align-center justify-center gap-4 mb-2">
+
+      <v-menu v-model="menuStart" :close-on-content-click="false" location="top center">
+        <template v-slot:activator="{ props }">
+          <v-text-field v-bind="props" :model-value="formatDate(dateRange.start)" label="Da"
+            prepend-inner-icon="mdi-calendar" density="compact" hide-details variant="outlined" readonly
+            style="max-width: 180px;" clearable @click:clear="dateRange.start = null"></v-text-field>
+        </template>
+        <v-date-picker v-model="dateRange.start" hide-header color="primary"
+          @update:model-value="menuStart = false"></v-date-picker>
+      </v-menu>
+
+      <v-menu v-model="menuEnd" :close-on-content-click="false" location="top center">
+        <template v-slot:activator="{ props }">
+          <v-text-field v-bind="props" :model-value="formatDate(dateRange.end)" label="A"
+            prepend-inner-icon="mdi-calendar" density="compact" hide-details variant="outlined" readonly
+            style="max-width: 180px;" clearable @click:clear="dateRange.end = null"></v-text-field>
+        </template>
+        <v-date-picker v-model="dateRange.end" hide-header color="primary"
+          @update:model-value="menuEnd = false"></v-date-picker>
+      </v-menu>
+
+    </div>
+    <v-pagination v-model="page" :length="totalPages" density="compact" total-visible="5"></v-pagination>
+  </v-footer>
+
   <v-fab v-if="tab === 'PLANNED'" icon="mdi-plus" app style="position: fixed; right: 10px; bottom: 10px;"
     location="bottom right" @click="openDialog()"></v-fab>
 

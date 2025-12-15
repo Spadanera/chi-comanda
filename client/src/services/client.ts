@@ -76,8 +76,8 @@ export default class Axios {
         this.progressStoreDef = ProgressStore
     }
 
-    private async get<T extends Repository>(path: string): Promise<T[]> {
-        const response: AxiosResponse<T[]> = await this.client.get<T[]>(path, this.config)
+    private async get<T extends Repository>(path: string, params?: any): Promise<T[]> {
+        const response: AxiosResponse<T[]> = await this.client.get<T[]>(path, { ...this.config, params })
         return response.data
     }
 
@@ -101,8 +101,14 @@ export default class Axios {
         return response.data
     }
 
-    async GetAllEvents(status: string): Promise<Event[]> {
-        return await this.get<Event>(`/events/status/${status}`)
+    async GetAllEvents(status: string, filters?: { page?: number, start?: string | null, end?: string | null }): Promise<Event[] | { events: Event[], totalPages: number }> {
+        const params: any = {}
+        if (filters) {
+            if (filters.page) params.page = filters.page
+            if (filters.start) params.start_date = filters.start
+            if (filters.end) params.end_date = filters.end
+        }
+        return await this.get(`/events/status/${status}`, params)
     }
 
     async GetEvent(event_id: number, status: string): Promise<Event> {

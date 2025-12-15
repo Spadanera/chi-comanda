@@ -6,59 +6,90 @@ class EventAPI {
     constructor() {
     }
 
-    async getAll(status: string): Promise<Event[]> {
+    async getAll(status: string, query?: any): Promise<Event[] | { events: Event[], totalPages: number }> {
         let tables = 'tables'
         let items = 'items'
         if (status === 'CLOSED') {
             tables = 'tables_history'
             items = 'items_history'
         }
-        return await db.query(`
+
+        // Array dei parametri per i prepared statements (solo per WHERE)
+        const params: any[] = [status]
+        let whereClause = 'WHERE e.status = ?'
+
+        // Gestione filtri opzionali
+        if (query?.start_date) {
+            whereClause += ' AND e.date >= ?'
+            params.push(query.start_date)
+        }
+        if (query?.end_date) {
+            whereClause += ' AND e.date <= ?'
+            params.push(query.end_date)
+        }
+
+        const baseQuery = `
+        SELECT
+            e.id,
+            e.name,
+            e.date,
+            e.status,
+            m.name AS menu_name,
+            COALESCE(t_stats.tableCount, 0) AS tableCount,
+            COALESCE(t_stats.tablesOpen, 0) AS tablesOpen,
+            COALESCE(i_stats.revenue, 0) AS revenue,
+            COALESCE(i_stats.discount, 0) AS discount,
+            COALESCE(i_stats.currentPaid, 0) AS currentPaid,
+            u_stats.users
+        FROM events e
+        INNER JOIN menu m ON e.menu_id = m.id
+        LEFT JOIN (
             SELECT
-                e.id,
-                e.name,
-                e.date,
-                e.status,
-                m.name AS menu_name,
-                COALESCE(t_stats.tableCount, 0) AS tableCount,
-                COALESCE(t_stats.tablesOpen, 0) AS tablesOpen,
-                COALESCE(i_stats.revenue, 0) AS revenue,
-                COALESCE(i_stats.discount, 0) AS discount,
-                COALESCE(i_stats.currentPaid, 0) AS currentPaid,
-                u_stats.users
-            FROM events e
-            INNER JOIN menu m ON e.menu_id = m.id
-            LEFT JOIN (
-                SELECT
-                    event_id,
-                    COUNT(id) AS tableCount,
-                    COUNT(CASE WHEN status = 'ACTIVE' THEN 1 END) AS tablesOpen
-                FROM ${tables}
-                GROUP BY event_id
-            ) t_stats ON t_stats.event_id = e.id
-            LEFT JOIN (
-                SELECT
-                    event_id,
-                    SUM(CASE WHEN type != 'Sconto' THEN price ELSE 0 END) AS revenue,
-                    SUM(CASE WHEN type = 'Sconto' THEN price ELSE 0 END) AS discount,
-                    SUM(CASE WHEN type != 'Sconto' AND paid = 1 THEN price ELSE 0 END) AS currentPaid
-                FROM ${items}
-                GROUP BY event_id
-            ) i_stats ON i_stats.event_id = e.id
-            LEFT JOIN (
-                SELECT
-                    ue.event_id,
-                    JSON_ARRAYAGG(JSON_OBJECT(
-                        'id', u.id,
-                        'username', u.username
-                    )) AS users
-                FROM users u
-                INNER JOIN user_event ue ON ue.user_id = u.id
-                GROUP BY ue.event_id
-            ) u_stats ON u_stats.event_id = e.id
-            WHERE e.status = ?
-            ORDER BY e.date DESC`
-            , [status])
+                event_id,
+                COUNT(id) AS tableCount,
+                COUNT(CASE WHEN status = 'ACTIVE' THEN 1 END) AS tablesOpen
+            FROM ${tables}
+            GROUP BY event_id
+        ) t_stats ON t_stats.event_id = e.id
+        LEFT JOIN (
+            SELECT
+                event_id,
+                SUM(CASE WHEN type != 'Sconto' THEN price ELSE 0 END) AS revenue,
+                SUM(CASE WHEN type = 'Sconto' THEN price ELSE 0 END) AS discount,
+                SUM(CASE WHEN type != 'Sconto' AND paid = 1 THEN price ELSE 0 END) AS currentPaid
+            FROM ${items}
+            GROUP BY event_id
+        ) i_stats ON i_stats.event_id = e.id
+        LEFT JOIN (
+            SELECT
+                ue.event_id,
+                JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', u.id,
+                    'username', u.username
+                )) AS users
+            FROM users u
+            INNER JOIN user_event ue ON ue.user_id = u.id
+            GROUP BY ue.event_id
+        ) u_stats ON u_stats.event_id = e.id
+        ${whereClause}`
+
+        if (query?.page) {
+            const page = parseInt(query.page, 10) || 1
+            const limit = 20
+            const offset = (page - 1) * limit
+
+            const countResult = await db.query(`SELECT COUNT(*) as total FROM events e ${whereClause}`, params)
+            const totalPages = Math.ceil((countResult[0]?.total || 0) / limit)
+
+            const events = await db.query(
+                `${baseQuery} ORDER BY e.date DESC LIMIT ${limit} OFFSET ${offset}`,
+                params
+            )
+            console.log(whereClause, params)
+            return { events, totalPages }
+        }
+
+        return await db.query(`${baseQuery} ORDER BY e.date DESC`, params)
     }
 
     async get(id: number, status: string): Promise<Event[]> {

@@ -29,7 +29,7 @@ eventsRouter.get("/users", async (req: Request, res: Response) => {
 
 eventsRouter.get("/status/:status", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
-        const result = await eventApi.getAll(req.params.status)
+        const result = await eventApi.getAll(req.params.status, req.query)
         res.status(200).json(result)
     } catch (error) {
         console.error(error)

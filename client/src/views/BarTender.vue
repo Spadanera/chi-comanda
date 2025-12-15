@@ -287,7 +287,6 @@ watch(() => props.event, init, { immediate: true })
 onUnmounted(() => {
   window.clearInterval(interval)
   clearTimeout(reloadTimeout)
-  console.log('unmounted bartender')
   if (is) {
     is.emit('leave', 'bartender')
 
