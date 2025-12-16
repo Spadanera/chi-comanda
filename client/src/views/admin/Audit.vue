@@ -4,6 +4,8 @@ import { onMounted, ref } from 'vue';
 import Axios from '@/services/client'
 import Avatar from "@/components/Avatar.vue";
 
+const props = defineProps(['event'])
+
 const axios = new Axios()
 
 const itemsPerPage = ref<number>(25)

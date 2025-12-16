@@ -178,6 +178,10 @@ export default class Axios {
         return await this.getSingle<MasterTable>(`/tables/${master_id}`)
     }
 
+    async GetByTableId(table_id: number, event_id: number): Promise<Table> {
+        return await this.getSingle<MasterTable>(`/events/${event_id}/tables/${table_id}/items`)
+    }
+
     async GetOrdersInEvent(event_id: number, destinations_ids: string): Promise<Order[]> {
         return await this.get<Order>(`/orders/${event_id}/[${destinations_ids}]`)
     }

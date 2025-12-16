@@ -11,6 +11,7 @@ const props = defineProps<{
   zoom: number
   selectedTableId: number
   editable?: boolean
+  highlightSelection?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -196,6 +197,7 @@ onUnmounted(() => {
               left: (draggingState.activeTableId === table.id ? draggingState.currentX : table.x) + 'px',
               width: table.width + 'px',
               height: table.height + 'px',
+              border: highlightSelection && table.table_id === props.selectedTableId ? '1px solid red' : ''
             }" @mousedown.stop="startDrag($event, table)" @touchstart.stop="startTouchDrag($event, table)"
             @click.stop="handleTableClick(table)">
             <div class="text-center unselectable">
@@ -274,7 +276,6 @@ onUnmounted(() => {
 .table-item {
   position: absolute;
   background-color: #f5f5f5;
-  border: 2px solid #424242;
   user-select: none;
   transition: box-shadow 0.1s;
   touch-action: none;

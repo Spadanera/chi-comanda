@@ -3,6 +3,8 @@ import MenuList from '@/components/MenuList.vue';
 import TypeList from '@/components/TypeList.vue';
 import { onMounted, ref } from 'vue';
 
+const props = defineProps(['event'])
+
 const tab = ref<string>(null)
 
 onMounted(() => {

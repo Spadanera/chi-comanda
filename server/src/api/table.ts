@@ -1,5 +1,5 @@
 import db from "../db"
-import { MasterTable, RestaurantLayout, Room, Table } from "../../../models/src"
+import { MasterTable, RestaurantLayout, Room, Table, Event } from "../../../models/src"
 import { SocketIOService } from "../socket"
 
 class TableApi {
@@ -31,7 +31,7 @@ class TableApi {
             [table_name, table_id]
         ])
         SocketIOService.instance().sendMessage({
-            rooms: ["waiter", "bartender", "table"],
+            rooms: ["waiter", "bartender", "table", "checkout"],
             event: "reload-table",
             body: {}
         })
@@ -137,6 +137,45 @@ class TableApi {
         } as RestaurantLayout
     }
 
+    async getTableItems(tableId: number, eventId: number): Promise<Event> {
+        return await db.queryOne<Event>(`
+            SELECT tables.id, tables.name, tables.paid, tables.status,
+            (
+                SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', items.id, 
+                    'master_item_id', items.master_item_id, 
+                    'event_id', items.event_id,
+                    'table_id', items.table_id,
+                    'order_id', items.order_id,
+                    'note', items.note, 
+                    'name', items.name, 
+                    'type', IFNULL(types.name, items.type), 
+                    'icon', IFNULL(sub_types.icon, items.icon), 
+                    'sub_type', IFNULL(sub_types.name, items.sub_type), 
+                    'price', items.price,
+                    'destination_id', items.destination_id,
+                    'done', items.done,
+                    'paid', items.paid
+                )) 
+                FROM items 
+                LEFT JOIN sub_types ON sub_types.id = items.sub_type_id
+                LEFT JOIN types ON sub_types.type_id = types.id
+                WHERE table_id = tables.id
+            ) items,
+            (
+                SELECT JSON_OBJECT(
+                    'id', users.id, 
+                    'username', users.username
+                )
+                FROM users 
+                WHERE users.id = tables.user_id
+            ) user
+            FROM tables 
+            WHERE tables.id = ? AND event_id = ?
+            ORDER BY paid, tables.id`
+            , [tableId, eventId])
+    }
+
     async saveLayout(layout: RestaurantLayout, event_id: number): Promise<number> {
         let transactionQueries: [string] = ['UPDATE master_tables_event SET status = ? WHERE event_id = ?']
         let transactionParams: [any[]] = [['DELETED', event_id]]
@@ -160,7 +199,7 @@ class TableApi {
         await db.executeTransaction(transactionQueries, transactionParams)
 
         SocketIOService.instance().sendMessage({
-            rooms: ["waiter", "bartender", "table"],
+            rooms: ["waiter", "bartender", "table", "checkoutS"],
             event: "reload-table",
             body: {}
         })
@@ -217,7 +256,7 @@ class TableApi {
             [table_id]
         ])
         SocketIOService.instance().sendMessage({
-            rooms: ["waiter", "table"],
+            rooms: ["waiter", "table", "checkout"],
             event: "reload-table",
             body: {}
         })

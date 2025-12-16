@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
 import Axios from '@/services/client'
-import { ref, onBeforeMount, onBeforeUnmount, onMounted } from 'vue'
+import { ref, onBeforeMount, onBeforeUnmount, onMounted, computed } from 'vue'
 import router from '@/router'
 import { UserStore, SnackbarStore, ProgressStore, ThemeStore } from '@/stores'
 import { type User, type Event, type Broadcast } from '../../models/src'
@@ -12,6 +12,7 @@ import bendingString from '@/assets/bending-string.mp3'
 
 const messageSound = new Audio(bendingString)
 const axios: Axios = new Axios()
+const route = useRoute()
 const userStore = UserStore()
 const snackbarStore = SnackbarStore()
 const progressStore = ProgressStore()
@@ -32,10 +33,28 @@ const broadcastsQueue = ref<Broadcast[]>([])
 const broadcastListDialog = ref<boolean>(null)
 const socketConnected = ref<boolean>(false)
 
+const routeTitle = computed(() => {
+  if (route.params.pagetitle) {
+    return Array.isArray(route.params.pagetitle) 
+      ? route.params.pagetitle[0] 
+      : route.params.pagetitle
+  }
+
+  return route.matched
+    .filter((r) => r.name)
+    .map((r) => r.name)
+    .join(' - ')
+})
+
 function login() {
   user.value = userStore.user
   getOnGoingEvent()
   router.push("/")
+}
+
+async function logout() {
+  await axios.Logout()
+  user.value = userStore.user
 }
 
 function reload() {
@@ -149,7 +168,6 @@ onMounted(async () => {
         try {
           await messageSound.play()
         } catch (e) {
-          // Gestione errore autoplay su mobile
         }
       } else {
         broadcastsQueue.value.push(data)
@@ -179,9 +197,16 @@ onBeforeUnmount(() => {
           </RouterLink>
         </template>
         <v-app-bar-title>
-          <RouterLink to="/">CHI COMANDA</RouterLink>
+          <RouterLink to="/" class="d-flex flex-column"
+            style="text-decoration: none; color: inherit; line-height: 1.1;">
+            <span>CHI COMANDA</span>
+            <span v-if="routeTitle" class="text-caption font-weight-light"
+              style="font-size: 0.75rem !important; opacity: 0.8; text-transform: uppercase;">
+              {{ routeTitle }}
+            </span>
+          </RouterLink>
         </v-app-bar-title>
-        <v-btn @click="openMessageDialog()" v-if="event?.id" size="x-large" icon="mdi-account-voice"></v-btn>
+        <v-btn @click="openMessageDialog()" v-if="event?.id && user?.id" size="x-large" icon="mdi-account-voice"></v-btn>
         <v-menu v-if="userStore.isLoggedIn">
           <template v-slot:activator="{ props }">
             <v-btn icon v-bind="props">
@@ -224,7 +249,7 @@ onBeforeUnmount(() => {
             </v-list-item>
             <v-list-item>
               <v-list-item-title>
-                <v-btn @click="axios.Logout()" v-if="userStore.isLoggedIn" variant="text">
+                <v-btn @click="logout()" v-if="userStore.isLoggedIn" variant="text">
                   ESCI
                   <template v-slot:prepend>
                     <v-icon>mdi-logout</v-icon>

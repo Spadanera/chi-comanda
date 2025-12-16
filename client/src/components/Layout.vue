@@ -14,7 +14,7 @@ import { SnackbarStore } from '@/stores'
 
 const props = defineProps<{
     event?: Event,
-    editRoom?: boolean
+    editRoom?: boolean,
 }>()
 
 const axios = new Axios()
@@ -188,12 +188,14 @@ defineExpose({
                         <v-btn prepend-icon="mdi-plus" @click="openRoomDialog()">Stanza</v-btn>
                     </v-btn-group>
 
-                    <div v-if="roomSelected && (smAndUp || !editing)" class="d-flex align-center" style="width: 200px; padding-left: 10px;">
+                    <div v-if="roomSelected && (smAndUp || !editing)" class="d-flex align-center"
+                        style="width: 200px; padding-left: 10px;">
                         <v-icon icon="mdi-magnify-minus-outline" size="small" class="mr-2" @click="zoomOut"></v-icon>
                         <v-slider v-model="zoomLevel" :min="0.3" :max="2.0" :step="0.05" hide-details
                             density="compact"></v-slider>
                         <v-icon icon="mdi-magnify-plus-outline" size="small" class="ml-2" @click="zoomIn"></v-icon>
-                        <span v-show="smAndUp" class="text-caption ml-2" style="width: 40px">{{ Math.round(zoomLevel * 100) }}%</span>
+                        <span v-show="smAndUp" class="text-caption ml-2" style="width: 40px">{{ Math.round(zoomLevel *
+                            100) }}%</span>
                     </div>
 
                     <v-spacer></v-spacer>
@@ -212,8 +214,9 @@ defineExpose({
                     @update-table="onTableUpdate" />
             </v-col>
         </v-row>
-        <v-fab @click="addTable()" v-if="roomSelected" icon="mdi-plus" app
-            style="position: fixed; right: 15px; bottom: 15px;" location="bottom right"></v-fab>
+
+        <v-fab @click="addTable()" v-if="roomSelected" text="Tavolo" prepend-icon="mdi-plus" location="bottom right" app
+            extended appear style="position: fixed; right: 15px; bottom: 15px;"></v-fab>
 
         <RoomDialog v-model="roomDialog" :room="tempRoom" :is-editing="isEditingRoom" @save="onSaveRoom" />
 

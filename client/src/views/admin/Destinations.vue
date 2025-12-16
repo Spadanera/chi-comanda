@@ -4,6 +4,8 @@ import { type Destination } from '../../../../models/src';
 import { copy, requiredRule, positiveIntegerRule } from '@/services/utils';
 import Axios from '@/services/client'
 
+const props = defineProps(['event'])
+
 const destinations = ref<Destination[]>([])
 const axios = new Axios()
 const confirmDeleteDestination = ref<boolean>(false)
