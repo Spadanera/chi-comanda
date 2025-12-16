@@ -14,11 +14,9 @@ class EventAPI {
             items = 'items_history'
         }
 
-        // Array dei parametri per i prepared statements (solo per WHERE)
         const params: any[] = [status]
         let whereClause = 'WHERE e.status = ?'
 
-        // Gestione filtri opzionali
         if (query?.start_date) {
             whereClause += ' AND e.date >= ?'
             params.push(query.start_date)
@@ -85,7 +83,6 @@ class EventAPI {
                 `${baseQuery} ORDER BY e.date DESC LIMIT ${limit} OFFSET ${offset}`,
                 params
             )
-            console.log(whereClause, params)
             return { events, totalPages }
         }
 

@@ -5,6 +5,8 @@ import Axios from '@/services/client'
 import { copy, requiredRule, emailRule, Roles } from '@/services/utils'
 import Avatar from '@/components/Avatar.vue'
 
+const props = defineProps(['event'])
+
 const axios = new Axios()
 const loading = ref<boolean>(null)
 const dialog = ref<boolean>(null)

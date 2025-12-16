@@ -325,16 +325,14 @@ onUnmounted(() => {
   </v-navigation-drawer>
   <v-skeleton-loader type="card" v-if="loading"></v-skeleton-loader>
   <v-container v-else-if="!props.event?.id">
-    <h3>{{ props.pagetitle }}</h3>
-    <p>Nessun evento attivo</p>
+    <NoEvent></NoEvent>
   </v-container>
   <template v-else>
     <v-container>
-      <h3>{{ props.pagetitle }} <span v-if="selectedOrder.length"> - Tavolo {{ selectedOrder[0].table_name }}</span>
-      </h3>
+      <h3>Tavolo {{ selectedOrder[0]?.table_name }}</h3>
       <v-chip v-if="selectedOrder.length">
-        <Avatar :user="selectedOrder[0].user" alt start></Avatar>
-        {{ selectedOrder[0].user.username }}
+        <Avatar :user="selectedOrder[0]?.user" alt start></Avatar>
+        {{ selectedOrder[0]?.user.username }}
       </v-chip>
     </v-container>
     <ItemList :quantitybefore="true" :showtype="true" subheader="DA FARE" v-model="itemsToDo" :shownote="true">

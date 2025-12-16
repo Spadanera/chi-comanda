@@ -142,6 +142,16 @@ eventsRouter.get("/:id/tables", async (req: Request, res: Response) => {
     }
 })
 
+eventsRouter.get("/:eventid/tables/:tableid/items", authorizationMiddleware(Roles.checkout), async (req: Request, res: Response) => {
+    try {
+        const result = await tableApi.getTableItems(+req.params.tableid, +req.params.eventid)
+        res.status(200).json(result)
+    } catch (error) {
+        console.error(error)
+        res.status(500).json(error)
+    }
+})
+
 eventsRouter.post("/:eventid/tables/:tableid/discount/:discount", authorizationMiddleware(Roles.checkout), async (req: Request, res: Response) => {
     try {
         const result = await tableApi.insertDiscount(+req.params.eventid, +req.params.tableid, +req.params.discount)

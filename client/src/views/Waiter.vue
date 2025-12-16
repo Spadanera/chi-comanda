@@ -28,7 +28,6 @@ const zoomLevel = ref(1)
 let reloadTimeout: ReturnType<typeof setTimeout>
 
 const currentRoom = computed(() => rooms.value.find(r => r.id === activeRoomId.value))
-const roomTables = computed(() => tables.value.filter(t => t.room_id === activeRoomId.value))
 const roomSelected = computed(() => activeRoomId.value && rooms.value.length)
 
 const onTableClick = (table: AvailableTable) => {
@@ -98,8 +97,7 @@ onUnmounted(() => {
   <main>
     <v-skeleton-loader v-if="loading" type="card"></v-skeleton-loader>
     <v-container v-else-if="!props.event?.id">
-      <h3>Cameriere</h3>
-      <p>Nessun evento attivo</p>
+      <NoEvent></NoEvent>
     </v-container>
     <v-container v-else style="margin: 0; padding: 0; min-width: 100%; max-height: calc(100vh - 64px);">
       <RoomTabs v-model="activeRoomId" :rooms="rooms" :editing="false" />
@@ -107,8 +105,8 @@ onUnmounted(() => {
       <RestaurantMap :room="currentRoom" :tables="tables" :zoom="zoomLevel" :selected-table-id="selectedTableId"
         :editable="false" @click-table="onTableClick" />
 
-      <v-fab @click="extraTableClick()" v-if="roomSelected !== undefined" icon="mdi-plus" app
-        style="position: fixed; right: 15px; bottom: 15px;" location="bottom right"></v-fab>
+      <v-fab @click="extraTableClick()" v-if="roomSelected !== undefined" prepend-icon="mdi-plus" app text="Extra"
+        appear style="position: fixed; right: 15px; bottom: 15px;" location="bottom right"></v-fab>
     </v-container>
   </main>
 </template>

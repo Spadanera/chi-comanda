@@ -43,8 +43,7 @@ onUnmounted(() => {
 
 <template>
   <v-container v-if="!props.event?.id">
-    <h3>Gestione Tavoli</h3>
-    <p>Nessun evento attivo</p>
+    <NoEvent></NoEvent>
   </v-container>
   <Layout v-else :edit-room="false" :event="props.event" ref="layout"></Layout>
 </template>

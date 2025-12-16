@@ -52,7 +52,7 @@ const router = createRouter({
     },
     {
       path: '/admin',
-      name: 'Admin',
+      name: 'Amministazione',
       component: () => import('@/views/Admin.vue'),
       props: true,
       meta: {
@@ -61,7 +61,7 @@ const router = createRouter({
       children: [
         {
           path: "",
-          name: "events",
+          name: "Eventi",
           component: () => import('@/views/admin/Events.vue'),
           props: true,
           meta: {
@@ -70,7 +70,7 @@ const router = createRouter({
         },
         {
           path: "users",
-          name: "users",
+          name: "Utenti",
           component: () => import('@/views/admin/Users.vue'),
           props: true,
           meta: {
@@ -79,7 +79,7 @@ const router = createRouter({
         },
         {
           path: "tables",
-          name: "tables",
+          name: "Tavoli",
           component: () => import('@/views/admin/Tables-v2.vue'),
           props: true,
           meta: {
@@ -97,7 +97,7 @@ const router = createRouter({
         },
         {
           path: "menu",
-          name: "menu",
+          name: "Menu",
           component: () => import('@/views/admin/Menu.vue'),
           props: true,
           meta: {
@@ -106,7 +106,7 @@ const router = createRouter({
         },
         {
           path: "destinations",
-          name: "destinations",
+          name: "Destinazioni",
           component: () => import('@/views/admin/Destinations.vue'),
           props: true,
           meta: {
@@ -115,7 +115,7 @@ const router = createRouter({
         },
         {
           path: "audit",
-          name: "audit",
+          name: "Audit",
           component: () => import('@/views/admin/Audit.vue'),
           props: true,
           meta: {
@@ -126,7 +126,7 @@ const router = createRouter({
     },
     {
       path: '/waiter',
-      name: 'Waiter',
+      name: 'Cameriere',
       component: () => import('@/views/Waiter.vue'),
       props: true,
       meta: {
@@ -135,7 +135,7 @@ const router = createRouter({
     },
     {
       path: '/waiter/:event_id/mastertable/:master_table_id/table/:table_id/menu/:menu_id',
-      name: 'Waiter Order',
+      name: 'Completa Ordine',
       component: () => import('@/views/WaiterOrder.vue'),
       props: true,
       meta: {
@@ -153,8 +153,8 @@ const router = createRouter({
     },
     {
       path: '/checkout',
-      name: 'Checkout',
-      component: () => import('@/views/Checkout.vue'),
+      name: 'Cassa',
+      component: () => import('@/views/Checkout-v2.vue'),
       props: true,
       meta: {
         allowedRole: Roles.checkout
@@ -162,7 +162,7 @@ const router = createRouter({
     },
     {
       path: '/tables',
-      name: 'Tables',
+      name: 'Gestione Tavoli',
       component: () => import('@/views/Tables.vue'),
       props: true,
       meta: {
@@ -171,7 +171,7 @@ const router = createRouter({
     },
     {
       path: '/profile',
-      name: 'Profile',
+      name: 'Profilo',
       component: () => import('@/views/Profile.vue'),
       props: true
     },

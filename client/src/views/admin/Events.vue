@@ -120,8 +120,17 @@ watch(tab, (val) => {
   load()
 })
 
-watch([page, () => dateRange.value.start, () => dateRange.value.end], () => {
-  if (tab.value === 'CLOSED') load()
+watch([page, () => dateRange.value.start, () => dateRange.value.end], ([nPage, nStart, nEnd], [oPage, oStart, oEnd]) => {
+  if (tab.value !== 'CLOSED') return
+
+  if (nStart !== oStart || nEnd !== oEnd) {
+    if (page.value !== 1) {
+      page.value = 1
+      return
+    }
+  }
+
+  load()
 })
 
 onMounted(async () => {
