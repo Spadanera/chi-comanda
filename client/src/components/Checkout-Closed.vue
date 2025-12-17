@@ -30,14 +30,14 @@ function getSubTypeCount(table: Table, subtype: string[]) {
   return 0
 }
 
-async function getTables(table_id?:number) {
+async function getTables(table_id?: number) {
   const _tables = (await axios.GetTablesInEvent(props.event?.id || 0)).filter(t => t.status === 'CLOSED')
   _tables.forEach((t: Table) => {
     if (!t.items) {
       t.items = []
     }
   })
-  const tableDiff:boolean = tables.value.length > _tables.length
+  const tableDiff: boolean = tables.value.length > _tables.length
   tables.value = _tables
   if (tables.value.length) {
     if (selectedTable.value.length === 0) {
@@ -73,19 +73,19 @@ async function init() {
 watch(() => props.event, init, { immediate: true })
 
 watch(() => selectedTable.value, () => {
-  if (!selectedTable.value.length && !smAndUp) {
+  if (!smAndUp.value) {
     drawer.value = false
   }
-}, { immediate: true })
+}, { immediate: true, deep: true })
 
 onUnmounted(() => {
-  
+
 })
 </script>
 
 <template>
   <v-navigation-drawer v-if="props.event?.id" v-model="drawer" mobile-breakpoint="sm" location="right" :width="450">
-    <v-list v-model:selected="selectedTable" lines="two">
+    <v-list v-model:selected="selectedTable" lines="two" mandatory>
       <v-list-subheader>Tavoli Chiusi</v-list-subheader>
       <v-list-item :key="table.id" v-for="(table, i) in sortedTables" :value="table">
         <v-list-item-title>
@@ -98,12 +98,22 @@ onUnmounted(() => {
         </template>
       </v-list-item>
     </v-list>
+    <v-fab @click="drawer = !drawer" height="48px" icon="mdi-undo" location="bottom left" variant="flat"></v-fab>
   </v-navigation-drawer>
   <v-skeleton-loader type="card" v-if="loading"></v-skeleton-loader>
   <v-container v-else-if="!props.event?.id">
     <NoEvent></NoEvent>
   </v-container>
-  <CheckoutOrder :roomid="-1" v-else-if="selectedTable.length" :event="props.event" v-model:selected-table="selectedTable" @get-tables="getTables"
-    @change-table-sheet="tableSheet = true" v-model:drawer="drawer" />
+  <CheckoutOrder :roomid="-1" v-else-if="tables.length" :event="props.event" v-model:selected-table="selectedTable"
+    @get-tables="getTables" @change-table-sheet="tableSheet = true" v-model:drawer="drawer" />
   <v-alert type="info" variant="tonal" class="ma-auto" v-else>Nessun Tavolo Chiuso</v-alert>
 </template>
+
+<style scoped>
+  .v-fab {
+    height: 48px !important;
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+  }
+</style>

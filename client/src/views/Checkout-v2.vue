@@ -144,7 +144,10 @@ const init = async () => {
 
 watch(() => props.event, init, { immediate: true })
 
-watch(() => activeRoomId.value, () => selectedTable.value = [], { immediate: true })
+watch(() => activeRoomId.value, () => { 
+  selectedTable.value = []
+  selectedTableId.value = 0
+}, { immediate: true })
 
 onUnmounted(() => {
   if (is) {
