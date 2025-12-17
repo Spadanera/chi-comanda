@@ -10,7 +10,7 @@ import { useDisplay } from 'vuetify'
 
 const { smAndDown } = useDisplay()
 
-const props = defineProps(['is', 'event', 'navigation'])
+const props = defineProps(['event', 'navigation', 'roomid'])
 const selectedTable = defineModel<Table[]>('selectedTable', { required: true })
 const drawer = defineModel<boolean>('drawer', { required: true })
 
@@ -78,8 +78,8 @@ const discounts = computed(() => {
 
 async function rollbackItem(item: Item) {
     item.paid = false
-    await axios.UpdateItem(item)
-    selectedTable.value[0].items.find((i: Item) => i.master_item_id === item.master_item_id && i.note === item.note && i.paid).paid = false
+    await axios.UpdateItem(item, selectedTable.value[0].paid)
+    emit('getTables', item.table_id)
 }
 
 async function deleteItemConfirm(item_id: number) {
@@ -136,11 +136,14 @@ function changeTableSheetHandler() {
 
 <template>
     <div>
-        <v-container>
-            <v-btn @click="changeTableSheetHandler()"
-                style="position: absolute; top: 74px; right: 25px; z-index: 10000;" v-if="selectedTable.length && selectedTable[0].name">{{
-                    selectedTable[0].name }}</v-btn>
-        </v-container>
+        <v-btn @click="changeTableSheetHandler()"
+            :style="{ top: navigation ? '16px' : (roomid === -1 ? '125px' : '74px'), right: navigation ? '14px' : '25px' }"
+            style="position: absolute; z-index: 100;" v-if="selectedTable.length && selectedTable[0].name"
+            :readonly="roomid === -1" :variant="roomid === -1 ? 'text' : 'elevated'">{{
+                selectedTable[0].name }}</v-btn>
+        <v-chip v-if="selectedTable.length && selectedTable[0]?.user" style="margin: 10px 0 0 10px;">
+            Effettuato da: {{ selectedTable[0]?.user?.username }}
+        </v-chip>
         <ItemList :shownote="true" style="margin-top: 2px;" :showtype="true" subheader="DA PAGARE"
             v-model="computedSelectedTable.itemsToDo">
             <template v-slot:prequantity="slotProps">
@@ -161,7 +164,8 @@ function changeTableSheetHandler() {
         </ItemList>
         <div :style="{ width: navigation || smAndDown ? '100%' : 'calc(100% - 255px)' }"
             style="position: absolute; bottom: 0; display: flex; flex: none; font-size: .75rem; justify-content: center; transition: inherit; height: 56px;">
-            <v-btn variant="plain" :icon="navigation ? 'mdi-undo' : 'mdi-menu'" @click="drawer = !drawer" id="drawer-button"></v-btn>
+            <v-btn variant="plain" :icon="navigation ? 'mdi-undo' : 'mdi-menu'" @click="drawer = !drawer"
+                id="drawer-button"></v-btn>
             <v-btn variant="plain" readonly v-if="selectedTable.length"
                 style="font-size: inherit; height: 100%; max-width: 168px; min-width: 80px; text-transform: none; transition: inherit; width: auto;">
                 Totale: {{ tableTotalOrder }} €

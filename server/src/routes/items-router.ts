@@ -23,4 +23,14 @@ itemsRouter.put("/", async (req: Request, res: Response) => {
     }
 })
 
+itemsRouter.put("/open", async (req: Request, res: Response) => {
+    try {
+        const result = await itemApi.update(req.body, true)
+        res.status(200).json(result)
+    } catch (error) {
+        console.error(error)
+        res.status(500).json(error)
+    }
+})
+
 export default itemsRouter

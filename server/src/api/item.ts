@@ -42,8 +42,12 @@ class ItemApi {
         return result
     }
 
-    async update(item: Item): Promise<number> {
+    async update(item: Item, openTable?: boolean): Promise<number> {
         const result = await db.executeUpdate('UPDATE items SET DONE = ?, PAID = ? WHERE id = ?', [item.done, item.paid, item.id])
+
+        if (openTable) {
+            await db.executeUpdate(`UPDATE tables SET status = ?, paid = null WHERE id = ?`, ['ACTIVE', item.table_id])
+        }
 
         SocketIOService.instance().sendMessage({
             rooms: ["bartender"],

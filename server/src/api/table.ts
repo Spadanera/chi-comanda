@@ -23,8 +23,11 @@ class TableApi {
 
     async changeTable(table_id: number, master_table_id: number): Promise<number> {
         const table_name = (await db.queryOne<MasterTable>("SELECT name FROM master_tables_event WHERE id = ?", [master_table_id])).name
+        const table_master_table:number = (await db.queryOne("SELECT id FROM table_master_table WHERE table_id = ?", [table_id])).id
         const result = await db.executeTransaction([
-            "UPDATE table_master_table SET master_table_id = ? WHERE table_id = ?",
+            table_master_table ? 
+                "UPDATE table_master_table SET master_table_id = ? WHERE table_id = ?" :
+                "INSERT INTO table_master_table (master_table_id, table_id) VALUES (?, ?)",
             "UPDATE tables SET name = ? WHERE id = ?"
         ], [
             [master_table_id, table_id],
