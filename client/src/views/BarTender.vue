@@ -309,7 +309,7 @@ onUnmounted(() => {
       <v-list-item :key="order.id" :value="order" v-for="order in orderedOrders"
         :style="{ opacity: !order.done ? 'inherit' : 0.3 }">
         <v-list-item-title>
-          <span :class="{ done: order.done }">Tavolo {{ order.table_name }}</span>
+          <span :class="{ done: order.done }">{{ order.table_name }}</span>
           <v-btn variant="plain" v-if="!order.done && order.minPassed >= 0"
             :class="{ 'text-danger': order.minPassed >= minutetoalert, 'font-weight-bold': order.minPassed > 14 }">
             {{ order.minPassed }} <span style="text-transform: lowercase;">m</span>
@@ -329,10 +329,9 @@ onUnmounted(() => {
   </v-container>
   <template v-else>
     <v-container>
-      <h3>Tavolo {{ selectedOrder[0]?.table_name }}</h3>
-      <v-chip v-if="selectedOrder.length">
-        <Avatar :user="selectedOrder[0]?.user" alt start></Avatar>
-        {{ selectedOrder[0]?.user.username }}
+      <h3>{{ selectedOrder[0]?.table_name }}</h3>
+      <v-chip v-if="selectedOrder.length"  style="margin: 10px 0 0 0;">
+        Effettuato da: {{ selectedOrder[0]?.user.username }}
       </v-chip>
     </v-container>
     <ItemList :quantitybefore="true" :showtype="true" subheader="DA FARE" v-model="itemsToDo" :shownote="true">

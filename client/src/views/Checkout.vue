@@ -138,7 +138,7 @@ onUnmounted(() => {
       <v-list-item :key="table.id" v-for="(table, i) in sortedTables" :value="table"
         :style="{ opacity: table.status === 'CLOSED' ? 0.3 : 'inherit' }">
         <v-list-item-title>
-          <span :class="{ done: table.paid }">Tavolo {{ table.name }}</span>
+          <span :class="{ done: table.paid }">{{ table.name }}</span>
         </v-list-item-title>
         <template v-for="type in types">
           <v-btn readonly size="small" density="compact" variant="plain" v-if="getSubTypeCount(table, [type.name]) > 0">
@@ -152,7 +152,7 @@ onUnmounted(() => {
   <v-container v-else-if="!props.event?.id">
     <NoEvent></NoEvent>
   </v-container>
-  <CheckoutOrder v-else :event="props.event" :is="is" v-model:selected-table="selectedTable" @get-tables="getTables"
+  <CheckoutOrder v-else :event="props.event" v-model:selected-table="selectedTable" @get-tables="getTables"
     @change-table-sheet="tableSheet = true" v-model:drawer="drawer" />
   <CheckoutTableSelection v-model="tableSheet" :event="props.event" :selected-table="selectedTable"
     @changed="getTables" />

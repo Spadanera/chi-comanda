@@ -194,8 +194,8 @@ export default class Axios {
         return await this.post("/orders", order)
     }
 
-    async UpdateItem(item: Item): Promise<Number> {
-        return await this.put("/items", item)
+    async UpdateItem(item: Item, reopenTable?: boolean): Promise<Number> {
+        return await this.put(`/items${reopenTable ? '/open' : ''}`, item)
     }
 
     async CompleteOrder(order_id: number, input: CompleteOrderInput): Promise<Number> {
