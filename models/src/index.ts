@@ -149,6 +149,7 @@ export interface Room extends Repository {
   width: number
   height: number
   tables: Table[]
+  activeTableCount?: number
 }
 
 export interface RestaurantLayout extends Repository {

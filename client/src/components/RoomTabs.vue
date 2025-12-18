@@ -26,7 +26,14 @@ const currentRoom = computed(() => props.rooms.find(r => r.id === props.modelVal
     <div class="d-flex align-center w-100">
 
         <v-tabs v-model="activeTab" align-tabs="start" class="flex-grow-1">
-            <v-tab v-for="room in rooms" :key="room.id" :text="room.name" :value="room.id"></v-tab>
+            <v-tab v-for="room in rooms" :key="room.id" :value="room.id">
+                <v-badge v-if="room.activeTableCount" :content="room.activeTableCount" color="error" offset-y="-3"
+                    offset-x="-10" class="small-badge">
+                    {{ room.name }}
+                </v-badge>
+
+                <span v-else>{{ room.name }}</span>
+            </v-tab>
         </v-tabs>
 
         <div class="d-flex px-2 ga-2" v-if="currentRoom && editing">
@@ -38,3 +45,10 @@ const currentRoom = computed(() => props.rooms.find(r => r.id === props.modelVal
 
     </div>
 </template>
+
+<style scoped>
+.small-badge :deep(.v-badge__badge) {
+    transform: scale(0.8);
+    transform-origin: center;
+}
+</style>
