@@ -1,252 +1,283 @@
 <script setup lang="ts">
-import { type Table, type Item } from "../../../models/src"
 import { ref, computed } from "vue"
+import { useDisplay } from 'vuetify'
+import { type Table, type Item } from "../../../models/src"
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { copy, sortItem } from "@/services/utils"
 import Confirm from "@/components/Confirm.vue"
 import ItemList from "@/components/ItemList.vue"
-import { useDisplay } from 'vuetify'
-
-const { smAndDown } = useDisplay()
 
 const props = defineProps(['event', 'navigation', 'roomid'])
+const emit = defineEmits(['getTables', 'changeTableSheet'])
+
 const selectedTable = defineModel<Table[]>('selectedTable', { required: true })
 const drawer = defineModel<boolean>('drawer', { required: true })
 
+const { smAndDown } = useDisplay()
 const axios = new Axios()
 const snackbarStore = SnackbarStore()
 
-const emit = defineEmits(['getTables', 'changeTableSheet'])
-
-const confirm = ref<boolean>(false)
-const deleteItemId = ref<number>(0)
+const confirm = ref(false)
+const deleteItemId = ref(0)
 const itemToBePaid = ref<number[]>([])
-const discount = ref<boolean>(false)
+const discount = ref(false)
 const realPaid = ref<number | null>(null)
-const partialPaid = ref<boolean>(false)
-const dialogPay = ref<boolean>(false)
+const partialPaid = ref(false)
+const dialogPay = ref(false)
+
+const activeTable = computed(() => selectedTable.value[0] || { items: [] } as Table)
 
 const computedSelectedTable = computed(() => {
-    let result = copy<Table>((selectedTable.value.length ? selectedTable.value[0] : { items: [] }) as Table)
-    if (!result.items) {
-        result.items = []
+    const result = copy<Table>(activeTable.value)
+    const items = result.items || []
+
+    return {
+        ...result,
+        itemsToDo: items.filter((i: Item) => !i.paid).sort(sortItem),
+        itemsDone: items.filter((i: Item) => i.paid).sort(sortItem)
     }
-    result.itemsToDo = result.items.filter((i: Item) => !i.paid).sort(sortItem)
-    result.itemsDone = result.items.filter((i: Item) => i.paid).sort(sortItem)
-    return result
-})
-const tableTotalOrder = computed(() => {
-    if (computedSelectedTable.value.items) {
-        return computedSelectedTable.value.items.reduce((a: number, i: Item) => a += i.paid ? 0 : i.price, 0)
-    }
-    else return 0
-})
-const itemToBePaidBill = computed(() => {
-    if (selectedTable.value.length && selectedTable.value[0].items) {
-        return selectedTable.value[0].items.filter((i: Item) => itemToBePaid.value.includes(i.id || 0)).reduce((a: number, i: Item) => a += i.price, 0)
-    }
-    else {
-        return 0
-    }
-})
-const onGoing = computed(() => selectedTable.value[0].items.filter((i: Item) => !i.done).length ? true : false)
-const discounts = computed(() => {
-    return [
-        {
-            discount: "10%",
-            discountAmount: Math.round((partialPaid.value ? itemToBePaidBill.value : tableTotalOrder.value) * 0.9)
-        },
-        {
-            discount: "15%",
-            discountAmount: Math.round((partialPaid.value ? itemToBePaidBill.value : tableTotalOrder.value) * 0.85)
-        },
-        {
-            discount: "20%",
-            discountAmount: Math.round((partialPaid.value ? itemToBePaidBill.value : tableTotalOrder.value) * 0.8)
-        },
-        {
-            discount: "30%",
-            discountAmount: Math.round((partialPaid.value ? itemToBePaidBill.value : tableTotalOrder.value) * 0.7)
-        },
-        {
-            discount: "50%",
-            discountAmount: Math.round((partialPaid.value ? itemToBePaidBill.value : tableTotalOrder.value) * 0.5)
-        }
-    ]
 })
 
-async function rollbackItem(item: Item) {
+const tableTotalOrder = computed(() => {
+    const items = computedSelectedTable.value.items || []
+    const isClosed = computedSelectedTable.value.status === 'CLOSED'
+    return items.reduce((acc, i) => acc + ((i.paid && !isClosed) ? 0 : i.price), 0)
+})
+
+const itemToBePaidBill = computed(() => {
+    const items = activeTable.value.items || []
+    return items
+        .filter(i => itemToBePaid.value.includes(i.id || 0))
+        .reduce((acc, i) => acc + i.price, 0)
+})
+
+const currentTotalToPay = computed(() => partialPaid.value ? itemToBePaidBill.value : tableTotalOrder.value)
+
+const onGoing = computed(() => {
+    const items = activeTable.value.items || []
+    return items.some(i => !i.done)
+})
+
+const tableNameStyle = computed(() => ({
+    top: props.navigation ? '16px' : (props.roomid === -1 ? '125px' : '74px'),
+    right: props.navigation ? '14px' : '25px'
+}))
+
+const bottomBarStyle = computed(() => ({
+    width: props.navigation || smAndDown.value ? '100%' : 'calc(100% - 255px)'
+}))
+
+const discounts = computed(() => {
+    const base = currentTotalToPay.value
+    const percentages = [0.9, 0.85, 0.8, 0.7, 0.5]
+    const labels = ["10%", "15%", "20%", "30%", "50%"]
+
+    return labels.map((label, index) => ({
+        discount: label,
+        discountAmount: Math.round(base * percentages[index])
+    }))
+})
+
+const rollbackItem = async (item: Item) => {
     item.paid = false
-    await axios.UpdateItem(item, selectedTable.value[0].paid)
+    await axios.UpdateItem(item, activeTable.value.paid)
     emit('getTables', item.table_id)
 }
 
-async function deleteItemConfirm(item_id: number) {
+const deleteItemConfirm = (item_id: number) => {
     deleteItemId.value = item_id
     confirm.value = true
 }
 
-async function deleteItem() {
+const deleteItem = async () => {
     await axios.DeleteItem(deleteItemId.value)
-    emit('getTables')
+    emit('getTables', activeTable.value.table_id || activeTable.value.id)
     confirm.value = false
 }
 
-async function completeTable() {
-    if (discount.value) {
-        if (!realPaid.value) {
-            return
-        }
-        const discountAmout = tableTotalOrder.value - realPaid.value
-        await axios.InsertDiscount(props.event.id, selectedTable.value[0].id, discountAmout)
+const handleDiscount = async () => {
+    if (discount.value && realPaid.value) {
+        const discountAmount = currentTotalToPay.value - realPaid.value
+        await axios.InsertDiscount(props.event.id, activeTable.value.table_id || activeTable.value.id, discountAmount)
     }
-    await axios.CompleteTable(selectedTable.value[0].id)
-    emit('getTables')
+}
+
+const completeTable = async () => {
+    await handleDiscount()
+    await axios.CompleteTable(activeTable.value.table_id || activeTable.value.id)
+    emit('getTables', 0)
     snackbarStore.show("Tavolo chiuso", 3000, 'bottom', 'success')
     dialogPay.value = false
 }
 
-async function paySelectedItem() {
-    if (discount.value) {
-        if (!realPaid.value) {
-            return
-        }
-        const discountAmout = itemToBePaidBill.value - realPaid.value
-        await axios.InsertDiscount(props.event.id, selectedTable.value[0].id, discountAmout)
-    }
-    await axios.PaySelectedItem(selectedTable.value[0].id, itemToBePaid.value)
-    emit('getTables')
+const paySelectedItem = async () => {
+    await handleDiscount()
+    await axios.PaySelectedItem(activeTable.value.table_id || activeTable.value.id, itemToBePaid.value)
+    emit('getTables', activeTable.value.table_id || activeTable.value.id)
     itemToBePaid.value = []
-
     dialogPay.value = false
 }
 
-function pay(partial: boolean) {
+const pay = (partial: boolean) => {
     partialPaid.value = partial
     discount.value = false
-    realPaid.value = partial ? itemToBePaidBill.value : tableTotalOrder.value
+    realPaid.value = currentTotalToPay.value
     dialogPay.value = true
-}
-
-function changeTableSheetHandler() {
-    emit('changeTableSheet')
 }
 </script>
 
 <template>
     <div>
-        <v-btn @click="changeTableSheetHandler()"
-            :style="{ top: navigation ? '16px' : (roomid === -1 ? '125px' : '74px'), right: navigation ? '14px' : '25px' }"
-            style="position: absolute; z-index: 100;" v-if="selectedTable.length && selectedTable[0].name"
-            :readonly="roomid === -1" :variant="roomid === -1 ? 'text' : 'elevated'">{{
-                selectedTable[0].name }}</v-btn>
-        <v-chip v-if="selectedTable.length && selectedTable[0]?.user" style="margin: 10px 0 0 10px;">
-            Effettuato da: {{ selectedTable[0]?.user?.username }}
+        <v-btn v-if="activeTable.name" @click="emit('changeTableSheet')" :style="tableNameStyle"
+            class="floating-name-btn" :readonly="roomid === -1" :variant="roomid === -1 ? 'text' : 'elevated'">
+            {{ activeTable.name }}
+        </v-btn>
+
+        <v-chip v-if="activeTable.user" class="user-chip">
+            Effettuato da: {{ activeTable.user.username }}
         </v-chip>
-        <ItemList :shownote="true" style="margin-top: 2px;" :showtype="true" subheader="DA PAGARE"
+
+        <ItemList class="mt-1" :shownote="true" :showtype="true" subheader="DA PAGARE"
             v-model="computedSelectedTable.itemsToDo">
-            <template v-slot:prequantity="slotProps">
-                <v-btn icon="mdi-delete" @click="deleteItemConfirm(slotProps.item.id)" variant="plain"></v-btn>
+            <template #prequantity="{ item }">
+                <v-btn icon="mdi-delete" @click="deleteItemConfirm(item.id)" variant="plain" />
             </template>
-            <template v-slot:postquantity="slotProps">
-                <v-checkbox v-model="itemToBePaid" :value="slotProps.item.id"></v-checkbox>
+            <template #postquantity="{ item }">
+                <v-checkbox v-model="itemToBePaid" :value="item.id" />
             </template>
         </ItemList>
-        <v-divider></v-divider>
+
+        <v-divider />
+
         <ItemList subheader="PAGATI" v-model="computedSelectedTable.itemsDone" :done="true">
-            <template v-slot:postquantity="slotProps">
-                <v-btn variant="plain" v-if="slotProps.item.sub_type !== 'Sconto'" icon="mdi-arrow-up-thin"
-                    @click="rollbackItem(slotProps.item)"></v-btn>
-                <v-btn variant="plain" v-else icon="mdi-window-close"
-                    @click="deleteItemConfirm(slotProps.item.id)"></v-btn>
+            <template #postquantity="{ item }" v-if="computedSelectedTable.status !== 'CLOSED'">
+                <v-btn variant="plain" :icon="item.sub_type !== 'Sconto' ? 'mdi-arrow-up-thin' : 'mdi-window-close'"
+                    @click="item.sub_type !== 'Sconto' ? rollbackItem(item) : deleteItemConfirm(item.id)" />
             </template>
         </ItemList>
-        <div :style="{ width: navigation || smAndDown ? '100%' : 'calc(100% - 255px)' }"
-            style="position: absolute; bottom: 0; display: flex; flex: none; font-size: .75rem; justify-content: center; transition: inherit; height: 56px;">
-            <v-btn variant="plain" :icon="navigation ? 'mdi-undo' : 'mdi-menu'" @click="drawer = !drawer"
-                id="drawer-button"></v-btn>
-            <v-btn variant="plain" readonly v-if="selectedTable.length"
-                style="font-size: inherit; height: 100%; max-width: 168px; min-width: 80px; text-transform: none; transition: inherit; width: auto;">
+
+        <div :style="bottomBarStyle" class="bottom-action-bar">
+            <v-btn id="drawer-button" variant="plain" :icon="navigation ? 'mdi-undo' : 'mdi-menu'"
+                @click="drawer = !drawer" />
+
+            <v-btn v-if="selectedTable.length" variant="plain" readonly class="total-display-btn">
                 Totale: {{ tableTotalOrder }} €
             </v-btn>
-            <v-spacer></v-spacer>
-            <v-btn variant="plain" @click="pay(true)" v-if="itemToBePaid.length"
-                class="custom-button-bottom-bar">PARZIALE {{
-                    itemToBePaidBill
-                }}
-                €</v-btn>
-            <v-btn class="show-xs custom-button-bottom-bar" variant="plain" @click="pay(false)"
-                v-if="selectedTable.length && !selectedTable[0].paid" :readonly="onGoing">
-                <span :style="{ opacity: onGoing ? 0.2 : 'inherit' }">CHIUDI TAVOLO</span>
-            </v-btn>
-            <v-btn :style="{ opacity: onGoing ? 0.2 : 'inherit' }" icon="mdi-close-box" class="hide-xs" variant="plain"
-                @click="pay(false)" :readonly="onGoing" v-if="selectedTable.length && !selectedTable[0].paid">
 
+            <v-spacer />
+
+            <v-btn v-if="itemToBePaid.length" variant="plain" @click="pay(true)" class="action-btn">
+                PARZIALE {{ itemToBePaidBill }} €
             </v-btn>
+
+            <template v-if="selectedTable.length && !activeTable.paid && activeTable.status !== 'CLOSED'">
+                <v-btn class="show-xs action-btn" variant="plain" @click="pay(false)" :readonly="onGoing">
+                    <span :class="{ 'opacity-low': onGoing }">CHIUDI TAVOLO</span>
+                </v-btn>
+
+                <v-btn class="hide-xs" icon="mdi-close-box" variant="plain" @click="pay(false)" :readonly="onGoing"
+                    :class="{ 'opacity-low': onGoing }" />
+            </template>
         </div>
+
         <v-dialog v-model="dialogPay" width="400">
             <v-card>
-                <v-card-title v-if="partialPaid">
-                    Pagare elementi selezionati
-                </v-card-title>
-                <v-card-title v-else>
-                    Paga l'intero conto
+                <v-card-title>
+                    {{ partialPaid ? 'Pagare elementi selezionati' : 'Paga l\'intero conto' }}
                 </v-card-title>
                 <v-card-subtitle v-if="!partialPaid">
                     A seguito del pagamento il tavolo verrà chiuso
                 </v-card-subtitle>
                 <v-card-text>
-                    <v-row v-if="partialPaid">
-                        <v-col style="font-size: x-large;">
-                            Da pagare: {{ itemToBePaidBill }} €
-                        </v-col>
-                    </v-row>
-                    <v-row v-else>
-                        <v-col style="font-size: x-large;">
-                            Da pagare: {{ tableTotalOrder }} €
+                    <v-row>
+                        <v-col class="text-h5">
+                            Da pagare: {{ currentTotalToPay }} €
                         </v-col>
                     </v-row>
                     <v-row>
-                        <v-checkbox v-model="discount" label="Applicare sconto"></v-checkbox>
+                        <v-checkbox v-model="discount" label="Applicare sconto" />
                     </v-row>
-                    <v-row v-if="discount">
-                        <v-text-field :max="partialPaid ? itemToBePaidBill : tableTotalOrder"
-                            append-inner-icon="mdi-currency-eur" v-model.number="realPaid"
-                            label="Quanto vuoi far pagere" type="number"></v-text-field>
-                    </v-row>
-                    <v-row v-if="discount">
-                        <v-table style="width: 100%;" density="compact">
-                            <thead>
-                                <td>Sconto</td>
-                                <td>Da pagare</td>
-                            </thead>
-                            <tbody style="cursor: pointer">
-                                <tr v-ripple @click="realPaid = disc.discountAmount" v-for="disc in discounts">
-                                    <td>{{ disc.discount }}</td>
-                                    <td>{{ disc.discountAmount }} €</td>
-                                </tr>
-                            </tbody>
-                        </v-table>
-                    </v-row>
+                    <template v-if="discount">
+                        <v-row>
+                            <v-text-field :max="currentTotalToPay" append-inner-icon="mdi-currency-eur"
+                                v-model.number="realPaid" label="Quanto vuoi far pagare" type="number" />
+                        </v-row>
+                        <v-row>
+                            <v-table class="w-100" density="compact">
+                                <thead>
+                                    <tr>
+                                        <th>Sconto</th>
+                                        <th>Da pagare</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="cursor-pointer">
+                                    <tr v-for="disc in discounts" :key="disc.discount" v-ripple
+                                        @click="realPaid = disc.discountAmount">
+                                        <td>{{ disc.discount }}</td>
+                                        <td>{{ disc.discountAmount }} €</td>
+                                    </tr>
+                                </tbody>
+                            </v-table>
+                        </v-row>
+                    </template>
                 </v-card-text>
                 <v-card-actions>
                     <v-btn variant="plain" @click="dialogPay = false">ANNULLA</v-btn>
-                    <v-spacer></v-spacer>
-                    <v-btn v-if="partialPaid" variant="plain" @click="paySelectedItem">CONFERMA</v-btn>
-                    <v-btn v-else variant="plain" @click="completeTable">CONFERMA</v-btn>
+                    <v-spacer />
+                    <v-btn variant="plain" @click="partialPaid ? paySelectedItem() : completeTable()">CONFERMA</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
+
         <Confirm v-model="confirm">
-            <template v-slot:action>
-                <v-btn text="Conferma" variant="plain" @click="deleteItem"></v-btn>
+            <template #action>
+                <v-btn text="Conferma" variant="plain" @click="deleteItem" />
             </template>
         </Confirm>
     </div>
 </template>
 
 <style scoped>
+.floating-name-btn {
+    position: absolute;
+    z-index: 100;
+}
+
+.user-chip {
+    margin: 10px 0 0 10px;
+}
+
+.bottom-action-bar {
+    position: absolute;
+    bottom: 0;
+    display: flex;
+    flex: none;
+    font-size: .75rem;
+    justify-content: center;
+    transition: inherit;
+    height: 56px;
+}
+
+.total-display-btn,
+.action-btn {
+    font-size: inherit;
+    height: 100%;
+    max-width: 168px;
+    min-width: 80px;
+    text-transform: none;
+    transition: inherit;
+    width: auto;
+}
+
+.opacity-low {
+    opacity: 0.2;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
 @media only screen and (min-width: 576px) {
     #drawer-button {
         display: none;
@@ -256,15 +287,5 @@ function changeTableSheetHandler() {
 .table-selection .v-card {
     text-align: center;
     font-size: large;
-}
-
-.custom-button-bottom-bar {
-    font-size: inherit;
-    height: 100%;
-    max-width: 168px;
-    min-width: 80px;
-    text-transform: none;
-    transition: inherit;
-    width: auto;
 }
 </style>

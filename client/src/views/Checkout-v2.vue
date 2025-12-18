@@ -7,7 +7,7 @@ import CheckoutOrder from "@/components/CheckoutOrder.vue"
 import CheckoutTableSelection from "@/components/CheckoutTableSelection.vue"
 import RoomTabs from '@/components/RoomTabs.vue'
 import RestaurantMap from "@/components/RestaurantMap.vue"
-import CheckoutClosed from "@/components/Checkout-Closed.vue"
+import CheckoutClosed from "@/components/CheckoutClosed.vue"
 import { useDisplay } from 'vuetify'
 
 const { smAndUp } = useDisplay()
@@ -44,14 +44,7 @@ const onTableClick = async (table: Table) => {
 }
 
 const selectTable = async (table: Table) => {
-  const res = await axios.GetByTableId(table.table_id, props.event.id)
-  if (res) {
-    selectedTableId.value = table.table_id
-    selectedTable.value[0] = {
-      ...table,
-      ...res
-    } as Table
-  }
+  selectedTable.value[0] = table
 }
 
 const reloadTableHandlerasync = () => {
@@ -67,16 +60,19 @@ const getTables = async (table_id?: number) => {
   rooms.value = layout.rooms || []
   tables.value = layout.tables
 
+  rooms.value.forEach(r => r.activeTableCount = tables.value.filter(t => t.room_id === r.id && t.inUse).length)
+
   for (let i = rooms.value.length - 1; i >= 0; i--) {
     if (rooms.value[i].id === 0 || rooms.value[i].id === -1) {
       rooms.value.splice(i, 1)
     }
   }
-
-  if (tables.value.find(t => t.room_id === 0)) {
+  const extraCount: number = tables.value.filter(t => t.room_id === 0).length
+  if (extraCount) {
     rooms.value.push({
       id: 0,
-      name: 'Extra'
+      name: 'Extra',
+      activeTableCount: extraCount
     } as Room)
   }
 
@@ -87,6 +83,12 @@ const getTables = async (table_id?: number) => {
 
   if (table_id) {
     selectedTableId.value = table_id
+  }
+  else if (table_id === 0) {
+    selectedTableId.value = 0
+    if (!smAndUp.value) {
+      drawer.value = false
+    }
   }
 
   if (selectedTableId.value) {
@@ -144,7 +146,7 @@ const init = async () => {
 
 watch(() => props.event, init, { immediate: true })
 
-watch(() => activeRoomId.value, () => { 
+watch(() => activeRoomId.value, () => {
   selectedTable.value = []
   selectedTableId.value = 0
 }, { immediate: true })
@@ -161,9 +163,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <v-navigation-drawer v-if="props.event?.id && activeRoomId > -1" v-model="drawer" mobile-breakpoint="sm" :width="450" location="right">
-    <CheckoutOrder v-if="selectedTable.length" :event="props.event" :roomid="activeRoomId" v-model:selected-table="selectedTable"
-      @get-tables="getTables" @change-table-sheet="tableSheet = true" v-model:drawer="drawer" :navigation="true" />
+  <v-navigation-drawer v-if="props.event?.id" v-model="drawer" mobile-breakpoint="sm" :width="450" location="right">
+    <CheckoutOrder v-if="selectedTable.length" :event="props.event" :roomid="activeRoomId"
+      v-model:selected-table="selectedTable" @get-tables="getTables" @change-table-sheet="tableSheet = true"
+      v-model:drawer="drawer" :navigation="true" />
     <v-alert type="info" variant="tonal" class="ma-auto" v-else>Nessun Tavolo Selezionato</v-alert>
   </v-navigation-drawer>
   <v-skeleton-loader type="card" v-if="loading"></v-skeleton-loader>
@@ -173,9 +176,9 @@ onUnmounted(() => {
   <v-container v-else style="padding: 0;">
     <RoomTabs v-model="activeRoomId" :rooms="rooms" :editing="false" />
 
-    <RestaurantMap v-if="activeRoomId > -1" :highlight-selection="true" :room="currentRoom" :tables="tables"
-      :zoom="zoomLevel" :selected-table-id="selectedTableId" :editable="false" @click-table="onTableClick" />
-    <CheckoutClosed @get-tables="getTables" :event="props.event" v-else></CheckoutClosed>
+    <RestaurantMap v-if="activeRoomId > -1" :highlight-selection="true" :room="currentRoom" :zoom="zoomLevel"
+      :editable="false" :tables="tables" :selected-table-id="selectedTableId" @click-table="onTableClick" />
+    <CheckoutClosed v-else :tables="tables" @click-table="onTableClick" :event="props.event" />
   </v-container>
   <CheckoutTableSelection v-model="tableSheet" :event="props.event" :selected-table="selectedTable"
     @changed="getTables" />
