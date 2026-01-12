@@ -24,7 +24,7 @@ const items = defineModel({ default: [] })
                 <template v-slot:prepend>
                     <v-btn min-width="12" variant="plain" v-if="quantitybefore" :class="{ done: done }">{{ item.quantity
                         }}</v-btn>
-                    <v-icon :icon="item.icon"></v-icon>
+                    <v-icon :icon="item.setMinimum ? 'mdi-cash' : item.icon"></v-icon>
                 </template>
                 <template v-slot:append>
                     <slot :item="item" name="prequantity"></slot>

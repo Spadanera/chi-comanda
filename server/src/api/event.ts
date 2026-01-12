@@ -32,7 +32,9 @@ class EventAPI {
             e.name,
             e.date,
             e.status,
+            e.minimumConsumptionPrice,
             m.name AS menu_name,
+            e.menu_id AS menu_id,
             COALESCE(t_stats.tableCount, 0) AS tableCount,
             COALESCE(t_stats.tablesOpen, 0) AS tablesOpen,
             COALESCE(i_stats.revenue, 0) AS revenue,
@@ -180,7 +182,8 @@ class EventAPI {
     }
 
     async create(event: Event): Promise<number> {
-        const eventId = await db.executeInsert('INSERT INTO events (name, date, status, menu_id) VALUES (?,?,?,?)', [event.name, (event.date + "").split('T')[0], 'PLANNED', event.menu_id])
+        const eventId = await db.executeInsert('INSERT INTO events (name, date, status, menu_id, minimumConsumptionPrice) VALUES (?,?,?,?,?)',
+            [event.name, (event.date + "").split('T')[0], 'PLANNED', event.menu_id, event.minimumConsumptionPrice])
         if (event.users) {
             await db.executeTransaction(
                 event.users.map((u: User) => 'INSERT INTO user_event (user_id, event_id) VALUES (?,?)'),
@@ -272,12 +275,12 @@ class EventAPI {
         if (event.users) {
             const result = await db.executeTransaction(
                 [
-                    'UPDATE events SET name = ?, date = ?, menu_id = ? WHERE id = ?',
+                    'UPDATE events SET name = ?, date = ?, menu_id = ?, minimumConsumptionPrice = ? WHERE id = ?',
                     'DELETE FROM user_event WHERE event_id = ?',
                     ...event.users.map((u: User) => 'INSERT INTO user_event (user_id, event_id) VALUES (?,?)')
                 ],
                 [
-                    [event.name, (event.date + "").split('T')[0], event.menu_id, event.id],
+                    [event.name, (event.date + "").split('T')[0], event.menu_id, event.minimumConsumptionPrice, event.id],
                     [event.id],
                     ...event.users.map((u: User) => [u.id, event.id])
                 ]

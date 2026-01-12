@@ -110,7 +110,7 @@ class TableApi {
             available_tables.event_id,
             IF(available_tables.id IS NULL, 0, 1) inUse,
             available_tables.status status,
-            (
+            IFNULL((
                 SELECT JSON_ARRAYAGG(JSON_OBJECT(
                     'id', items.id, 
                     'master_item_id', items.master_item_id, 
@@ -125,13 +125,14 @@ class TableApi {
                     'price', items.price,
                     'destination_id', items.destination_id,
                     'done', items.done,
-                    'paid', items.paid
+                    'paid', items.paid,
+                    'setMinimum', items.setMinimum
                 )) 
                 FROM items 
                 LEFT JOIN sub_types ON sub_types.id = items.sub_type_id
                 LEFT JOIN types ON sub_types.type_id = types.id
                 WHERE table_id = available_tables.id
-            ) items,
+            ), JSON_ARRAY()) items,
             (
                 SELECT JSON_OBJECT(
                     'id', users.id, 
@@ -163,7 +164,7 @@ class TableApi {
                 tables.event_id,
                 1 inUse,
                 tables.status status,
-                (
+                IFNULL((
                     SELECT JSON_ARRAYAGG(JSON_OBJECT(
                         'id', items.id, 
                         'master_item_id', items.master_item_id, 
@@ -178,13 +179,14 @@ class TableApi {
                         'price', items.price,
                         'destination_id', items.destination_id,
                         'done', items.done,
-                        'paid', items.paid
+                        'paid', items.paid,
+                        'setMinimum', items.setMinimum
                     )) 
                     FROM items 
                     LEFT JOIN sub_types ON sub_types.id = items.sub_type_id
                     LEFT JOIN types ON sub_types.type_id = types.id
                     WHERE table_id = tables.id
-                ) items,
+                ), JSON_ARRAY()) items,
                 (
                     SELECT JSON_OBJECT(
                         'id', users.id, 
@@ -249,7 +251,7 @@ class TableApi {
     async getTableItems(tableId: number, eventId: number): Promise<Event> {
         return await db.queryOne<Event>(`
             SELECT tables.id, tables.name, tables.paid, tables.status,
-            (
+            IFNULL((
                 SELECT JSON_ARRAYAGG(JSON_OBJECT(
                     'id', items.id, 
                     'master_item_id', items.master_item_id, 
@@ -264,13 +266,14 @@ class TableApi {
                     'price', items.price,
                     'destination_id', items.destination_id,
                     'done', items.done,
-                    'paid', items.paid
+                    'paid', items.paid,
+                    'setMinimum', items.setMinimum
                 )) 
                 FROM items 
                 LEFT JOIN sub_types ON sub_types.id = items.sub_type_id
                 LEFT JOIN types ON sub_types.type_id = types.id
                 WHERE table_id = tables.id
-            ) items,
+            ), JSON_ARRAY()) items,
             (
                 SELECT JSON_OBJECT(
                     'id', users.id, 

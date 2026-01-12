@@ -72,6 +72,7 @@ export interface Event extends Repository {
   currentPaid?: number
   tablesOpen?: number
   menu_name?: string
+  minimumConsumptionPrice?: number
 }
 
 export interface Table extends Repository {
@@ -127,6 +128,7 @@ export interface Item extends Repository {
   price?: number
   destination_id?: number
   grouped_ids?: number[]
+  setMinimum?: boolean
 }
 
 export interface MasterTable extends Repository {

@@ -82,11 +82,11 @@ class OrderAPI {
                 let item = order.items[i]
                 order.items[i].id = await db.executeInsert(`
                     INSERT INTO items 
-                    (event_id, order_id, table_id, master_item_id, type, sub_type, name, price, note, destination_id, icon, done, paid) 
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
+                    (event_id, order_id, table_id, master_item_id, type, sub_type, name, price, note, destination_id, icon, done, paid, setMinimum) 
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
                     , [
                         order.event_id, order_id, order.table_id, item.master_item_id, item.type, item.sub_type, item.name, item.price, item.note || ''
-                        , item.destination_id, item.icon, item.done, item.paid
+                        , item.destination_id, item.icon, item.done, item.paid, item.setMinimum
                     ])
             }
             if (order.items.length && order.items[0].done) {
