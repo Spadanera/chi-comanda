@@ -9,7 +9,8 @@ const ordersRouter: Router = router()
 ordersRouter.get("/:eventid/:destinationsids", authorizationMiddleware([Roles.bartender, Roles.checkout, Roles.waiter]), async (req, res) => {
     try {
         const eventId = +req.params.eventid
-        const destinationsIds = JSON.parse(req.params.destinationsids)
+        const pivot = req.params.destinationsids as string
+        const destinationsIds = JSON.parse(pivot)
         const result = await orderApi.getAll(eventId, destinationsIds)
         res.status(200).json(result)
     } catch (error) {
