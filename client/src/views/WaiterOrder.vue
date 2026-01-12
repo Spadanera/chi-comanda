@@ -78,7 +78,8 @@ async function addItemToOrder(item?: Item, minimum?: boolean) {
 function addItemWithNote() {
   dialogItem.value.table_id = props.table_id
   dialogItem.value.master_item_id = dialogItem.value.id
-  orderItems.value.push(copy<Item>(dialogItem.value))
+  const _item = copy<Item>(dialogItem.value)
+  orderItems.value.push(_item)
   dialog.value = false
   snackbarStore.show(`${dialogItem.value.name} aggiunto`)
 }
@@ -289,6 +290,9 @@ onMounted(async () => {
             <v-textarea v-model="dialogItem.note" label="Nota" required :autofocus="true"
               :clearable="true"></v-textarea>
           </v-col>
+        </v-row>
+        <v-row dense>
+          <v-switch label="Consumazione Minima" color="success" v-if="dialogItem.price < event.minimumConsumptionPrice" v-model="dialogItem.setMinimum"></v-switch>
         </v-row>
       </v-card-text>
 
