@@ -62,7 +62,8 @@ async function openDialog(event?: Event) {
   } else {
     dialogEvent.value = {
       name: 'Serata Standard',
-      date: new Date()
+      date: new Date(),
+      minimumConsumptionPrice: 5
     } as EventType
   }
 
@@ -213,6 +214,9 @@ onMounted(async () => {
               </v-chip>
             </template>
           </v-select>
+          <v-text-field v-model="dialogEvent.minimumConsumptionPrice" :disabled="!!dialogEvent.id && dialogEvent.status === 'ONGOING'"
+            :readonly="!!dialogEvent.id && dialogEvent.status === 'ONGOING'" label="Prezzo Consumazione Minima"
+            :clearable="dialogEvent.status !== 'ONGOING'" type="number" append-inner-icon="mdi-currency-eur"></v-text-field>
           <v-date-picker hide-header locale="it" :disabled="!!dialogEvent.id && dialogEvent.status === 'ONGOING'"
             :readonly="!!dialogEvent.id && dialogEvent.status === 'ONGOING'" first-day-of-week="1"
             v-model:model-value="dialogEvent.date"></v-date-picker>

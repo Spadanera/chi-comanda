@@ -25,7 +25,7 @@ export function sortItem<T extends Item & MasterItem>(a: T, b: T): number {
 export function groupItems(orderItems: Item[]): Item[] {
     if (orderItems) {
         return orderItems.reduce((a: Item[], i: Item) => {
-            let found = a.find((_i: Item) => (i.master_item_id === _i.master_item_id && i.note === _i.note && i.name === _i.name))
+            let found = a.find((_i: Item) => (i.master_item_id === _i.master_item_id && i.note === _i.note && i.name === _i.name && i.price === _i.price))
             if (found) {
                 found.quantity++
                 found.grouped_ids.push(i.id)

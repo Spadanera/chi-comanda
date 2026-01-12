@@ -29,7 +29,9 @@ eventsRouter.get("/users", async (req: Request, res: Response) => {
 
 eventsRouter.get("/status/:status", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
-        const result = await eventApi.getAll(req.params.status, req.query)
+        const query = req.query as Record<string, any>
+        const status = req.params.status as string
+        const result = await eventApi.getAll(status, query)
         res.status(200).json(result)
     } catch (error) {
         console.error(error)
@@ -39,7 +41,8 @@ eventsRouter.get("/status/:status", authorizationMiddleware(Roles.admin), async 
 
 eventsRouter.get("/:id/status/:status", authorizationMiddleware(Roles.admin), async (req: Request, res: Response) => {
     try {
-        const result = await eventApi.get(+req.params.id, req.params.status)
+        const status = req.params.status as string
+        const result = await eventApi.get(+req.params.id, status)
         if (result.length) {
             res.status(200).json(result[0])
         }

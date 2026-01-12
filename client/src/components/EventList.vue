@@ -88,7 +88,7 @@ onMounted(() => {
                 <v-card :title="getExtendedDate(event.date.toString())" @click="showEvent(event)">
                     <v-card-subtitle>{{ event.name }} <span v-if="event.status === 'ONGOING'"> - <span
                                 style="font-weight: bold">Incasso attuale: {{ event.currentPaid }}
-                                €</span></span><span v-if="event.status === 'PLANNED'"> - {{ event.manu_name
+                                €</span></span><span v-if="event.status === 'PLANNED'"> - {{ event.menu_name
                             }}</span></v-card-subtitle>
                     <v-card-text v-show="event.status !== 'PLANNED'">
                         <v-btn readonly size="small" density="compact" variant="plain">
@@ -101,6 +101,9 @@ onMounted(() => {
                             <v-icon>mdi-cart-percent</v-icon> {{ event.discount * -1 }} €
                         </v-btn>
                     </v-card-text>
+                    <v-card-subtitle v-if="event.minimumConsumptionPrice">
+                        Consumazione Minima: <span style="font-weight: bold">{{ event.minimumConsumptionPrice }} €</span>
+                    </v-card-subtitle>
                     <v-card-text v-if="event.users && event.users.length">
                         <h4 style="margin-bottom: 10px;">Lavoranti</h4>
                         <v-chip v-for="user in event.users">

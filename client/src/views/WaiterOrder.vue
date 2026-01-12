@@ -51,7 +51,7 @@ function filterItems(type: SubType) {
   return computedItems.value.filter((i: MasterItem) => i.sub_type_id === type.id).sort(sortItem)
 }
 
-async function addItemToOrder(item?: Item) {
+async function addItemToOrder(item?: Item, minimum?: boolean) {
   if (!item) {
     const { valid } = await formExtra.value?.validate()
     if (valid) {
@@ -65,7 +65,12 @@ async function addItemToOrder(item?: Item) {
   }
   item.table_id = props.table_id
   item.master_item_id = item.id
-  orderItems.value.push(copy<Item>(item))
+  const _item = copy<Item>(item)
+  if (minimum) {
+    _item.price = props.event.minimumConsumptionPrice
+    _item.setMinimum = true
+  }
+  orderItems.value.push(_item)
   snackbarStore.show(`${item.name} aggiunto`, 2000, 'top')
   dialogExtra.value = false
 }
@@ -162,7 +167,7 @@ onMounted(async () => {
   <v-skeleton-loader v-if="loading" type="list-item-three-line"></v-skeleton-loader>
   <div v-else>
     <v-text-field class="no-detail" :clearable="true" v-model="filter" label="Cerca"></v-text-field>
-    <v-list v-if="!filter" v-model:opened="open" open-strategy="single">
+    <v-list class="compact-list" v-if="!filter" v-model:opened="open" open-strategy="single">
       <template v-for="type in types">
         <v-list-group v-if="!(['Sconto', 'Fuori Menu'].includes(type.name))">
           <template v-slot:activator="{ props }">
@@ -177,6 +182,7 @@ onMounted(async () => {
                 <v-btn icon="mdi-star-circle" v-if="item.sub_type === 'Cocktail'" variant="text"
                   @click="openNoteDialog(item, true)"></v-btn>
                 <v-btn icon="mdi-pencil" variant="text" @click="openNoteDialog(item, false)"></v-btn>
+                <v-btn v-if="item.price < event.minimumConsumptionPrice" icon="mdi-cash" variant="text" @click="addItemToOrder(item, true)"></v-btn>
                 <v-btn icon="mdi-plus" variant="text" @click="addItemToOrder(item)"></v-btn>
               </template>
             </v-list-item>
@@ -357,4 +363,8 @@ onMounted(async () => {
   </v-bottom-navigation>
 </template>
 
-<style scoped></style>
+<style scoped>
+.compact-list :deep(.v-list-group__items .v-list-item) {
+  padding-inline-start: calc(8px + var(--indent-padding)) !important
+}
+</style>
