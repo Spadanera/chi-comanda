@@ -6,16 +6,29 @@ import RoomTabs from '@/components/RoomTabs.vue'
 import RoomDialog from '@/components/RoomDialog.vue'
 import TableDialog from '@/components/TableDialog.vue'
 import { useDisplay } from 'vuetify'
+import Axios from '@/services/client'
+import { SnackbarStore, ZoomStore } from '@/stores'
+import { storeToRefs } from 'pinia'
 
 const { smAndUp } = useDisplay()
-
-import Axios from '@/services/client'
-import { SnackbarStore } from '@/stores'
 
 const props = defineProps<{
     event?: Event,
     editRoom?: boolean,
 }>()
+
+const zoomStore = ZoomStore()
+const { level: zoomLevel } = storeToRefs(zoomStore)
+
+const zoomIn = () => {
+    const next = Math.min(2.0, zoomStore.level + 0.05)
+    zoomStore.setLevel(next)
+}
+
+const zoomOut = () => {
+    const next = Math.max(0.3, zoomStore.level - 0.05)
+    zoomStore.setLevel(next)
+}
 
 const axios = new Axios()
 const snackbarStore = SnackbarStore()
@@ -26,7 +39,6 @@ const editing = ref<boolean>(false)
 
 const activeRoomId = ref<number>()
 const selectedTableId = ref<number>(0)
-const zoomLevel = ref(1)
 const deleteConfirmDialog = ref(false)
 
 const roomDialog = ref(false)
@@ -159,14 +171,6 @@ const getLayout = async () => {
     editing.value = false
 }
 
-const zoomIn = () => {
-    zoomLevel.value = Math.min(2.0, zoomLevel.value + 0.05)
-}
-
-const zoomOut = () => {
-    zoomLevel.value = Math.max(0.3, zoomLevel.value - 0.05)
-}
-
 onMounted(async () => {
     await getLayout()
     if (rooms.value.length) {
@@ -191,8 +195,8 @@ defineExpose({
                     <div v-if="roomSelected && (smAndUp || !editing)" class="d-flex align-center"
                         style="width: 200px; padding-left: 10px;">
                         <v-icon icon="mdi-magnify-minus-outline" size="small" class="mr-2" @click="zoomOut"></v-icon>
-                        <v-slider v-model="zoomLevel" :min="0.3" :max="2.0" :step="0.05" hide-details
-                            density="compact"></v-slider>
+                        <v-slider v-model="zoomLevel" :min="0.3" :max="2.0" :step="0.05" hide-details density="compact"
+                            @update:model-value="zoomStore.setLevel"></v-slider>
                         <v-icon icon="mdi-magnify-plus-outline" size="small" class="ml-2" @click="zoomIn"></v-icon>
                         <span v-show="smAndUp" class="text-caption ml-2" style="width: 40px">{{ Math.round(zoomLevel *
                             100) }}%</span>

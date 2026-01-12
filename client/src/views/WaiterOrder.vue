@@ -128,7 +128,7 @@ async function sendOrder() {
   } as Order
   await axios.CreateOrder(_order)
   loading.value = false
-  snackbarStore.show("Ordine inviato con successo", 3000, 'top', 'success')
+  snackbarStore.show("Ordine inviato con successo", 3000, 'bottom', 'success')
   router.push(origin)
 }
 
