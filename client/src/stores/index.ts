@@ -87,6 +87,18 @@ export const ProgressStore: StoreDefinition = defineStore('progress', {
     state: () => ({ loading: false, activeRequestCount: 0 })
 })
 
+export const ZoomStore = defineStore('zoom', {
+    state: () => ({
+        level: Number(localStorage.getItem('zoom_level')) || 1
+    }),
+    actions: {
+        setLevel(val: number) {
+            this.level = val
+            localStorage.setItem('zoom_level', val.toString())
+        }
+    }
+})
+
 export const ThemeStore: StoreDefinition = defineStore('theme', {
     state: () => ({ theme: localStorage.getItem('theme') || 'light' }),
     actions: {

@@ -2,15 +2,29 @@
 import type { Table, SubType, RestaurantLayout, Room, MasterTable, User } from "../../../models/src"
 import { ref, computed, onUnmounted, watch } from "vue"
 import Axios from '@/services/client'
-import { SnackbarStore } from '@/stores'
 import CheckoutOrder from "@/components/CheckoutOrder.vue"
 import CheckoutTableSelection from "@/components/CheckoutTableSelection.vue"
 import RoomTabs from '@/components/RoomTabs.vue'
 import RestaurantMap from "@/components/RestaurantMap.vue"
 import CheckoutClosed from "@/components/CheckoutClosed.vue"
 import { useDisplay } from 'vuetify'
+import { SnackbarStore, ZoomStore } from '@/stores'
+import { storeToRefs } from 'pinia'
 
 const { smAndUp } = useDisplay()
+
+const zoomStore = ZoomStore()
+const { level: zoomLevel } = storeToRefs(zoomStore)
+
+const zoomIn = () => {
+  const next = Math.min(2.0, zoomStore.level + 0.05)
+  zoomStore.setLevel(next)
+}
+
+const zoomOut = () => {
+  const next = Math.max(0.3, zoomStore.level - 0.05)
+  zoomStore.setLevel(next)
+}
 
 const props = defineProps(['is', 'event'])
 
@@ -31,7 +45,6 @@ const drawer = ref<boolean>(smAndUp.value ? true : false)
 const activeRoomId = ref<number>()
 const rooms = ref<Room[]>([])
 const selectedTableId = ref<number>(0)
-const zoomLevel = ref(1)
 let reloadTimeout: ReturnType<typeof setTimeout>
 
 const currentRoom = computed(() => rooms.value.find(r => r.id === activeRoomId.value))
@@ -174,6 +187,14 @@ onUnmounted(() => {
     <NoEvent></NoEvent>
   </v-container>
   <v-container v-else style="padding: 0;">
+    <div v-if="activeRoomId" class="d-flex align-center" style="width: 200px; padding-left: 10px;">
+      <v-icon icon="mdi-magnify-minus-outline" size="small" class="mr-2" @click="zoomOut"></v-icon>
+      <v-slider v-model="zoomLevel" :min="0.3" :max="2.0" :step="0.05" hide-details density="compact"
+        @update:model-value="zoomStore.setLevel"></v-slider>
+      <v-icon icon="mdi-magnify-plus-outline" size="small" class="ml-2" @click="zoomIn"></v-icon>
+      <span v-show="smAndUp" class="text-caption ml-2" style="width: 40px">{{ Math.round(zoomLevel *
+        100) }}%</span>
+    </div>
     <RoomTabs v-model="activeRoomId" :rooms="rooms" :editing="false" />
 
     <RestaurantMap v-if="activeRoomId > -1" :highlight-selection="true" :room="currentRoom" :zoom="zoomLevel"
