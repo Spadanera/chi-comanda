@@ -6,7 +6,7 @@ import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { groupItems, copy, sortOrder } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
-import Avatar from "@/components/Avatar.vue"
+import SubTypeSummary from "@/components/SubTypeSummary.vue"
 import fileAudio from '@/assets/nuovo-ordine.wav'
 import fileAudio1 from '@/assets/nuovo-ordine-1.ogg'
 import fileAudio2 from '@/assets/nuovo-ordine-2.ogg'
@@ -40,38 +40,16 @@ const itemsToDo = computed(() => {
   if (selectedOrder.value.length) {
     return groupItems(selectedOrder.value[0].items.filter((i: Item) => !i.done))
   }
-  else {
-    return []
-  }
+  return []
 })
 const itemsDone = computed(() => {
   if (selectedOrder.value.length) {
     return groupItems(selectedOrder.value[0].items.filter((i: Item) => i.done))
   }
-  else {
-    return []
-  }
+  return []
 })
-const subTypesCount = computed(() => {
-  let result: any = []
-  types.value.forEach((type: SubType) => {
-    let count = getSubTypeCount(selectedOrder.value[0], [type.name])
-    if (count > 0) result.push({
-      type: type.name,
-      icon: type.icon,
-      count
-    })
-  })
-  return result
-})
-const orderedOrders = computed(() => orders.value.sort(sortOrder))
 
-function getSubTypeCount(order: Order, subtype: string[]) {
-  if (order && order.items) {
-    return order.items.reduce((a: number, i: Item) => a += subtype.includes(i.sub_type) ? 1 : 0, 0)
-  }
-  return 0
-}
+const orderedOrders = computed(() => orders.value.sort(sortOrder))
 
 async function doneItem(item_ids: number[], multiple: boolean = false) {
   if (!multiple) {
@@ -160,18 +138,11 @@ function getMinutesPassed(datetimeString: string): number {
     const [datePart, timePart] = datetimeString.split(/T| /)
     const [year, month, day] = datePart.split('-').map(Number)
     const [hours, minutes, seconds] = timePart.split('.')[0].split(':').map(Number)
-
-
     const then = new Date(year, month - 1, day, hours, minutes, seconds)
-
     const now = new Date().toLocaleString("en-US", { timeZone: "Europe/Rome" })
     const nowItaly = new Date(now)
-
     const differenceMs = nowItaly.getTime() - then.getTime()
-
-    const minutesPassed = Math.floor(differenceMs / (1000 * 60))
-
-    return minutesPassed
+    return Math.floor(differenceMs / (1000 * 60))
   } catch (error) {
     return 0
   }
@@ -198,7 +169,6 @@ function newOrderHandler(data: Order) {
     if (!selectedOrder.value.length) {
       selectedOrder.value.push(data)
     }
-
     if (!data.items[0].done) {
       snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
       let audioToPlay = audio.value[Math.floor(Math.random() * audio.value.length)]
@@ -212,7 +182,7 @@ function orderCompletedHandler() {
 }
 
 function itemUpdatedHandler(data: Item) {
-  const _order = orders.value.find((o: Order) => o.id = data.order_id)
+  const _order = orders.value.find((o: Order) => o.id === data.order_id)
   if (_order) {
     const _item = _order.items.find((i: Item) => i.id === data.id)
     if (_item) {
@@ -229,18 +199,16 @@ function reloadTablehandler() {
 }
 
 function itemRemovedHandler(data: number) {
-  const order = orders.value.find((o: Order) => {
-    if (o.items.find((i: Item) => i.id === data)) {
-      return true
+  const order = orders.value.find((o: Order) => o.items.find((i: Item) => i.id === data))
+  if (order) {
+    const _items = copy<Item[]>(order.items.filter((i: Item) => i.id !== data))
+    order.items = _items
+    if (_items.length === 0) {
+      if (selectedOrder.value.length && order.id === selectedOrder.value[0].id) {
+        selectedOrder.value = []
+      }
+      orders.value = copy<Order[]>(orders.value.filter((o: Order) => o.id !== order.id))
     }
-  })
-  const _items = copy<Item[]>(order.items.filter((i: Item) => i.id !== data))
-  order.items = _items
-  if (_items.length === 0) {
-    if (order.id === selectedOrder.value[0].id) {
-      selectedOrder.value = []
-    }
-    orders.value = copy<Order[]>(orders.value.filter((o: Order) => o.id !== order.id))
   }
 }
 
@@ -257,14 +225,12 @@ async function init() {
     types.value = await axios.GetSubTypes()
     await getOrders()
     is.emit('join', 'bartender')
-
     is.on('new-order', newOrderHandler)
     is.on('order-completed', orderCompletedHandler)
     is.on('item-updated', itemUpdatedHandler)
     is.on('reload-table', reloadTablehandler)
     is.on('item-removed', itemRemovedHandler)
     is.on('connect', handleReconnection)
-
     window.clearInterval(interval)
     interval = window.setInterval(calculateMinPassed, 1000 * 60)
     loading.value = false
@@ -289,7 +255,6 @@ onUnmounted(() => {
   clearTimeout(reloadTimeout)
   if (is) {
     is.emit('leave', 'bartender')
-
     is.off('new-order', newOrderHandler)
     is.off('order-completed', orderCompletedHandler)
     is.off('item-updated', itemUpdatedHandler)
@@ -315,25 +280,25 @@ onUnmounted(() => {
             {{ order.minPassed }} <span style="text-transform: lowercase;">m</span>
           </v-btn>
         </v-list-item-title>
-        <template v-for="type in types">
-          <v-btn readonly size="small" density="compact" variant="plain" v-if="getSubTypeCount(order, [type.name]) > 0">
-            <v-icon>{{ type.icon }}</v-icon> {{ getSubTypeCount(order, [type.name]) }}
-          </v-btn>
-        </template>
+        <SubTypeSummary :items="order.items" :types="types" />
       </v-list-item>
     </v-list>
   </v-navigation-drawer>
+
   <v-skeleton-loader type="card" v-if="loading"></v-skeleton-loader>
+
   <v-container v-else-if="!props.event?.id">
     <NoEvent></NoEvent>
   </v-container>
+
   <template v-else>
     <v-container>
       <h3>{{ selectedOrder[0]?.table_name }}</h3>
-      <v-chip v-if="selectedOrder.length"  style="margin: 10px 0 0 0;">
+      <v-chip v-if="selectedOrder.length" style="margin: 10px 0 0 0;">
         Effettuato da: {{ selectedOrder[0]?.user.username }}
       </v-chip>
     </v-container>
+
     <ItemList :quantitybefore="true" :showtype="true" subheader="DA FARE" v-model="itemsToDo" :shownote="true">
       <template v-slot:prequantity="slotProps">
         <v-btn icon="mdi-delete" v-if="!slotProps.item.paid && !readonly" @click="deleteItemConfirm(slotProps.item.id)"
@@ -342,25 +307,21 @@ onUnmounted(() => {
           @click="doneItem(slotProps.item.grouped_ids, true)"></v-btn>
         <v-btn variant="plain" v-if="!readonly" icon="mdi-check" @click="doneItem(slotProps.item.grouped_ids)"></v-btn>
       </template>
-      <template v-slot:postquantity="slotProps">
-      </template>
     </ItemList>
+
     <v-divider></v-divider>
+
     <ItemList :quantitybefore="true" subheader="COMPLETATI" v-model="itemsDone" :done="true" shownote>
       <template v-slot:postquantity="slotProps">
         <v-btn variant="plain" v-if="!readonly" icon="mdi-arrow-up-thin" @click="rollbackItem(slotProps.item)"></v-btn>
       </template>
     </ItemList>
-    <v-bottom-navigation>
-      <v-btn icon="mdi-menu" @click="drawer = !drawer" id="drawer-button">
 
-      </v-btn>
-      <template v-for="type in subTypesCount">
-        <v-btn v-if="type.type !== 'Fuori Menu'" min-width="50" readonly size="x-small" density="compact"
-          variant="plain">
-          <v-icon>{{ type.icon }}</v-icon> {{ type.count }}
-        </v-btn>
-      </template>
+    <v-bottom-navigation>
+      <v-btn icon="mdi-menu" @click="drawer = !drawer" id="drawer-button"></v-btn>
+
+      <SubTypeSummary v-if="selectedOrder.length" :items="selectedOrder[0].items" :types="types" />
+
       <v-spacer></v-spacer>
       <v-btn class="show-xs" variant="plain" @click="confirm = true"
         v-if="selectedOrder.length && !selectedOrder[0].done && !readonly">
@@ -369,6 +330,7 @@ onUnmounted(() => {
       <v-btn class="hide-xs" icon="mdi-check-all" variant="plain" @click="confirm = true"
         v-if="selectedOrder.length && !selectedOrder[0].done"></v-btn>
     </v-bottom-navigation>
+
     <Confirm v-model="confirm">
       <template v-slot:action>
         <v-btn text="Conferma" variant="plain" @click="completeOrder"></v-btn>

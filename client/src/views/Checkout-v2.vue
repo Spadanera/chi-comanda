@@ -57,7 +57,9 @@ const onTableClick = async (table: Table) => {
 }
 
 const selectTable = async (table: Table) => {
+  console.log(table)
   selectedTable.value[0] = table
+  selectedTableId.value = table.table_id
 }
 
 const reloadTableHandlerasync = () => {
@@ -179,7 +181,7 @@ onUnmounted(() => {
   <v-navigation-drawer v-if="props.event?.id" v-model="drawer" mobile-breakpoint="sm" :width="450" location="right">
     <CheckoutOrder v-if="selectedTable.length" :event="props.event" :roomid="activeRoomId"
       v-model:selected-table="selectedTable" @get-tables="getTables" @change-table-sheet="tableSheet = true"
-      v-model:drawer="drawer" :navigation="true" />
+      v-model:drawer="drawer" :navigation="true" @close-drawer="selectedTableId = 0" />
     <v-alert type="info" variant="tonal" class="ma-auto" v-else>Nessun Tavolo Selezionato</v-alert>
   </v-navigation-drawer>
   <v-skeleton-loader type="card" v-if="loading"></v-skeleton-loader>
@@ -198,7 +200,7 @@ onUnmounted(() => {
     <RoomTabs v-model="activeRoomId" :rooms="rooms" :editing="false" />
 
     <RestaurantMap v-if="activeRoomId > -1" :highlight-selection="true" :room="currentRoom" :zoom="zoomLevel"
-      :editable="false" :tables="tables" :selected-table-id="selectedTableId" @click-table="onTableClick" />
+      :editable="false" :tables="tables" :selected-table-id="selectedTableId" @click-table="onTableClick" :types="types" />
     <CheckoutClosed v-else :tables="tables" @click-table="onTableClick" :event="props.event" />
   </v-container>
   <CheckoutTableSelection v-model="tableSheet" :event="props.event" :selected-table="selectedTable"

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, onUnmounted, computed } from 'vue'
-import type { MasterTable, Room, TableUpdatePayload } from '../../../models/src'
+import type { MasterTable, Room, SubType, TableUpdatePayload } from '../../../models/src'
+import SubTypeSummary from "@/components/SubTypeSummary.vue"
 import { useDisplay } from 'vuetify'
 
 const { smAndUp } = useDisplay()
@@ -12,6 +13,7 @@ const props = defineProps<{
   selectedTableId: number
   editable?: boolean
   highlightSelection?: boolean
+  types?: SubType[]
 }>()
 
 const emit = defineEmits<{
@@ -182,12 +184,10 @@ onUnmounted(() => {
         }">
           <div class="grid-overlay"></div>
 
-          <div v-for="table in activeTables" :key="table.id" class="table-item d-flex align-center justify-center"
+          <div v-for="table in activeTables" :key="table.id" class="table-item d-flex align-center justify-center elevation-2"
             :class="{
               'rounded-circle': table.shape === 'circle',
               'rounded': table.shape === 'rect',
-              'elevation-6 ring-active': selectedTableId === table.id,
-              'elevation-2': selectedTableId !== table.id,
               'cursor-grab': editable,
               'cursor-pointer': !editable,
               'in-use': table.inUse,
@@ -200,10 +200,14 @@ onUnmounted(() => {
               border: highlightSelection && table.table_id === props.selectedTableId ? '1px solid red' : ''
             }" @mousedown.stop="startDrag($event, table)" @touchstart.stop="startTouchDrag($event, table)"
             @click.stop="handleTableClick(table)">
-            <div class="text-center unselectable">
+            <div class="text-center unselectable"
+              style="margin: auto; max-height: 100%; width: 100%; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
               <div class="text-subtitle-2 font-weight-bold" style="font-size: 0.8rem">{{ table.name || table.table_name
                 || table.master_table_name }}</div>
-              <div class="text-caption" style="font-size: 0.6rem">{{ table.default_seats }}p</div>
+              <div v-if="types && table.inUse">
+                <SubTypeSummary :items="table.items" :types="types" />
+              </div>
+              <div v-else class="text-caption" style="font-size: 0.6rem">{{ table.default_seats }}p</div>
             </div>
           </div>
         </div>
@@ -212,8 +216,15 @@ onUnmounted(() => {
         <v-container>
           <v-row justify="center">
             <v-col v-for="table in activeTables" cols="12" sm="6" md="4" lg="3" xl="2">
-              <v-card style="padding: 10px; text-align: center" @click.stop="handleTableClick(table)">
-                {{ table.table_name }}
+              <v-card :style="{
+                border: highlightSelection && table.table_id === props.selectedTableId ? '1px solid red' : ''
+              }" style="padding: 10px; text-align: center" @click.stop="handleTableClick(table)">
+                <v-card-title>
+                  {{ table.table_name }}
+                </v-card-title>
+                <v-card-text v-if="types">
+                  <SubTypeSummary :items="table.items" :types="types" />
+                </v-card-text>
               </v-card>
             </v-col>
           </v-row>
@@ -250,13 +261,18 @@ onUnmounted(() => {
 }
 
 .room-floor {
-  background-color: white;
   position: absolute;
   top: 0;
   left: 0;
   overflow: hidden;
   transform-origin: 0 0;
-  will-change: transform
+  will-change: transform;
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(#e5e5e5 1px, transparent 1px),
+    linear-gradient(90deg, #e5e5e5 1px, transparent 1px);
+  background-size: 50px 50px;
+  background-repeat: repeat !important;
 }
 
 .grid-overlay {
@@ -275,7 +291,7 @@ onUnmounted(() => {
 
 .table-item {
   position: absolute;
-  background-color: #f5f5f5;
+  background-color: #fff;
   user-select: none;
   transition: box-shadow 0.1s;
   touch-action: none;
@@ -288,7 +304,8 @@ onUnmounted(() => {
 }
 
 .in-use {
-  background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgb(126 118 118 / 20%) 10px, rgba(255, 255, 255, 0.2) 20px);
+  border: 2px solid #007bff;
+  box-shadow: inset 0 0 10px rgba(0, 123, 255, 0.2);
 }
 
 .table-item.cursor-grab:active {
@@ -303,5 +320,19 @@ onUnmounted(() => {
 .unselectable {
   user-select: none;
   pointer-events: none
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.4)
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(33, 150, 243, 0)
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0)
+  }
 }
 </style>

@@ -165,6 +165,7 @@ const addName = async () => {
   const lastIndex = inputs.value.length - 1
   if (inputs.value[lastIndex]) {
     inputs.value[lastIndex].focus()
+    inputs.value[lastIndex].$el.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 }
 
@@ -283,8 +284,10 @@ onMounted(async () => {
       <v-card-title>
         Indica il nome del tavolo
       </v-card-title>
-      <v-card-text>
+
+      <v-card-text style="max-height: 400px; overflow-y: auto">
         <v-switch v-model="multiple" label="Inserimento Multiplo" color="success"></v-switch>
+
         <v-form ref="form" @submit.prevent v-if="!multiple">
           <v-row dense>
             <v-col cols="12">
@@ -293,13 +296,13 @@ onMounted(async () => {
             </v-col>
           </v-row>
         </v-form>
+
         <v-form ref="formMultiple" v-else @submit.prevent>
           <div v-for="(name, index) in names" :key="index" class="d-flex align-center mb-2">
-            <v-text-field :rules="[requiredRule]" ref="inputs" v-model="names[index]" label="Nome" hide-details></v-text-field>
-
+            <v-text-field :rules="[requiredRule]" ref="inputs" v-model="names[index]" label="Nome"
+              hide-details></v-text-field>
             <v-btn icon="mdi-minus" variant="text" @click="removeName(index)"></v-btn>
           </div>
-
           <v-btn @click="addName">Aggiungi Nome</v-btn>
         </v-form>
       </v-card-text>
@@ -311,7 +314,6 @@ onMounted(async () => {
         <RouterLink to="/waiter">
           <v-btn text="Annulla" variant="plain"></v-btn>
         </RouterLink>
-
         <v-btn color="primary" text="Salva" variant="tonal" @click="setTableName"></v-btn>
       </v-card-actions>
     </v-card>
