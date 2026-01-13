@@ -23,9 +23,9 @@ class TableApi {
 
     async changeTable(table_id: number, master_table_id: number): Promise<number> {
         const table_name = (await db.queryOne<MasterTable>("SELECT name FROM master_tables_event WHERE id = ?", [master_table_id])).name
-        const table_master_table:number = (await db.queryOne("SELECT id FROM table_master_table WHERE table_id = ?", [table_id])).id
+        const table_master_table: number = (await db.queryOne("SELECT id FROM table_master_table WHERE table_id = ?", [table_id])).id
         const result = await db.executeTransaction([
-            table_master_table ? 
+            table_master_table ?
                 "UPDATE table_master_table SET master_table_id = ? WHERE table_id = ?" :
                 "INSERT INTO table_master_table (master_table_id, table_id) VALUES (?, ?)",
             "UPDATE tables SET name = ? WHERE id = ?"
@@ -198,7 +198,7 @@ class TableApi {
             FROM tables
             WHERE event_id = ?
             AND id NOT IN (SELECT table_id FROM table_master_table)
-            ORDER BY table_name DESC, master_table_name`, [eventId, eventId, eventId])
+            ORDER BY table_name, master_table_name`, [eventId, eventId, eventId])
     }
 
     async getActiveTable(eventId: number): Promise<Table[]> {
@@ -379,6 +379,24 @@ class TableApi {
 
     async paySelectedItem(table_id: number, item_ids: number[]): Promise<number> {
         return await db.executeUpdate(`UPDATE items SET paid = TRUE WHERE table_id = ? AND id IN (${item_ids.join(',')})`, [table_id])
+    }
+
+    async insertMultipleTables(event_id: number, tableNames: string[], userId: number): Promise<number> {
+        if (tableNames.length) {
+            const result = await db.executeTransaction(
+                tableNames.map(() => `INSERT INTO tables (event_id, name, user_id) VALUES (?,?,?)`),
+                tableNames.map((name:string) => [event_id, name, userId])
+            )
+
+            SocketIOService.instance().sendMessage({
+                rooms: ["waiter", "table", "checkout"],
+                event: "reload-table",
+                body: {}
+            })
+
+            return result
+        }
+        return 0
     }
 }
 

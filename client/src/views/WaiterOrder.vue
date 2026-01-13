@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Order, type MasterItem, type Item, type SubType, type Type, type Destination, type User } from "../../../models/src"
-import { ref, onMounted, computed } from "vue"
+import { ref, onMounted, computed, nextTick } from "vue"
 import router from '@/router'
 import Axios from '@/services/client'
 import { SnackbarStore } from '@/stores'
@@ -18,6 +18,9 @@ const destinations = ref<Destination[]>([])
 const types = ref<SubType[]>([])
 const alreadyDone = ref<boolean>(false)
 const alreadyPaid = ref<boolean>(false)
+
+const names = ref([''])
+const inputs = ref([])
 
 const emit = defineEmits(['login', 'reload'])
 
@@ -37,7 +40,9 @@ const filter = ref<string>('')
 const table_name = ref<string>('')
 const form = ref(null)
 const formExtra = ref(null)
+const formMultiple = ref(null)
 const extraItem = ref<Item>({} as Item)
+const multiple = ref<boolean>(false)
 
 const orderTotal = computed(() => orderItems.value.reduce((a: number, i: Item) => a += i.price, 0))
 const foodTotal = computed(() => orderItems.value.filter((i: Item) => i.type === 'Cibo').length)
@@ -139,11 +144,32 @@ async function sendOrder() {
 }
 
 async function setTableName() {
-  const { valid } = await form.value?.validate()
-  if (valid) {
-    table_name.value = tableName.value
-    dialogTable.value = false
+  if (!multiple.value) {
+    const { valid } = await form.value?.validate()
+    if (valid) {
+      table_name.value = tableName.value
+      dialogTable.value = false
+    }
+  } else {
+    const { valid } = await formMultiple.value?.validate()
+    if (valid) {
+      await axios.InsertMultipleTables(parseInt(props.event_id), names.value)
+      router.push(origin)
+    }
   }
+}
+
+const addName = async () => {
+  names.value.push('')
+  await nextTick()
+  const lastIndex = inputs.value.length - 1
+  if (inputs.value[lastIndex]) {
+    inputs.value[lastIndex].focus()
+  }
+}
+
+const removeName = (index: number) => {
+  names.value.splice(index, 1)
 }
 
 onMounted(async () => {
@@ -183,7 +209,8 @@ onMounted(async () => {
                 <v-btn icon="mdi-star-circle" v-if="item.sub_type === 'Cocktail'" variant="text"
                   @click="openNoteDialog(item, true)"></v-btn>
                 <v-btn icon="mdi-pencil" variant="text" @click="openNoteDialog(item, false)"></v-btn>
-                <v-btn v-if="item.price < event.minimumConsumptionPrice" icon="mdi-cash" variant="text" @click="addItemToOrder(item, true)"></v-btn>
+                <v-btn v-if="item.price < event.minimumConsumptionPrice" icon="mdi-cash" variant="text"
+                  @click="addItemToOrder(item, true)"></v-btn>
                 <v-btn icon="mdi-plus" variant="text" @click="addItemToOrder(item)"></v-btn>
               </template>
             </v-list-item>
@@ -257,13 +284,23 @@ onMounted(async () => {
         Indica il nome del tavolo
       </v-card-title>
       <v-card-text>
-        <v-form ref="form" @submit.prevent>
+        <v-switch v-model="multiple" label="Inserimento Multiplo" color="success"></v-switch>
+        <v-form ref="form" @submit.prevent v-if="!multiple">
           <v-row dense>
             <v-col cols="12">
               <v-text-field v-model="tableName" label="Nome Tavolo" :rules="[requiredRule]"
                 :autofocus="true"></v-text-field>
             </v-col>
           </v-row>
+        </v-form>
+        <v-form ref="formMultiple" v-else @submit.prevent>
+          <div v-for="(name, index) in names" :key="index" class="d-flex align-center mb-2">
+            <v-text-field :rules="[requiredRule]" ref="inputs" v-model="names[index]" label="Nome" hide-details></v-text-field>
+
+            <v-btn icon="mdi-minus" variant="text" @click="removeName(index)"></v-btn>
+          </div>
+
+          <v-btn @click="addName">Aggiungi Nome</v-btn>
         </v-form>
       </v-card-text>
 
@@ -292,7 +329,8 @@ onMounted(async () => {
           </v-col>
         </v-row>
         <v-row dense>
-          <v-switch label="Consumazione Minima" color="success" v-if="dialogItem.price < event.minimumConsumptionPrice" v-model="dialogItem.setMinimum"></v-switch>
+          <v-switch label="Consumazione Minima" color="success" v-if="dialogItem.price < event.minimumConsumptionPrice"
+            v-model="dialogItem.setMinimum"></v-switch>
         </v-row>
       </v-card-text>
 
