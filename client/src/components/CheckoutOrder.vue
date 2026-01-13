@@ -9,7 +9,7 @@ import Confirm from "@/components/Confirm.vue"
 import ItemList from "@/components/ItemList.vue"
 
 const props = defineProps(['event', 'navigation', 'roomid'])
-const emit = defineEmits(['getTables', 'changeTableSheet'])
+const emit = defineEmits(['getTables', 'changeTableSheet', 'closeDrawer'])
 
 const selectedTable = defineModel<Table[]>('selectedTable', { required: true })
 const drawer = defineModel<boolean>('drawer', { required: true })
@@ -125,13 +125,18 @@ const pay = (partial: boolean) => {
     realPaid.value = currentTotalToPay.value
     dialogPay.value = true
 }
+
+const closeDrawer = () => {
+    drawer.value = !drawer.value
+    emit('closeDrawer')
+}
 </script>
 
 <template>
-    <div>
-        <v-btn v-if="activeTable.name" @click="emit('changeTableSheet')" :style="tableNameStyle"
+    <div style="padding-bottom: 56px;">
+        <v-btn v-if="activeTable.name || activeTable.table_name" @click="emit('changeTableSheet')" :style="tableNameStyle"
             class="floating-name-btn" :readonly="roomid === -1" :variant="roomid === -1 ? 'text' : 'elevated'">
-            {{ activeTable.name }}
+            {{ activeTable.name || activeTable.table_name }}
         </v-btn>
 
         <v-chip v-if="activeTable.user" class="user-chip">
@@ -157,9 +162,9 @@ const pay = (partial: boolean) => {
             </template>
         </ItemList>
 
-        <div :style="bottomBarStyle" class="bottom-action-bar">
+        <div :style="bottomBarStyle" class="bottom-action-bar bg-surface text-on-surface elevation-4">
             <v-btn id="drawer-button" variant="plain" :icon="navigation ? 'mdi-undo' : 'mdi-menu'"
-                @click="drawer = !drawer" />
+                @click="closeDrawer" />
 
             <v-btn v-if="selectedTable.length" variant="plain" readonly class="total-display-btn">
                 Totale: {{ tableTotalOrder }} €

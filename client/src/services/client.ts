@@ -162,6 +162,10 @@ export default class Axios {
         return await this.put<AvailableTable>(`/tables/${table_id}/change/${master_table_id}`, {} as AvailableTable)
     }
 
+    async InsertMultipleTables(event_id: number, tableNames: string[]): Promise<number> {
+        return (await this.client.post(`/events/${event_id}/tables/multiple`, tableNames)).data
+    }
+
     async GetMasterTable(master_id: string): Promise<MasterTable> {
         return await this.getSingle<MasterTable>(`/master-tables/${master_id}`)
     }

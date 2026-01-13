@@ -135,6 +135,17 @@ eventsRouter.get("/:id/tables/free", authorizationMiddleware(Roles.checkout), as
     }
 })
 
+eventsRouter.post("/:id/tables/multiple", authorizationMiddleware([Roles.checkout, Roles.bartender, Roles.admin, Roles.waiter]), async (req: Request, res: Response) => {
+    try {
+        const userId = (req.user as any).id
+        const result = await tableApi.insertMultipleTables(+req.params.id, req.body, +userId)
+        res.status(200).json(result)
+    } catch (error) {
+        console.error(error)
+        res.status(500).json(error)
+    }
+})
+
 eventsRouter.get("/:id/tables", async (req: Request, res: Response) => {
     try {
         const result = await tableApi.getActiveTable(+req.params.id)
