@@ -154,7 +154,7 @@ const router = createRouter({
     {
       path: '/checkout',
       name: 'Cassa',
-      component: () => import('@/views/Checkout-v2.vue'),
+      component: () => import('@/views/Checkout.vue'),
       props: true,
       meta: {
         allowedRole: Roles.checkout

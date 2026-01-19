@@ -84,6 +84,9 @@ function addItemWithNote() {
   dialogItem.value.table_id = props.table_id
   dialogItem.value.master_item_id = dialogItem.value.id
   const _item = copy<Item>(dialogItem.value)
+  if (dialogItem.value.setMinimum) {
+    _item.price = props.event.minimumConsumptionPrice
+  }
   orderItems.value.push(_item)
   dialog.value = false
   snackbarStore.show(`${dialogItem.value.name} aggiunto`)
@@ -238,6 +241,8 @@ onMounted(async () => {
               <v-btn icon="mdi-star-circle" v-if="item.sub_type === 'Cocktail'" variant="text"
                 @click="openNoteDialog(item, true)"></v-btn>
               <v-btn icon="mdi-pencil" variant="text" @click="openNoteDialog(item, false)"></v-btn>
+              <v-btn v-if="item.price < event.minimumConsumptionPrice" icon="mdi-cash" variant="text"
+                  @click="addItemToOrder(item, true)"></v-btn>
               <v-btn icon="mdi-plus" variant="text" @click="addItemToOrder(item)"></v-btn>
             </template>
           </v-list-item>

@@ -219,7 +219,8 @@ class TableApi {
                     'price', items.price,
                     'destination_id', items.destination_id,
                     'done', items.done,
-                    'paid', items.paid
+                    'paid', items.paid,
+                    'setMinimum', items.setMinimum
                 )) 
                 FROM items 
                 LEFT JOIN sub_types ON sub_types.id = items.sub_type_id
