@@ -11,11 +11,11 @@ export class SocketIOService {
   }
 
   static instance(): SocketIOService {
-    if (!this._instance) {
-      return new SocketIOService();
+    if (!SocketIOService._instance) {
+      SocketIOService._instance = new SocketIOService();
     }
 
-    return this._instance;
+    return SocketIOService._instance;
   }
 
   initialize(httpServer: HttpServer, opts?: Partial<ServerOptions>) {

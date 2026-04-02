@@ -1,46 +1,27 @@
 import router, { Router, Request, Response } from "express"
 import masterItemsApi from "../api/master-item"
+import { asyncHandler } from "../utils/asyncHandler"
 
 const typesRouter: Router = router()
 
-typesRouter.get("/", async (req: Request, res: Response) => {
-    try {
-        const result = await masterItemsApi.getTypes()
-        res.status(200).json(result)
-    } catch (error) {
-        console.error(error)
-        res.status(500).json(error)
-    }
-})
+typesRouter.get("/", asyncHandler(async (_req: Request, res: Response) => {
+    const result = await masterItemsApi.getTypes()
+    res.status(200).json(result)
+}))
 
-typesRouter.post("/", async (req: Request, res: Response) => {
-    try {
-        const result = await masterItemsApi.createType(req.body)
-        res.status(200).json(result)
-    } catch (error) {
-        console.error(error)
-        res.status(500).json(error)
-    }
-})
+typesRouter.post("/", asyncHandler(async (req: Request, res: Response) => {
+    const result = await masterItemsApi.createType(req.body)
+    res.status(200).json(result)
+}))
 
-typesRouter.put("/", async (req: Request, res: Response) => {
-    try {
-        const result = await masterItemsApi.updateType(req.body)
-        res.status(200).json(result)
-    } catch (error) {
-        console.error(error)
-        res.status(500).json(error)
-    }
-})
+typesRouter.put("/", asyncHandler(async (req: Request, res: Response) => {
+    const result = await masterItemsApi.updateType(req.body)
+    res.status(200).json(result)
+}))
 
-typesRouter.delete("/:id", async (req: Request, res: Response) => {
-    try {
-        const result = await masterItemsApi.deleteType(+req.params.id)
-        res.status(200).json(result)
-    } catch (error) {
-        console.error(error)
-        res.status(500).json(error)
-    }
-})
+typesRouter.delete("/:id", asyncHandler(async (req: Request, res: Response) => {
+    const result = await masterItemsApi.deleteType(+req.params.id)
+    res.status(200).json(result)
+}))
 
 export default typesRouter

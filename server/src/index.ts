@@ -6,6 +6,7 @@ import history from "connect-history-api-fallback"
 import * as passportStrategy from "passport-local"
 import apiRouter from "./routes"
 import publicApiRouter from "./routes/public"
+import { errorMiddleware } from "./utils/asyncHandler"
 import { createServer } from 'http'
 import { SocketIOService } from "./socket"
 import { Audit, User } from "../../models/src"
@@ -87,7 +88,7 @@ app.get("/api/checkauthentication", async (req: Request, res: Response) => {
     }
 })
 
-app.use('public', publicApiRouter)
+app.use('/public', publicApiRouter)
 
 app.use('/api', (req: Request, res: Response, next: any) => {
     if (req.isAuthenticated() || /\/public\//.test(req.path)) {
@@ -113,6 +114,7 @@ app.use('/api', (req: Request, res: Response, next: any) => {
 
 
 app.use(express.static(path.join(__dirname, 'static')))
+app.use(errorMiddleware)
 
 // start listening
 

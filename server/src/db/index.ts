@@ -76,6 +76,9 @@ class Database {
             connection = await this.getConnection()
             const [result] = await connection.execute<ResultSetHeader>(query, this.safeNull(values))
             return result.insertId
+        } catch (error: any) {
+            console.error("Error executing query: ", query, values)
+            throw new Error(error)
         } finally {
             if (connection) {
                 connection.release()

@@ -329,7 +329,7 @@ class TableApi {
     }
 
     async create(table: Table, userId: number): Promise<number> {
-        const table_id = await db.executeInsert('INSERT INTO tables (name, event_id, status, user_id) VALUES (?,?,?)', [table.name, table.event_id, 'ACTIVE', userId])
+        const table_id = await db.executeInsert('INSERT INTO tables (name, event_id, status, user_id) VALUES (?,?,?,?)', [table.name, table.event_id, 'ACTIVE', userId])
         if (table.master_table_id) {
             const transactionInput: { queries: string[], values: any[] } = {
                 queries: [],
@@ -379,7 +379,9 @@ class TableApi {
     }
 
     async paySelectedItem(table_id: number, item_ids: number[]): Promise<number> {
-        return await db.executeUpdate(`UPDATE items SET paid = TRUE WHERE table_id = ? AND id IN (${item_ids.join(',')})`, [table_id])
+        if (!item_ids.length) return 0
+        const placeholders = item_ids.map(() => '?').join(',')
+        return await db.executeUpdate(`UPDATE items SET paid = TRUE WHERE table_id = ? AND id IN (${placeholders})`, [table_id, ...item_ids])
     }
 
     async insertMultipleTables(event_id: number, tableNames: string[], userId: number): Promise<number> {

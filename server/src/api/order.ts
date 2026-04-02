@@ -9,53 +9,53 @@ class OrderAPI {
     }
 
     async getAll(event_id: number, destinationIds: number[]): Promise<Order[]> {
-        const destinationIdsString = destinationIds.join(',');
+        const placeholders = destinationIds.map(() => '?').join(',')
         return await db.query(`
             SELECT * FROM (
-                SELECT 
-                    orders.id, 
+                SELECT
+                    orders.id,
                     orders.event_id,
-                    orders.table_id, 
+                    orders.table_id,
                     orders.order_date,
                     tables.name table_name,
                     (CASE WHEN (
-                        SELECT COUNT(items.id) FROM items 
-                        WHERE order_id = orders.id AND items.destination_id IN (${destinationIdsString}) AND IFNULL(done, FALSE) = FALSE
-                    ) > 0 THEN 0 ELSE 1 END) done,  
+                        SELECT COUNT(items.id) FROM items
+                        WHERE order_id = orders.id AND items.destination_id IN (${placeholders}) AND IFNULL(done, FALSE) = FALSE
+                    ) > 0 THEN 0 ELSE 1 END) done,
                     (
                         SELECT JSON_ARRAYAGG(JSON_OBJECT(
-                            'id', items.id, 
-                            'master_item_id', items.master_item_id, 
-                            'note', items.note, 
-                            'name', items.name, 
-                            'order_id', items.order_id, 
-                            'type', IFNULL(types.name, items.type), 
-                            'icon', IFNULL(sub_types.icon, items.icon), 
-                            'sub_type', IFNULL(sub_types.name, items.sub_type), 
+                            'id', items.id,
+                            'master_item_id', items.master_item_id,
+                            'note', items.note,
+                            'name', items.name,
+                            'order_id', items.order_id,
+                            'type', IFNULL(types.name, items.type),
+                            'icon', IFNULL(sub_types.icon, items.icon),
+                            'sub_type', IFNULL(sub_types.name, items.sub_type),
                             'price', items.price,
                             'destination_id', items.destination_id,
                             'done', items.done,
                             'paid', items.paid
-                        )) 
-                        FROM items 
+                        ))
+                        FROM items
                         LEFT JOIN sub_types ON sub_types.id = items.sub_type_id
                         LEFT JOIN types ON sub_types.type_id = types.id
-                        WHERE order_id = orders.id AND items.destination_id IN (${destinationIdsString})
+                        WHERE order_id = orders.id AND items.destination_id IN (${placeholders})
                     ) items,
                     (
-					    SELECT JSON_OBJECT(
-                            'id', users.id, 
+                        SELECT JSON_OBJECT(
+                            'id', users.id,
                             'username', users.username
                         )
-                        FROM users 
+                        FROM users
                         WHERE users.id = orders.user_id
                     ) user
-                FROM orders 
+                FROM orders
                 INNER JOIN tables ON orders.table_id = tables.id
                 WHERE orders.event_id = ?
             ) pivot
             WHERE pivot.items != '[]'
-            ORDER BY pivot.done, pivot.id`, [event_id])
+            ORDER BY pivot.done, pivot.id`, [...destinationIds, ...destinationIds, event_id])
     }
 
     async get(id: number): Promise<Order[]> {
@@ -125,7 +125,8 @@ class OrderAPI {
     async completeOrder(order_id: number, input: CompleteOrderInput): Promise<number> {
         let result: any
         if (input.item_ids && input.item_ids.length) {
-            result = await db.executeUpdate(`UPDATE items SET done = TRUE WHERE order_id = ? AND id in (${input.item_ids.join(',')})`, [order_id])
+            const placeholders = input.item_ids.map(() => '?').join(',')
+            result = await db.executeUpdate(`UPDATE items SET done = TRUE WHERE order_id = ? AND id IN (${placeholders})`, [order_id, ...input.item_ids])
             const items = await db.query<Item>("SELECT id FROM items WHERE order_id = ? AND IFNULL(done, false) = FALSE", [order_id])
             if (items.length === 0) {
                 await db.executeUpdate("UPDATE orders SET done = TRUE WHERE id = ?", [order_id])
