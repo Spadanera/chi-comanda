@@ -36,6 +36,8 @@ services:
       MAIL_API_SECRET: ${MAIL_API_SECRET}
       MAIL_FROM: 'info-dev@chicomanda.com'
       MAIL_FROM_NAME: 'Info-dev - Chi Comanda'
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       SECRET: 'pippopluto'
       PORT: 3000
     networks:

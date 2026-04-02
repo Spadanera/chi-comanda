@@ -255,6 +255,61 @@ class UserApi {
         }
     }
 
+    async findOrCreateGoogleUser(googleId: string, email: string, displayName: string, avatar: string): Promise<User> {
+        // Try to find by googleId first
+        let user = await db.queryOne<User>(
+            `SELECT id, email, username, avatar,
+             (SELECT JSON_ARRAYAGG(name) FROM roles INNER JOIN user_role ON roles.id = user_role.role_id WHERE user_id = users.id) AS roles
+             FROM users WHERE googleId = ?`, [googleId])
+
+        if (user.id) {
+            return user
+        }
+
+        // Try to find by email (invited user that hasn't set up account yet)
+        user = await db.queryOne<User>(
+            `SELECT id, email, username, status, avatar,
+             (SELECT JSON_ARRAYAGG(name) FROM roles INNER JOIN user_role ON roles.id = user_role.role_id WHERE user_id = users.id) AS roles
+             FROM users WHERE email = ? AND status != 'DELETED'`, [email])
+
+        if (user.id) {
+            // Link Google account and always refresh the Google avatar
+            await db.executeUpdate(
+                'UPDATE users SET googleId = ?, username = COALESCE(username, ?), avatar = ?, status = "ACTIVE", last_login_date = ? WHERE id = ?',
+                [googleId, displayName, avatar, getCurrentDateTimeInItaly(), user.id]
+            )
+            user.avatar = avatar
+            user.roles = user.roles || []
+            return user
+        }
+
+        // New user — create without password (Google-only account)
+        const newId = await db.executeInsert(
+            'INSERT INTO users (email, username, googleId, avatar, status, creation_date) VALUES (?,?,?,?,?,?)',
+            [email, displayName, googleId, avatar, 'ACTIVE', getCurrentDateTimeInItaly()]
+        )
+
+        return await db.queryOne<User>(
+            `SELECT id, email, username, avatar,
+             (SELECT JSON_ARRAYAGG(name) FROM roles INNER JOIN user_role ON roles.id = user_role.role_id WHERE user_id = users.id) AS roles
+             FROM users WHERE id = ?`, [newId])
+    }
+
+    async acceptInvitationWithGoogle(token: string, googleId: string, displayName: string, avatar: string): Promise<User> {
+        const pending = await db.queryOne<User>('SELECT id, email FROM users WHERE token = ?', [token])
+        if (!pending.id) {
+            throw new Error('Token invito non valido')
+        }
+        await db.executeUpdate(
+            'UPDATE users SET googleId = ?, username = ?, avatar = ?, status = "ACTIVE", token = NULL, last_login_date = ? WHERE id = ?',
+            [googleId, displayName, avatar, getCurrentDateTimeInItaly(), pending.id]
+        )
+        return await db.queryOne<User>(
+            `SELECT id, email, username, avatar,
+             (SELECT JSON_ARRAYAGG(name) FROM roles INNER JOIN user_role ON roles.id = user_role.role_id WHERE user_id = users.id) AS roles
+             FROM users WHERE id = ?`, [pending.id])
+    }
+
     async resetPassword(invitation: Invitation): Promise<number> {
         const _reset: Invitation = await db.queryOne("SELECT id, email FROM reset WHERE token = ?", [invitation.token])
         const _user: User = await db.queryOne("SELECT id FROM users WHERE email = ?", [_reset.email])

@@ -46,8 +46,17 @@ async function login() {
                 <RouterLink to="/askreset">Password dimenticata</RouterLink>
               </p>
             </v-card-text>
-            <v-card-actions>
+            <v-card-actions class="flex-column gap-2 pa-4">
               <v-btn class="mt-2" type="submit" @click="login" block>ACCEDI</v-btn>
+              <v-divider class="my-2 w-100"></v-divider>
+              <v-btn
+                block
+                variant="outlined"
+                prepend-icon="mdi-google"
+                @click="axios.loginWithGoogle()"
+              >
+                Accedi con Google
+              </v-btn>
             </v-card-actions>
           </v-card>
         </v-col>
@@ -55,3 +64,9 @@ async function login() {
     </v-container>
   </main>
 </template>
+
+<style scoped>
+.gap-2 {
+  gap: 8px;
+}
+</style>
