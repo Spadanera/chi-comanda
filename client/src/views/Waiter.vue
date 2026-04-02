@@ -9,6 +9,7 @@ import { useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { SnackbarStore, ZoomStore } from '@/stores'
 import { storeToRefs } from 'pinia'
+import { useSocket } from '@/composables/useSocket'
 
 const { smAndUp } = useDisplay()
 
@@ -26,13 +27,12 @@ const zoomOut = () => {
 }
 
 const emit = defineEmits(['login', 'reload'])
-const props = defineProps(['is', 'event'])
+const props = defineProps(['event'])
 
+const socket = useSocket()
 const router = useRouter()
-
 const route = useRoute()
 const queryToPass = route.query.origin ? `?origin=${route.query.origin}` : ''
-const is = props.is
 const tables = ref<AvailableTable[]>([])
 const snackbarStore = SnackbarStore()
 const axios = new Axios()
@@ -53,7 +53,7 @@ const extraTableClick = () => {
   router.push(`/waiter/${props.event?.id}/mastertable/0/table/0/menu/${props.event.menu_id}`)
 }
 
-function reloadTableHandlerasync() {
+function reloadTableHandler() {
   clearTimeout(reloadTimeout)
   reloadTimeout = setTimeout(async () => {
     await getTables()
@@ -66,18 +66,13 @@ async function getTables() {
   rooms.value = layout.rooms || []
   tables.value = layout.tables
   if (tables.value.find(t => t.room_id === 0)) {
-    rooms.value.push({
-      id: 0,
-      name: 'Extra'
-    } as Room)
+    rooms.value.push({ id: 0, name: 'Extra' } as Room)
   }
 }
 
 async function handleReconnection() {
-  if (is) {
-    is.emit('join', 'waiter')
-    await getTables()
-  }
+  socket.emit('join', 'waiter')
+  await getTables()
 }
 
 async function init() {
@@ -87,11 +82,9 @@ async function init() {
     if (rooms.value.length) {
       activeRoomId.value = rooms.value[0].id
     }
-    if (is) {
-      is.emit('join', 'waiter')
-      is.on('reload-table', reloadTableHandlerasync)
-      is.on('connect', handleReconnection)
-    }
+    socket.emit('join', 'waiter')
+    socket.on('reload-table', reloadTableHandler)
+    socket.on('connect', handleReconnection)
     loading.value = false
   }
 }
@@ -100,11 +93,9 @@ watch(() => props.event, init, { immediate: true })
 
 onUnmounted(() => {
   clearTimeout(reloadTimeout)
-  if (is) {
-    is.emit('leave', 'waiter')
-    is.off('reload-table', reloadTableHandlerasync)
-    is.off('connect', handleReconnection)
-  }
+  socket.emit('leave', 'waiter')
+  socket.off('reload-table', reloadTableHandler)
+  socket.off('connect', handleReconnection)
 })
 </script>
 
@@ -120,14 +111,11 @@ onUnmounted(() => {
         <v-slider v-model="zoomLevel" :min="0.3" :max="2.0" :step="0.05" hide-details density="compact"
           @update:model-value="zoomStore.setLevel"></v-slider>
         <v-icon icon="mdi-magnify-plus-outline" size="small" class="ml-2" @click="zoomIn"></v-icon>
-        <span v-show="smAndUp" class="text-caption ml-2" style="width: 40px">{{ Math.round(zoomLevel *
-          100) }}%</span>
+        <span v-show="smAndUp" class="text-caption ml-2" style="width: 40px">{{ Math.round(zoomLevel * 100) }}%</span>
       </div>
       <RoomTabs v-model="activeRoomId" :rooms="rooms" :editing="false" />
-
       <RestaurantMap :room="currentRoom" :tables="tables" :zoom="zoomLevel" :selected-table-id="selectedTableId"
         :editable="false" @click-table="onTableClick" />
-
       <v-fab @click="extraTableClick()" v-if="roomSelected !== undefined" prepend-icon="mdi-plus" app text="Extra"
         appear style="position: fixed; right: 15px; bottom: 15px;" location="bottom right"></v-fab>
     </v-container>

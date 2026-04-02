@@ -24,7 +24,7 @@ const inputs = ref([])
 
 const emit = defineEmits(['login', 'reload'])
 
-const props = defineProps(['event_id', 'table_id', 'master_table_id', 'menu_id', 'is', 'event'])
+const props = defineProps(['event_id', 'table_id', 'master_table_id', 'menu_id', 'event'])
 
 const open = ref(null)
 const loading = ref<boolean>(true)
@@ -180,7 +180,6 @@ onMounted(async () => {
   destinations.value = await axios.GetDestinations()
   types.value = await axios.GetSubTypes()
   master_items.value = await axios.GetAvailableMasterItems(props.menu_id)
-  destinations.value = await axios.GetDestinations()
   if (parseInt(props.table_id)) {
     table_name.value = (await axios.GetTable(props.table_id)).name
   }
