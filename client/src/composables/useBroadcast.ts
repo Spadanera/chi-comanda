@@ -1,5 +1,5 @@
 import { ref, type Ref } from 'vue'
-import { type Broadcast, type Event, type User } from '../../../../models/src'
+import { type Broadcast, type Event, type User } from '../../../models/src'
 import { UserStore, SnackbarStore } from '@/stores'
 import { copy } from '@/services/utils'
 import Axios from '@/services/client'
