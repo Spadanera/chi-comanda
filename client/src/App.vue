@@ -4,13 +4,12 @@ import Axios from '@/services/client'
 import { ref, onBeforeMount, onBeforeUnmount, onMounted, computed } from 'vue'
 import router from '@/router'
 import { UserStore, SnackbarStore, ProgressStore, ThemeStore } from '@/stores'
-import { type User, type Event, type Broadcast } from '../../models/src'
+import { type User, type Event } from '../../models/src'
 import Avatar from './components/Avatar.vue'
-import { io, Socket } from 'socket.io-client'
-import { requiredRule, requireRuleArray, copy } from './services/utils'
-import bendingString from '@/assets/bending-string.mp3'
+import { requireRuleArray, requiredRule } from './services/utils'
+import { useSocket, socketConnected, destroySocket } from './composables/useSocket'
+import { useBroadcast } from './composables/useBroadcast'
 
-const messageSound = new Audio(bendingString)
 const axios: Axios = new Axios()
 const route = useRoute()
 const userStore = UserStore()
@@ -18,28 +17,33 @@ const snackbarStore = SnackbarStore()
 const progressStore = ProgressStore()
 const themeStore = ThemeStore()
 const user = ref<User>({} as User)
-const theme = ref('light')
-const is = ref<Socket>(null)
 const event = ref<Event>()
-const messageDialog = ref<boolean>(null)
-const messageForm = ref(null)
-const message = ref<string>(null)
-const messageReceivers = ref<number[]>([])
-const messageDialogReviced = ref<boolean>(false)
-const possibleReceivers = ref<User[]>([])
-const broadcast = ref<Broadcast>(null)
-const broadcasts = ref<Broadcast[]>([])
-const broadcastsQueue = ref<Broadcast[]>([])
-const broadcastListDialog = ref<boolean>(null)
-const socketConnected = ref<boolean>(false)
+
+const {
+  messageDialog,
+  messageForm,
+  message,
+  messageReceivers,
+  messageDialogReceived,
+  possibleReceivers,
+  broadcast,
+  broadcasts,
+  broadcastListDialog,
+  openMessageDialog,
+  closeMessageDialogReceived,
+  sendMessage,
+  getLocalTime,
+  initReceivers,
+  registerSocketHandler,
+  unregisterSocketHandler
+} = useBroadcast(event)
 
 const routeTitle = computed(() => {
   if (route.params.pagetitle) {
-    return Array.isArray(route.params.pagetitle) 
-      ? route.params.pagetitle[0] 
+    return Array.isArray(route.params.pagetitle)
+      ? route.params.pagetitle[0]
       : route.params.pagetitle
   }
-
   return route.matched
     .filter((r) => r.name)
     .map((r) => r.name)
@@ -49,7 +53,7 @@ const routeTitle = computed(() => {
 function login() {
   user.value = userStore.user
   getOnGoingEvent()
-  router.push("/")
+  router.push('/')
 }
 
 async function logout() {
@@ -65,81 +69,25 @@ function reloadPage() {
   window.location.reload()
 }
 
-function openMessageDialog() {
-  messageDialogReviced.value = false
-  message.value = ''
-  messageDialog.value = true
-}
-
-function closeMessageDialogReceived() {
-  messageDialogReviced.value = false
-  window.setTimeout(() => {
-    if (broadcastsQueue.value.length) {
-      broadcast.value = broadcastsQueue.value.shift()
-      messageDialogReviced.value = true
-    }
-  }, 200)
-}
-
-async function sendMessage() {
-  const { valid } = await messageForm.value?.validate()
-  if (valid && event.value.id) {
-    const sender = copy<User>(user.value as User)
-    delete sender.avatar
-    const broad = {
-      event_id: event.value.id,
-      message: message.value,
-      receivers: messageReceivers.value,
-      sender: sender
-    } as Broadcast
-    await axios.BroadcastMessage(broad)
-    messageDialog.value = false
-    snackbarStore.show("Messaggio inviato", 3000, 'success')
-
-    broad.dateTime = new Date()
-    broadcasts.value.unshift(broad)
-    localStorage.setItem("broadcasts", JSON.stringify(broadcasts.value))
-  }
-}
-
 async function getOnGoingEvent() {
   event.value = await axios.GetOnGoingEvent()
-  if (event.value.id) {
-    possibleReceivers.value = event.value.users?.filter((u: User) => u.id !== user.value.id)
-    messageReceivers.value = possibleReceivers.value.map((u: User) => u.id)
-    const localBroadcasts: string = localStorage.getItem("broadcasts")
-    if (localBroadcasts) {
-      broadcasts.value = JSON.parse(localStorage.getItem("broadcasts")) as Broadcast[]
-    }
-  }
-  else {
-    localStorage.removeItem("broadcasts")
-  }
+  initReceivers()
 }
 
-function getLocalTime(dateString: string) {
-  const date = new Date(dateString)
-  return date.toLocaleTimeString('it-it', {
-    timeZone: 'Europe/Rome',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
+onBeforeMount(() => {
+  const socket = useSocket()
 
-onBeforeMount(async () => {
-  is.value = io(window.location.origin, {
-    path: "/socket/socket.io"
-  })
-
-  is.value.on('connect', () => {
+  socket.on('connect', () => {
     socketConnected.value = true
-    is.value?.emit('join', 'main')
+    socket.emit('join', 'main')
   })
 
-  is.value.on('connect_error', (err: any) => {
-    snackbarStore.show("Errore nella connessione, prova a ricaricare la pagina", -1, 'top', 'error', true)
-    is.value.emit('end')
+  socket.on('connect_error', () => {
+    snackbarStore.show('Errore nella connessione, prova a ricaricare la pagina', -1, 'top', 'error', true)
+    socket.emit('end')
   })
+
+  registerSocketHandler()
 })
 
 onMounted(async () => {
@@ -149,43 +97,22 @@ onMounted(async () => {
     await getOnGoingEvent()
   }
 
-  is.value?.emit('join', 'main')
-
-  is.value?.on('reload', async () => {
+  const socket = useSocket()
+  socket.on('reload', async () => {
     if (user.value?.id) {
       getOnGoingEvent()
-    }
-  })
-
-  is.value?.on('broadcast', async (data: Broadcast) => {
-    if (data.receivers.includes(user.value?.id)) {
-      data.dateTime = new Date()
-      broadcasts.value.unshift(data)
-      localStorage.setItem("broadcasts", JSON.stringify(broadcasts.value))
-      if (!messageDialogReviced.value) {
-        broadcast.value = data
-        messageDialogReviced.value = true
-        try {
-          await messageSound.play()
-        } catch (e) {
-        }
-      } else {
-        broadcastsQueue.value.push(data)
-      }
     }
   })
 })
 
 onBeforeUnmount(() => {
-  if (is.value) {
-    is.value.emit('end')
-  }
+  unregisterSocketHandler()
+  destroySocket()
 })
-
 </script>
 
 <template>
-  <v-responsive class="" max-height="100%">
+  <v-responsive max-height="100%">
     <v-app :theme="themeStore.theme">
       <v-app-bar>
         <template v-slot:prepend>
@@ -213,7 +140,6 @@ onBeforeUnmount(() => {
               <Avatar :user="userStore.user" alt></Avatar>
             </v-btn>
           </template>
-
           <v-list>
             <v-list-item v-if="event && event.id">
               <v-list-item-title>
@@ -227,10 +153,10 @@ onBeforeUnmount(() => {
             </v-list-item>
             <v-list-item>
               <v-list-item-title>
-                <v-btn @click="themeStore.toggle" v-if="userStore.isLoggedIn" variant="text">
+                <v-btn @click="themeStore.toggle" variant="text">
                   INVERTI TEMA
                   <template v-slot:prepend>
-                    <v-icon>{{ theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
+                    <v-icon>{{ themeStore.theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
                   </template>
                 </v-btn>
               </v-list-item-title>
@@ -238,7 +164,7 @@ onBeforeUnmount(() => {
             <v-list-item>
               <v-list-item-title>
                 <RouterLink to="/profile">
-                  <v-btn v-if="userStore.isLoggedIn" variant="text">
+                  <v-btn variant="text">
                     PROFILO
                     <template v-slot:prepend>
                       <v-icon>mdi-account</v-icon>
@@ -249,7 +175,7 @@ onBeforeUnmount(() => {
             </v-list-item>
             <v-list-item>
               <v-list-item-title>
-                <v-btn @click="logout()" v-if="userStore.isLoggedIn" variant="text">
+                <v-btn @click="logout()" variant="text">
                   ESCI
                   <template v-slot:prepend>
                     <v-icon>mdi-logout</v-icon>
@@ -259,11 +185,12 @@ onBeforeUnmount(() => {
             </v-list-item>
           </v-list>
         </v-menu>
-        <v-btn v-else :prepend-icon="theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'" text="Inverti tema"
-          slim @click="themeStore.toggle"></v-btn>
+        <v-btn v-else :prepend-icon="themeStore.theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'"
+          text="Inverti tema" slim @click="themeStore.toggle"></v-btn>
       </v-app-bar>
       <v-main>
-        <RouterView v-if="socketConnected" :is="is" v-model="user" @login="login" @reload="reload" :event="event" />
+        <RouterView v-if="socketConnected" v-model="user" @login="login" @reload="reload" :event="event" />
+
       </v-main>
       <v-snackbar v-model="snackbarStore.enable" :timeout="snackbarStore.timeout" :location="snackbarStore.location"
         :color="snackbarStore.color">
@@ -282,9 +209,7 @@ onBeforeUnmount(() => {
       </v-overlay>
       <v-dialog v-model="messageDialog" max-width="600px">
         <v-card>
-          <v-card-title>
-            Invia Messaggio
-          </v-card-title>
+          <v-card-title>Invia Messaggio</v-card-title>
           <v-card-text>
             <v-form @submit.stop ref="messageForm">
               <v-select label="Destinatari" :items="possibleReceivers" v-model="messageReceivers" item-value="id"
@@ -312,7 +237,7 @@ onBeforeUnmount(() => {
           </v-card-actions>
         </v-card>
       </v-dialog>
-      <v-dialog persistent scrollable transition="dialog-top-transition" v-model="messageDialogReviced"
+      <v-dialog persistent scrollable transition="dialog-top-transition" v-model="messageDialogReceived"
         max-width="500px">
         <v-card prepend-icon="mdi-message-alert" title="Nuovo Messaggio">
           <v-divider></v-divider>
@@ -339,7 +264,7 @@ onBeforeUnmount(() => {
           <v-card-text style="padding: 0;">
             <v-list lines="two">
               <v-list-item :title="getLocalTime(item.dateTime.toString())" :subtitle="item.message"
-                v-for="item in broadcasts">
+                v-for="item in broadcasts" :key="item.dateTime?.toString()">
                 <template v-slot:prepend>
                   <Avatar :user="item.sender"></Avatar>
                 </template>
@@ -354,7 +279,6 @@ onBeforeUnmount(() => {
       </v-dialog>
     </v-app>
   </v-responsive>
-
 </template>
 
 <style scoped></style>

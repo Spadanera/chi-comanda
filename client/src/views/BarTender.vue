@@ -12,9 +12,11 @@ import fileAudio1 from '@/assets/nuovo-ordine-1.ogg'
 import fileAudio2 from '@/assets/nuovo-ordine-2.ogg'
 import fileAudio3 from '@/assets/nuovo-ordine-3.ogg'
 import fileAudio4 from '@/assets/nuovo-ordine-4.mp3'
+import { useSocket } from '@/composables/useSocket'
 
 const axios = new Axios()
-var interval: number
+const socket = useSocket()
+let interval: number
 let reloadTimeout: ReturnType<typeof setTimeout>
 const user = defineModel<User>()
 const snackbarStore = SnackbarStore()
@@ -22,7 +24,7 @@ const types = ref<SubType[]>([])
 
 const emit = defineEmits(['login', 'reload'])
 
-const props = defineProps(['destinations', 'pagetitle', 'minutetoalert', 'is', 'event'])
+const props = defineProps(['destinations', 'pagetitle', 'minutetoalert', 'event'])
 
 const loading = ref<boolean>(false)
 const orders = ref<Order[]>([])
@@ -34,7 +36,6 @@ const drawer = ref<boolean>(true)
 const audio = ref([])
 const readonly = ref(false)
 const origin = window.location.pathname
-const is = props.is
 
 const itemsToDo = computed(() => {
   if (selectedOrder.value.length) {
@@ -58,17 +59,16 @@ async function doneItem(item_ids: number[], multiple: boolean = false) {
     _item.done = true
     try {
       await axios.UpdateItem(_item)
-    } catch (error) {
+    } catch {
       _item.done = false
     }
-  }
-  else {
+  } else {
     for (let j = 0; j < item_ids.length; j++) {
       const _item = selectedOrder.value[0].items.find((i: Item) => i.id === item_ids[j])
       _item.done = true
       try {
         await axios.UpdateItem(_item)
-      } catch (error) {
+      } catch {
         _item.done = false
       }
     }
@@ -82,7 +82,7 @@ async function rollbackItem(item: Item) {
   item.done = false
   try {
     await axios.UpdateItem(item)
-  } catch (error) {
+  } catch {
     item.done = true
   }
 }
@@ -110,8 +110,7 @@ async function completeOrder() {
   await getOrders()
   if (orders.value.length && !orders.value[0].done) {
     selectedOrder.value = [orders.value[0]]
-  }
-  else {
+  } else {
     selectedOrder.value = []
   }
   snackbarStore.show("Ordine completato", 3000, 'bottom')
@@ -123,12 +122,10 @@ async function getOrders() {
   if (orders.value.length && !orders.value[0].done) {
     if (selectedOrder.value.length === 0) {
       selectedOrder.value = [orders.value[0]]
-    }
-    else {
+    } else {
       selectedOrder.value = [orders.value.find((o: Order) => o.id === selectedOrder.value[0].id)]
     }
-  }
-  else {
+  } else {
     selectedOrder.value = []
   }
 }
@@ -139,11 +136,9 @@ function getMinutesPassed(datetimeString: string): number {
     const [year, month, day] = datePart.split('-').map(Number)
     const [hours, minutes, seconds] = timePart.split('.')[0].split(':').map(Number)
     const then = new Date(year, month - 1, day, hours, minutes, seconds)
-    const now = new Date().toLocaleString("en-US", { timeZone: "Europe/Rome" })
-    const nowItaly = new Date(now)
-    const differenceMs = nowItaly.getTime() - then.getTime()
-    return Math.floor(differenceMs / (1000 * 60))
-  } catch (error) {
+    const nowItaly = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Rome" }))
+    return Math.floor((nowItaly.getTime() - then.getTime()) / (1000 * 60))
+  } catch {
     return 0
   }
 }
@@ -151,12 +146,9 @@ function getMinutesPassed(datetimeString: string): number {
 function calculateMinPassed() {
   orders.value.forEach((o: Order) => {
     if (!o.done) {
-      if (o.order_date !== '2024-01-01T00:00:00.000Z') {
-        o.minPassed = getMinutesPassed(o.order_date)
-      }
-      else {
-        o.minPassed = -1
-      }
+      o.minPassed = o.order_date !== '2024-01-01T00:00:00.000Z'
+        ? getMinutesPassed(o.order_date)
+        : -1
     }
   })
 }
@@ -171,7 +163,7 @@ function newOrderHandler(data: Order) {
     }
     if (!data.items[0].done) {
       snackbarStore.show("Nuovo ordine", -1, 'bottom', 'success')
-      let audioToPlay = audio.value[Math.floor(Math.random() * audio.value.length)]
+      const audioToPlay = audio.value[Math.floor(Math.random() * audio.value.length)]
       audioToPlay.play()
     }
   }
@@ -191,11 +183,9 @@ function itemUpdatedHandler(data: Item) {
   }
 }
 
-function reloadTablehandler() {
+function reloadTableHandler() {
   clearTimeout(reloadTimeout)
-  reloadTimeout = setTimeout(() => {
-    getOrders()
-  }, 300)
+  reloadTimeout = setTimeout(() => { getOrders() }, 300)
 }
 
 function itemRemovedHandler(data: number) {
@@ -213,10 +203,8 @@ function itemRemovedHandler(data: number) {
 }
 
 async function handleReconnection() {
-  if (is) {
-    is.emit('join', 'bartender')
-    await getOrders()
-  }
+  socket.emit('join', 'bartender')
+  await getOrders()
 }
 
 async function init() {
@@ -224,13 +212,13 @@ async function init() {
     loading.value = true
     types.value = await axios.GetSubTypes()
     await getOrders()
-    is.emit('join', 'bartender')
-    is.on('new-order', newOrderHandler)
-    is.on('order-completed', orderCompletedHandler)
-    is.on('item-updated', itemUpdatedHandler)
-    is.on('reload-table', reloadTablehandler)
-    is.on('item-removed', itemRemovedHandler)
-    is.on('connect', handleReconnection)
+    socket.emit('join', 'bartender')
+    socket.on('new-order', newOrderHandler)
+    socket.on('order-completed', orderCompletedHandler)
+    socket.on('item-updated', itemUpdatedHandler)
+    socket.on('reload-table', reloadTableHandler)
+    socket.on('item-removed', itemRemovedHandler)
+    socket.on('connect', handleReconnection)
     window.clearInterval(interval)
     interval = window.setInterval(calculateMinPassed, 1000 * 60)
     loading.value = false
@@ -253,15 +241,13 @@ watch(() => props.event, init, { immediate: true })
 onUnmounted(() => {
   window.clearInterval(interval)
   clearTimeout(reloadTimeout)
-  if (is) {
-    is.emit('leave', 'bartender')
-    is.off('new-order', newOrderHandler)
-    is.off('order-completed', orderCompletedHandler)
-    is.off('item-updated', itemUpdatedHandler)
-    is.off('reload-table', reloadTablehandler)
-    is.off('item-removed', itemRemovedHandler)
-    is.off('connect', handleReconnection)
-  }
+  socket.emit('leave', 'bartender')
+  socket.off('new-order', newOrderHandler)
+  socket.off('order-completed', orderCompletedHandler)
+  socket.off('item-updated', itemUpdatedHandler)
+  socket.off('reload-table', reloadTableHandler)
+  socket.off('item-removed', itemRemovedHandler)
+  socket.off('connect', handleReconnection)
 })
 </script>
 
@@ -319,9 +305,7 @@ onUnmounted(() => {
 
     <v-bottom-navigation>
       <v-btn icon="mdi-menu" @click="drawer = !drawer" id="drawer-button"></v-btn>
-
       <SubTypeSummary v-if="selectedOrder.length" :items="selectedOrder[0].items" :types="types" />
-
       <v-spacer></v-spacer>
       <v-btn class="show-xs" variant="plain" @click="confirm = true"
         v-if="selectedOrder.length && !selectedOrder[0].done && !readonly">

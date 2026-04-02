@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import Layout from '@/components/Layout.vue'
 import { ref, onUnmounted, onMounted } from "vue"
+import { useSocket } from '@/composables/useSocket'
 
-const props = defineProps(['is', 'event'])
+const props = defineProps(['event'])
 
-const is = props.is
+const socket = useSocket()
 const layout = ref<any>(null)
 let reloadTimeout: ReturnType<typeof setTimeout>
 
@@ -18,26 +19,21 @@ const reloadTable = () => {
 }
 
 const handleReconnection = () => {
-  if (is) {
-    is.emit('join', 'table')
-    reloadTable()
-  }
+  socket.emit('join', 'table')
+  reloadTable()
 }
 
-onMounted(async () => {
-  is.emit('join', 'table')
-
-  is.on('reload-table', reloadTable)
-  is.on('connect', handleReconnection)
+onMounted(() => {
+  socket.emit('join', 'table')
+  socket.on('reload-table', reloadTable)
+  socket.on('connect', handleReconnection)
 })
 
 onUnmounted(() => {
   clearTimeout(reloadTimeout)
-  if (is) {
-    is.emit('leave', 'table')
-    is.off('reload-table', reloadTable)
-    is.off('connect', handleReconnection)
-  }
+  socket.emit('leave', 'table')
+  socket.off('reload-table', reloadTable)
+  socket.off('connect', handleReconnection)
 })
 </script>
 

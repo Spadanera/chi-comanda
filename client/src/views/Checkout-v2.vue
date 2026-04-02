@@ -10,6 +10,7 @@ import CheckoutClosed from "@/components/CheckoutClosed.vue"
 import { useDisplay } from 'vuetify'
 import { SnackbarStore, ZoomStore } from '@/stores'
 import { storeToRefs } from 'pinia'
+import { useSocket } from '@/composables/useSocket'
 
 const { smAndUp } = useDisplay()
 
@@ -26,10 +27,10 @@ const zoomOut = () => {
   zoomStore.setLevel(next)
 }
 
-const props = defineProps(['is', 'event'])
+const props = defineProps(['event'])
 
 const axios = new Axios()
-const is = props.is
+const socket = useSocket()
 const user = defineModel<User>()
 const snackbarStore = SnackbarStore()
 
@@ -57,12 +58,11 @@ const onTableClick = async (table: Table) => {
 }
 
 const selectTable = async (table: Table) => {
-  console.log(table)
   selectedTable.value[0] = table
   selectedTableId.value = table.table_id
 }
 
-const reloadTableHandlerasync = () => {
+const reloadTableHandler = () => {
   clearTimeout(reloadTimeout)
   reloadTimeout = setTimeout(async () => {
     await getTables()
@@ -82,24 +82,17 @@ const getTables = async (table_id?: number) => {
       rooms.value.splice(i, 1)
     }
   }
+
   const extraCount: number = tables.value.filter(t => t.room_id === 0).length
   if (extraCount) {
-    rooms.value.push({
-      id: 0,
-      name: 'Extra',
-      activeTableCount: extraCount
-    } as Room)
+    rooms.value.push({ id: 0, name: 'Extra', activeTableCount: extraCount } as Room)
   }
 
-  rooms.value.push({
-    id: -1,
-    name: 'Chiusi'
-  } as Room)
+  rooms.value.push({ id: -1, name: 'Chiusi' } as Room)
 
   if (table_id) {
     selectedTableId.value = table_id
-  }
-  else if (table_id === 0) {
+  } else if (table_id === 0) {
     selectedTableId.value = 0
     if (!smAndUp.value) {
       drawer.value = false
@@ -124,24 +117,14 @@ const getTables = async (table_id?: number) => {
   }
 }
 
-const newOrderHandler = () => {
-  getTables()
-}
-
-const itemRemovedHandler = () => {
-  getTables()
-}
-
-const orderCompletedHandler = () => {
-  getTables()
-}
+const newOrderHandler = () => { getTables() }
+const itemRemovedHandler = () => { getTables() }
+const orderCompletedHandler = () => { getTables() }
 
 const handleReconnection = async () => {
-  if (is) {
-    is.emit('join', 'checkout')
-    is.on('reload-table', reloadTableHandlerasync)
-    await getTables()
-  }
+  socket.emit('join', 'checkout')
+  socket.on('reload-table', reloadTableHandler)
+  await getTables()
 }
 
 const init = async () => {
@@ -149,12 +132,11 @@ const init = async () => {
     loading.value = true
     types.value = await axios.GetSubTypes()
     await getTables()
-
-    is.emit('join', 'checkout')
-    is.on('new-order', newOrderHandler)
-    is.on('item-removed', itemRemovedHandler)
-    is.on('order-completed', orderCompletedHandler)
-    is.on('connect', handleReconnection)
+    socket.emit('join', 'checkout')
+    socket.on('new-order', newOrderHandler)
+    socket.on('item-removed', itemRemovedHandler)
+    socket.on('order-completed', orderCompletedHandler)
+    socket.on('connect', handleReconnection)
     loading.value = false
   }
 }
@@ -167,13 +149,12 @@ watch(() => activeRoomId.value, () => {
 }, { immediate: true })
 
 onUnmounted(() => {
-  if (is) {
-    is.emit('leave', 'checkout')
-    is.off('new-order', newOrderHandler)
-    is.off('item-removed', itemRemovedHandler)
-    is.off('order-completed', orderCompletedHandler)
-    is.off('connect', handleReconnection)
-  }
+  clearTimeout(reloadTimeout)
+  socket.emit('leave', 'checkout')
+  socket.off('new-order', newOrderHandler)
+  socket.off('item-removed', itemRemovedHandler)
+  socket.off('order-completed', orderCompletedHandler)
+  socket.off('connect', handleReconnection)
 })
 </script>
 
@@ -194,11 +175,9 @@ onUnmounted(() => {
       <v-slider v-model="zoomLevel" :min="0.3" :max="2.0" :step="0.05" hide-details density="compact"
         @update:model-value="zoomStore.setLevel"></v-slider>
       <v-icon icon="mdi-magnify-plus-outline" size="small" class="ml-2" @click="zoomIn"></v-icon>
-      <span v-show="smAndUp" class="text-caption ml-2" style="width: 40px">{{ Math.round(zoomLevel *
-        100) }}%</span>
+      <span v-show="smAndUp" class="text-caption ml-2" style="width: 40px">{{ Math.round(zoomLevel * 100) }}%</span>
     </div>
     <RoomTabs v-model="activeRoomId" :rooms="rooms" :editing="false" />
-
     <RestaurantMap v-if="activeRoomId > -1" :highlight-selection="true" :room="currentRoom" :zoom="zoomLevel"
       :editable="false" :tables="tables" :selected-table-id="selectedTableId" @click-table="onTableClick" :types="types" />
     <CheckoutClosed v-else :tables="tables" @click-table="onTableClick" :event="props.event" />
