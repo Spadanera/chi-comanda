@@ -4,6 +4,7 @@ import path from "path"
 import passport from "passport"
 import history from "connect-history-api-fallback"
 import * as passportStrategy from "passport-local"
+import { Strategy as GoogleStrategy } from "passport-google-oauth20"
 import apiRouter from "./routes"
 import publicApiRouter from "./routes/public"
 import { errorMiddleware } from "./utils/asyncHandler"
@@ -41,7 +42,6 @@ app.use(session({
 }))
 app.use(passport.initialize())
 app.use(passport.session())
-app.use(history())
 
 passport.use(new passportStrategy.Strategy(
     { usernameField: 'email', passwordField: 'password' }, async (email, password, done) => {
@@ -56,10 +56,37 @@ passport.use(new passportStrategy.Strategy(
         }
     }));
 
+passport.use(new GoogleStrategy(
+    {
+        clientID: process.env.GOOGLE_CLIENT_ID || '',
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+        callbackURL: `${process.env.BASE_URL}/api/auth/google/callback`,
+        passReqToCallback: true
+    },
+    async (req: any, _accessToken, _refreshToken, profile, done) => {
+        try {
+            const email = profile.emails?.[0]?.value || ''
+            const avatar = profile.photos?.[0]?.value || ''
+            const displayName = profile.displayName || email
+
+            // Check if this is an invitation flow (token passed via state)
+            const invitationToken = req.query.state as string | undefined
+            let user: User
+            if (invitationToken) {
+                user = await userApi.acceptInvitationWithGoogle(invitationToken, profile.id, displayName, avatar)
+            } else {
+                user = await userApi.findOrCreateGoogleUser(profile.id, email, displayName, avatar)
+            }
+            done(null, user)
+        } catch (e: any) {
+            done(e, false)
+        }
+    }
+))
+
 passport.serializeUser((user, done) => {
     done(null, user)
 });
-
 
 passport.deserializeUser((user: User, done) => {
     done(null, user);
@@ -88,6 +115,22 @@ app.get("/api/checkauthentication", async (req: Request, res: Response) => {
     }
 })
 
+// Google OAuth routes — must be before the /api auth guard
+app.get('/api/auth/google', (req: Request, res: Response, next: any) => {
+    const state = req.query.state as string | undefined
+    passport.authenticate('google', {
+        scope: ['profile', 'email'],
+        ...(state ? { state } : {})
+    })(req, res, next)
+})
+
+app.get('/api/auth/google/callback',
+    passport.authenticate('google', { failureRedirect: '/login?error=google' }),
+    (req: Request, res: Response) => {
+        res.redirect('/')
+    }
+)
+
 app.use('/public', publicApiRouter)
 
 app.use('/api', (req: Request, res: Response, next: any) => {
@@ -113,6 +156,7 @@ app.use('/api', (req: Request, res: Response, next: any) => {
 }, apiRouter)
 
 
+app.use(history())
 app.use(express.static(path.join(__dirname, 'static')))
 app.use(errorMiddleware)
 

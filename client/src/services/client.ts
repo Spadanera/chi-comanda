@@ -388,6 +388,13 @@ export default class Axios {
         router.push("/login")
     }
 
+    loginWithGoogle(invitationToken?: string) {
+        const url = invitationToken
+            ? `/api/auth/google?state=${encodeURIComponent(invitationToken)}`
+            : `/api/auth/google`
+        window.location.href = url
+    }
+
     async Login(email: string, password: string): Promise<void> {
         const user = (await this.client.post<User>("/login", {
             email: email,

@@ -15,7 +15,7 @@ function hasMatchingRole(arr1: Roles[], arr2: Roles[]): boolean {
   return false
 }
 
-const publicRoute:String[] = ['Login', 'Reset', 'Invitation', 'AskReset']
+const publicRoute:String[] = ['Login', 'Reset', 'Invitation', 'AskReset', 'Landing']
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -25,6 +25,11 @@ const router = createRouter({
       name: 'Home',
       component: Home,
       props: true
+    },
+    {
+      path: '/landing',
+      name: 'Landing',
+      component: () => import('@/views/Landing.vue'),
     },
     {
       path: '/login',

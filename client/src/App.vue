@@ -185,11 +185,16 @@ onBeforeUnmount(() => {
             </v-list-item>
           </v-list>
         </v-menu>
-        <v-btn v-else :prepend-icon="themeStore.theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'"
-          text="Inverti tema" slim @click="themeStore.toggle"></v-btn>
+        <template v-else>
+          <RouterLink to="/landing" style="text-decoration: none;">
+            <v-btn variant="text" slim>Info</v-btn>
+          </RouterLink>
+          <v-btn :prepend-icon="themeStore.theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'"
+            text="Inverti tema" slim @click="themeStore.toggle"></v-btn>
+        </template>
       </v-app-bar>
       <v-main>
-        <RouterView v-if="socketConnected" v-model="user" @login="login" @reload="reload" :event="event" />
+        <RouterView v-if="socketConnected || route.name === 'Landing'" v-model="user" @login="login" @reload="reload" :event="event" />
 
       </v-main>
       <v-snackbar v-model="snackbarStore.enable" :timeout="snackbarStore.timeout" :location="snackbarStore.location"

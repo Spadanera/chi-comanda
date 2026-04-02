@@ -22,14 +22,13 @@ function handleFileChange() {
   files.value = fileInput.value?.files
 }
 
-async function reset() {
+async function accept() {
   const { valid } = await form.value?.validate()
   if (valid) {
     try {
       const formData = new FormData()
       if (files.value && files.value.length) {
-        const file = files.value[0]
-        formData.append('avatar', file)
+        formData.append('avatar', files.value[0])
       }
       formData.append('username', credentials.value.username)
       formData.append('password', credentials.value.password)
@@ -50,7 +49,28 @@ async function reset() {
         <v-col sm="8" cols="12" lg="4" xl="4">
           <v-card>
             <v-card-text style="text-align: center;">
-              <img alt="Chi Comanda" class="logo" src="@/assets/chicomanda.png" style="" width="240" height="240" />
+              <img alt="Chi Comanda" class="logo" src="@/assets/chicomanda.png" width="240" height="240" />
+
+              <p class="text-body-2 text-medium-emphasis mb-4">
+                Scegli come configurare il tuo account
+              </p>
+
+              <!-- Google fast track -->
+              <v-btn
+                block
+                variant="tonal"
+                color="primary"
+                prepend-icon="mdi-google"
+                class="mb-4"
+                @click="axios.loginWithGoogle(props.token)"
+              >
+                Accetta con Google
+              </v-btn>
+
+              <v-divider class="mb-4">
+                <span class="text-caption text-medium-emphasis px-2">oppure imposta manualmente</span>
+              </v-divider>
+
               <v-form fast-fail @submit.prevent ref="form">
                 <v-text-field type="text" label="Nome Utente" v-model="credentials.username"
                   :rules="[requiredRule]"></v-text-field>
@@ -63,7 +83,7 @@ async function reset() {
               </v-form>
             </v-card-text>
             <v-card-actions>
-              <v-btn class="mt-2" type="submit" @click="reset" block>ACCETTA INVITO</v-btn>
+              <v-btn class="mt-2" type="submit" @click="accept" block>ACCETTA INVITO</v-btn>
             </v-card-actions>
           </v-card>
         </v-col>
