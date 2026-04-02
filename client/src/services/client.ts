@@ -30,7 +30,7 @@ export default class Axios {
         }, error => {
             const progressStore = this.progressStoreDef()
             progressStore.activeRequestCount--
-            setInterval(() => {
+            setTimeout(() => {
                 if (progressStore.activeRequestCount === 0) {
                     progressStore.loading = false;
                 }
@@ -42,7 +42,7 @@ export default class Axios {
             const progressStore = this.progressStoreDef()
             if (response.config.url !== "/checkauthentication") {
                 progressStore.activeRequestCount--
-                setInterval(() => {
+                setTimeout(() => {
                     if (progressStore.activeRequestCount === 0) {
                         progressStore.loading = false;
                     }
@@ -54,7 +54,7 @@ export default class Axios {
             progressStore.loading = false;
             if (error.response) {
                 progressStore.activeRequestCount--
-                setInterval(() => {
+                setTimeout(() => {
                     if (progressStore.activeRequestCount === 0) {
                         progressStore.loading = false;
                     }

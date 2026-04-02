@@ -85,7 +85,7 @@ class MasterItemsApi {
     }
 
     async updateType(type: Type): Promise<number> {
-        return await db.executeInsert('UPDATE types SET name = ?, icon = ? WHERE id = ?', [type.name, type.icon, type.id])
+        return await db.executeUpdate('UPDATE types SET name = ?, icon = ? WHERE id = ?', [type.name, type.icon, type.id])
     }
 
     async deleteType(id: number): Promise<number> {

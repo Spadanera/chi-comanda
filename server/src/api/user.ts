@@ -22,18 +22,19 @@ class UserApi {
     }
 
     async getAvailable(): Promise<User[]> {
-        const filter = `'${Object.values(Roles).join("','")}'`
+        const roleValues = Object.values(Roles)
+        const placeholders = roleValues.map(() => '?').join(',')
         return await db.query(`
             SELECT id, username, avatar
-            FROM users 
+            FROM users
             WHERE status = 'ACTIVE'
             AND EXISTS (
                 SELECT user_id
-                FROM user_role 
+                FROM user_role
                 INNER JOIN roles ON roles.id = user_role.role_id
                 WHERE user_role.user_id = users.id
-                AND roles.name in (${filter})
-            )`, [])
+                AND roles.name IN (${placeholders})
+            )`, roleValues)
     }
 
     async getByEmailAndPassword(email: string, password: string): Promise<User> {
@@ -43,7 +44,7 @@ class UserApi {
         if (result.id && (await checkPassword(password, result.password || ''))) {
             delete result.password
             try {
-                await db.executeInsert("UPDATE users SET last_login_date = ? WHERE id = ?", [getCurrentDateTimeInItaly(), result.id])
+                await db.executeUpdate("UPDATE users SET last_login_date = ? WHERE id = ?", [getCurrentDateTimeInItaly(), result.id])
             } catch (error: any) {
                 console.error("Error setting last_login_date", error.message)
             }
@@ -81,12 +82,14 @@ class UserApi {
     }
 
     async updateRoles(user: User): Promise<number> {
+        const roles = user.roles || []
+        const rolePlaceholders = roles.map(() => '?').join(',')
         return await db.executeTransaction([
             "DELETE FROM user_role WHERE user_id = ?",
-            `INSERT INTO user_role (user_id, role_id) SELECT ?, id FROM roles WHERE name in (${user.roles?.map((value:string) => `'${value}'`).join(',')})`
+            `INSERT INTO user_role (user_id, role_id) SELECT ?, id FROM roles WHERE name IN (${rolePlaceholders})`
         ], [
             [user.id],
-            [user.id]
+            [user.id, ...roles]
         ])
     }
 
@@ -100,7 +103,9 @@ class UserApi {
 
             const result = await db.executeInsert("INSERT INTO users (email, token, creation_date) VALUES (?,?,?)", [invitation.email, invitation.token, invitation.creation_date])
 
-            await db.executeInsert(`INSERT INTO user_role (user_id, role_id) SELECT ?, id FROM roles WHERE name in (${user.roles?.map((value:string) => `'${value}'`).join(',')})`, [result])
+            const roles = user.roles || []
+            const rolePlaceholders = roles.map(() => '?').join(',')
+            await db.executeInsert(`INSERT INTO user_role (user_id, role_id) SELECT ?, id FROM roles WHERE name IN (${rolePlaceholders})`, [result, ...roles])
 
             await sendEmail({
                 to: user.email,
@@ -251,8 +256,8 @@ class UserApi {
     }
 
     async resetPassword(invitation: Invitation): Promise<number> {
-        var _reset: Invitation = await db.queryOne("SELECT id, email FROM reset WHERE token = ?", [invitation.token])
-        var _user: User = await db.queryOne("SELECT id FROM users WHERE email = ?", [_reset.email])
+        const _reset: Invitation = await db.queryOne("SELECT id, email FROM reset WHERE token = ?", [invitation.token])
+        const _user: User = await db.queryOne("SELECT id FROM users WHERE email = ?", [_reset.email])
         if (_reset.id && _user.id) {
             return await db.executeTransaction([
                 "UPDATE users SET password = ? WHERE id = ?",
