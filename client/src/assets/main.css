@@ -94,3 +94,11 @@ a:visited {
         display: none !important;
     }
 }
+/* Art Déco icons (src/icons/deco.ts): ink line in the current colour */
+.v-icon__svg.deco-icon {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
