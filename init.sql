@@ -1,3 +1,5 @@
+SET FOREIGN_KEY_CHECKS = 0;
+
 CREATE TABLE `reset` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `email` varchar(255),
@@ -74,7 +76,7 @@ CREATE TABLE `tables_history` (
   `status` varchar(255),
   `user_id` INT NULL,
   `archived_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
+);
 
 CREATE TABLE `table_master_table` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -84,7 +86,7 @@ CREATE TABLE `table_master_table` (
   UNIQUE KEY `id` (`id`),
   KEY `table_id` (`table_id`),
   CONSTRAINT `table_master_table_ibfk_1` FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`),
-  CONSTRAINT `table_master_table_ibfk_2` FOREIGN KEY (`id`) REFERENCES `master_tables_event` (`id`)
+  CONSTRAINT `table_master_table_ibfk_2` FOREIGN KEY (`master_table_id`) REFERENCES `master_tables_event` (`id`)
 );
 
 CREATE TABLE `events` (
@@ -92,7 +94,8 @@ CREATE TABLE `events` (
   `name` varchar(255),
   `date` date,
   `status` VARCHAR(255) NULL,
-  `menu_id` INT NULL
+  `menu_id` INT NULL,
+  `minimumConsumptionPrice` DOUBLE NULL
 );
 
 CREATE TABLE `menu` (
@@ -156,7 +159,8 @@ CREATE TABLE `items` (
   `done` bool,
   `paid` bool,
   `destination_id` integer, 
-  `menu_id` integer
+  `menu_id` integer,
+  `setMinimum` TINYINT(1) NULL
 );
 
 CREATE TABLE `items_history` (
@@ -176,7 +180,8 @@ CREATE TABLE `items_history` (
   `done` bool,
   `paid` bool,
   `destination_id` integer, 
-  `menu_id` integer
+  `menu_id` integer,
+  `setMinimum` TINYINT(1) NULL,
   `archived_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -261,8 +266,6 @@ ADD COLUMN `shape` VARCHAR(45) NULL AFTER `height`;
 ALTER TABLE `user_role` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 ALTER TABLE `user_role` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`);
 ALTER TABLE `tables` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
-ALTER TABLE `table_master_table` ADD FOREIGN KEY (`master_table_id`) REFERENCES `master_tables` (`id`);
-ALTER TABLE `table_master_table` ADD FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`);
 ALTER TABLE `orders` ADD FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`);
 ALTER TABLE `orders` ADD FOREIGN KEY (`event_id`) REFERENCES `events` (`id`);
 ALTER TABLE `audit` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
@@ -307,8 +310,8 @@ INSERT INTO `sub_types` (name, type_id, icon) VALUES ('Special', 2, 'mdi-french-
 INSERT INTO `sub_types` (name, type_id, icon) VALUES ('Piadina', 2, 'mdi-taco');
 INSERT INTO `sub_types` (name, type_id, icon) VALUES ('Panino', 2, 'mdi-food-hot-dog');
 
-INSERT INTO `rooms` (name, width, height) VALUES ('Sala 1', 4, 15);
-INSERT INTO `rooms` (name, width, height) VALUES ('Sala 2', 5, 12);
+INSERT INTO `rooms` (name, width, height, status) VALUES ('Sala 1', 4, 15, 'ACTIVE');
+INSERT INTO `rooms` (name, width, height, status) VALUES ('Sala 2', 5, 12, 'ACTIVE');
 
 INSERT INTO master_tables (name, default_seats, status) VALUES ('1', 6, 'ACTIVE');
 INSERT INTO master_tables (name, default_seats, status) VALUES ('2', 6, 'ACTIVE');
@@ -420,3 +423,5 @@ INSERT INTO master_items (name, sub_type_id, price, destination_id, menu_id, ava
 
 INSERT INTO master_items (name, sub_type_id, price, destination_id, menu_id, available, status) VALUES ('Calice di Vino', 5, 4, 1, 1, true, 'ACTIVE');
 INSERT INTO master_items (name, sub_type_id, price, destination_id, menu_id, available, status) VALUES ('Bottiglia di Vino', 5, 18, 1, 1, true, 'ACTIVE');
+
+SET FOREIGN_KEY_CHECKS = 1;
