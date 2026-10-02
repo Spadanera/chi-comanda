@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type Order, type Item, type SubType, type User } from "../../../models/src"
 import { ref, onMounted, computed, onUnmounted, watch } from "vue"
-import { Roles } from '@/services/utils'
+import { minutesSinceItalianTime, Roles } from '@/services/utils'
 import api from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { groupItems, copy, sortOrder } from "@/services/utils"
@@ -129,25 +129,10 @@ async function getOrders() {
   }
 }
 
-function getMinutesPassed(datetimeString: string): number {
-  try {
-    const [datePart, timePart] = datetimeString.split(/T| /)
-    const [year, month, day] = datePart.split('-').map(Number)
-    const [hours, minutes, seconds] = timePart.split('.')[0].split(':').map(Number)
-    const then = new Date(year, month - 1, day, hours, minutes, seconds)
-    const nowItaly = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Rome" }))
-    return Math.floor((nowItaly.getTime() - then.getTime()) / (1000 * 60))
-  } catch {
-    return 0
-  }
-}
-
 function calculateMinPassed() {
   orders.value.forEach((o: Order) => {
     if (!o.done) {
-      o.minPassed = o.order_date !== '2024-01-01T00:00:00.000Z'
-        ? getMinutesPassed(o.order_date)
-        : -1
+      o.minPassed = minutesSinceItalianTime(o.order_date)
     }
   })
 }

@@ -16,7 +16,8 @@ class OrderService {
                     orders.id,
                     orders.event_id,
                     orders.table_id,
-                    orders.order_date,
+                    -- Stored as Italian wall-clock time: sent as text so the server timezone can't shift it
+                    DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') order_date,
                     tables.name table_name,
                     (CASE WHEN (
                         SELECT COUNT(items.id) FROM items

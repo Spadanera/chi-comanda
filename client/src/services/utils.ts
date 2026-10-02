@@ -129,6 +129,28 @@ export const emailRule = (v: any) => /.+@.+\..+/.test(v) || 'Indirizzo email non
 
 export const passwordMatchRule = (comparison: any) => (v: any) => v === comparison || 'Le password devono essere uguali'
 
+/** Current wall-clock time in Italy, as a UTC timestamp with the same digits (for differences only). */
+function italianWallClockNow(): number {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+    }).formatToParts(new Date())
+    const get = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find(p => p.type === type)?.value)
+    return Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'))
+}
+
+/**
+ * Minutes elapsed since `wallTime`, an Italian wall-clock time as stored by the server
+ * (`YYYY-MM-DD HH:mm:ss`). Works whatever the device timezone is; returns -1 if unparsable.
+ */
+export function minutesSinceItalianTime(wallTime: string | undefined): number {
+    const match = wallTime?.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/)
+    if (!match) return -1
+    const [year, month, day, hours, minutes, seconds] = match.slice(1).map(Number)
+    const then = Date.UTC(year, month - 1, day, hours, minutes, seconds)
+    return Math.max(0, Math.floor((italianWallClockNow() - then) / 60000))
+}
+
 export enum Roles {
     admin = 'admin',
     checkout = 'checkout',

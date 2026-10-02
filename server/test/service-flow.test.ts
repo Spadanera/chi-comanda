@@ -88,6 +88,12 @@ describe('a full service: event → order → bar → checkout → close', () =>
         expect(orders.body).toHaveLength(1)
         const order = orders.body[0]
         expect(order).toMatchObject({ table_id: state.tableId, table_name: 'Tavolo 1', done: 0 })
+        // Italian wall-clock time, independent of the server timezone (the bar computes waiting minutes from it)
+        expect(order.order_date).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
+        const conn = await rawConnection()
+        const [[stored]]: any = await conn.query(`SELECT DATE_FORMAT(order_date, '%Y-%m-%d %H:%i:%s') d FROM orders WHERE id = ?`, [order.id])
+        await conn.end()
+        expect(order.order_date).toBe(stored.d)
         expect(order.items).toHaveLength(2)
         state.orderId = order.id
         state.itemIds = order.items.map((i: any) => i.id)
