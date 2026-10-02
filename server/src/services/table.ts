@@ -17,54 +17,6 @@ class TableService {
             ) AND master_tables.event_id = ? AND master_tables.status = 'ACTIVE'`, [eventId, eventId])
     }
 
-    /** Every layout table (free or in use) plus active tables opened without a layout position. */
-    getAvailable(eventId: number): Promise<MasterTable[]> {
-        return db.query(`
-            SELECT
-                available_tables.id table_id,
-                available_tables.name table_name,
-                master_tables.id master_table_id,
-                master_tables.id id,
-                master_tables.name master_table_name,
-                master_tables.default_seats,
-                IFNULL(master_tables.room_id, 0) room_id,
-                master_tables.x,
-                master_tables.y,
-                master_tables.width,
-                master_tables.height,
-                master_tables.shape,
-                available_tables.event_id,
-                IF(available_tables.id IS NULL, 0, 1) inUse
-            FROM (
-                SELECT tables.id, tables.name, table_master_table.master_table_id, tables.event_id
-                FROM tables
-                INNER JOIN table_master_table ON tables.id = table_master_table.table_id
-                WHERE tables.status = 'ACTIVE' AND tables.event_id = ?
-            ) available_tables
-            RIGHT JOIN master_tables_event master_tables ON available_tables.master_table_id = master_tables.id
-            WHERE master_tables.status = 'ACTIVE' AND master_tables.event_id = ?
-            UNION
-            SELECT
-                tables.id table_id,
-                tables.name table_name,
-                NULL master_table_id,
-                NULL id,
-                tables.name master_table_name,
-                NULL default_seats,
-                0 room_id,
-                NULL x,
-                NULL y,
-                NULL width,
-                NULL height,
-                NULL shape,
-                tables.event_id,
-                1 inUse
-            FROM tables
-            WHERE tables.status = 'ACTIVE' AND event_id = ?
-            AND id NOT IN (SELECT table_id FROM table_master_table)
-            ORDER BY table_name DESC, master_table_name`, [eventId, eventId, eventId])
-    }
-
     /**
      * Event layout with each table's items and owner. Closed tables and tables without a
      * layout position get the virtual room ids -1 and 0 respectively.
@@ -159,40 +111,12 @@ class TableService {
             ORDER BY paid, tables.id`, [eventId])
     }
 
-    async getWithItems(tableId: number, eventId: number): Promise<Table> {
-        const table = await db.queryOne<Table>(`
-            SELECT tables.id, tables.name, tables.paid, tables.status,
-            ${tableItemsJson('tables.id')} items,
-            ${userJson('tables.user_id')} user
-            FROM tables
-            WHERE tables.id = ? AND event_id = ?`, [tableId, eventId])
-        if (!table) {
-            throw new NotFoundError('Tavolo non trovato')
-        }
-        return table
-    }
-
-    getAll(): Promise<Table[]> {
-        return db.query('SELECT * FROM tables')
-    }
-
     async get(id: number): Promise<Table> {
         const table = await db.queryOne<Table>('SELECT * FROM tables WHERE id = ?', [id])
         if (!table) {
             throw new NotFoundError('Tavolo non trovato')
         }
         return table
-    }
-
-    create(table: Table, userId: number): Promise<number> {
-        return db.transaction(async tx => {
-            const tableId = await tx.insert(`INSERT INTO tables (name, event_id, status, user_id) VALUES (?,?,'ACTIVE',?)`,
-                [table.name, table.event_id, userId])
-            for (const masterTableId of table.master_table_id || []) {
-                await tx.insert('INSERT INTO table_master_table (table_id, master_table_id) VALUES (?, ?)', [tableId, masterTableId])
-            }
-            return tableId
-        })
     }
 
     insertMultiple(eventId: number, tableNames: string[], userId: number): Promise<number> {
@@ -206,10 +130,6 @@ class TableService {
             notify.tablesChanged(['waiter', 'table', 'checkout'])
             return count
         })
-    }
-
-    updateStatus(id: number, status: string): Promise<number> {
-        return db.execute('UPDATE tables SET status = ? WHERE id = ?', [status, id])
     }
 
     /** Moves an open table to another position of the event layout, renaming it accordingly. */

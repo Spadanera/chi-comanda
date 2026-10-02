@@ -16,8 +16,6 @@ const ownProfileOnly = (req: Request, _res: Response, next: NextFunction) => {
 
 const router = Router()
 
-router.get('/:id', ownProfileOnly, jsonHandler(req => profileService.get(toId(req.params.id))))
-
 router.put('/avatar/:id', ownProfileOnly, upload.single('avatar'), asyncHandler(async (req, res) => {
     if (!req.file) {
         throw new BadRequestError('Immagine mancante')

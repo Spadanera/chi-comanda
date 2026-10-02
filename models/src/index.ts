@@ -59,6 +59,7 @@ export interface Event extends Repository {
   id?: number
   name?: string
   date?: Date
+  status?: string
   menu_id?: number
   tables?: Table[]
   users?: User[]
@@ -81,6 +82,9 @@ export interface Table extends Repository {
   name?: string
   paid?: boolean
   status?: string
+  table_name?: string
+  room_id?: number
+  revenue?: number
   user?: User
   items?: Item[]
   discuntItems?: Item[]
@@ -93,6 +97,8 @@ export interface AvailableTable extends MasterTable {
   master_table_name?: string
   default_seats?: number
   event_id?: number
+  items?: Item[]
+  user?: User
 }
 
 export interface Order extends Repository {
@@ -128,6 +134,7 @@ export interface Item extends Repository {
   price?: number
   destination_id?: number
   grouped_ids?: number[]
+  quantity?: number
   setMinimum?: boolean
 }
 
@@ -185,6 +192,8 @@ export interface Role extends Repository {
 export interface Menu extends Repository {
   id?: number
   name?: string
+  creation_date?: string
+  canDelete?: number
   status?: string
   from_id?: number
 }

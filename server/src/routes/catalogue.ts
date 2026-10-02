@@ -18,7 +18,6 @@ masterItemsRouter.get('/available/:id', requireRole(Roles.waiter, Roles.bartende
 masterItemsRouter.get('/:id', admin, jsonHandler(req => catalogueService.getAll(toId(req.params.id))))
 masterItemsRouter.post('/', admin, jsonHandler(req => catalogueService.create(req.body)))
 masterItemsRouter.put('/', admin, jsonHandler(req => catalogueService.update(req.body)))
-masterItemsRouter.delete('/:id', admin, jsonHandler(req => catalogueService.delete(toId(req.params.id))))
 
 export const typesRouter = Router()
 typesRouter.use(admin)

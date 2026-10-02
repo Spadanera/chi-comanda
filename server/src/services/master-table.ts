@@ -12,15 +12,6 @@ class MasterTableService {
         return db.queryOne('SELECT * FROM master_tables_event WHERE id = ?', [id])
     }
 
-    create(table: MasterTable): Promise<number> {
-        return db.insert('INSERT INTO master_tables (name, status) VALUES (?, ?)', [table.name, table.status])
-    }
-
-    update(table: MasterTable): Promise<number> {
-        return db.execute('UPDATE master_tables SET name = ?, default_seats = ?, status = ? WHERE id = ?',
-            [table.name, table.default_seats, table.status, table.id])
-    }
-
     async getLayout(): Promise<RestaurantLayout> {
         const rooms = await db.query<Room>(`SELECT * FROM rooms WHERE status = 'ACTIVE'`)
         return { rooms, tables: await this.getAll() } as RestaurantLayout

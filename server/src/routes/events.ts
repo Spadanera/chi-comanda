@@ -41,8 +41,6 @@ router.delete('/:id', requireRole(Roles.admin), jsonHandler(req => eventService.
 
 // ── Tables of an event ───────────────────────────────────────────────────────
 
-router.get('/:id/tables/available', floorStaff, jsonHandler(req => tableService.getAvailable(toId(req.params.id))))
-
 router.get('/:id/tables/layout', floorStaff, jsonHandler(req => tableService.getLayout(toId(req.params.id))))
 
 router.put('/:id/tables/layout', floorStaff, jsonHandler(req => tableService.saveLayout(req.body, toId(req.params.id))))
@@ -57,9 +55,6 @@ router.post('/:id/tables/multiple', requireRole(...STAFF_ROLES), jsonHandler(req
 }))
 
 router.get('/:id/tables', requireRole(...STAFF_ROLES), jsonHandler(req => tableService.getByEvent(toId(req.params.id))))
-
-router.get('/:eventid/tables/:tableid/items', requireRole(Roles.checkout),
-    jsonHandler(req => tableService.getWithItems(toId(req.params.tableid), toId(req.params.eventid))))
 
 router.post('/:eventid/tables/:tableid/discount/:discount', requireRole(Roles.checkout), jsonHandler(req => {
     const discount = Number(req.params.discount)

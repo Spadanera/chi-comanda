@@ -76,9 +76,10 @@ describe('a full service: event → order → bar → checkout → close', () =>
         expect(res.status).toBe(200)
         state.tableId = res.body
 
-        const available = await agents.waiter.get(`/api/events/${state.eventId}/tables/available`)
-        const used = available.body.find((t: any) => t.table_id === state.tableId)
-        expect(used).toMatchObject({ inUse: 1, id: state.masterTableId })
+        const layout = await agents.waiter.get(`/api/events/${state.eventId}/tables/layout`)
+        const used = layout.body.tables.find((t: any) => t.table_id === state.tableId)
+        expect(used).toMatchObject({ inUse: 1, id: state.masterTableId, table_name: 'Tavolo 1' })
+        expect(used.items).toHaveLength(2)
     })
 
     it('bartender sees the order and completes it', async () => {
@@ -106,24 +107,27 @@ describe('a full service: event → order → bar → checkout → close', () =>
     })
 
     it('checkout pays one item, applies a discount and closes the table', async () => {
-        const table = await agents.checkout.get(`/api/events/${state.eventId}/tables/${state.tableId}/items`)
-        expect(table.status).toBe(200)
-        expect(table.body.items).toHaveLength(2)
+        const getTable = async () => {
+            const res = await agents.checkout.get(`/api/events/${state.eventId}/tables`)
+            expect(res.status).toBe(200)
+            return res.body.find((t: any) => t.id === state.tableId)
+        }
+        expect((await getTable()).items).toHaveLength(2)
 
         await agents.checkout.put(`/api/tables/${state.tableId}/payitems`).send([state.itemIds![0]]).expect(200)
         await agents.checkout.post(`/api/events/${state.eventId}/tables/${state.tableId}/discount/2`).expect(200)
 
-        const afterPay = await agents.checkout.get(`/api/events/${state.eventId}/tables/${state.tableId}/items`)
-        const byId = Object.fromEntries(afterPay.body.items.map((i: any) => [i.id, i]))
+        const afterPay = await getTable()
+        const byId = Object.fromEntries(afterPay.items.map((i: any) => [i.id, i]))
         expect(byId[state.itemIds![0]].paid).toBeTruthy()
         expect(byId[state.itemIds![1]].paid).toBeFalsy()
-        const discount = afterPay.body.items.find((i: any) => i.type === 'Sconto')
+        const discount = afterPay.items.find((i: any) => i.type === 'Sconto')
         expect(discount.price).toBe(-2)
 
         await agents.checkout.put(`/api/tables/${state.tableId}/complete`).expect(200)
-        const closed = await agents.checkout.get(`/api/events/${state.eventId}/tables/${state.tableId}/items`)
-        expect(closed.body.status).toBe('CLOSED')
-        expect(closed.body.items.every((i: any) => i.paid)).toBe(true)
+        const closed = await getTable()
+        expect(closed.status).toBe('CLOSED')
+        expect(closed.items.every((i: any) => i.paid)).toBe(true)
 
         const free = await agents.checkout.get(`/api/events/${state.eventId}/tables/free`)
         expect(free.body.map((t: any) => t.table_id)).toContain(state.masterTableId)

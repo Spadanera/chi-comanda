@@ -61,7 +61,7 @@ describe('authorization', () => {
 
     it('forbids users without operational roles from reading tables', async () => {
         const agent = await loginAs(app, 'client')
-        expect((await agent.get('/api/tables')).status).toBe(403)
+        expect((await agent.get('/api/tables/1')).status).toBe(403)
         expect((await agent.get('/api/events/1/tables')).status).toBe(403)
     })
 })

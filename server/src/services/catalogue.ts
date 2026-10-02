@@ -71,10 +71,6 @@ class CatalogueService {
             [item.name, item.sub_type_id, item.price, item.destination_id, item.available, item.status, item.menu_id])
     }
 
-    delete(id: number): Promise<number> {
-        return db.execute('DELETE FROM master_items WHERE id = ?', [id])
-    }
-
     update(item: MasterItem): Promise<number> {
         return db.execute(`
             UPDATE master_items SET name = ?, sub_type_id = ?, price = ?, destination_id = ?, available = ?, status = ?
