@@ -1,15 +1,13 @@
-import { RowDataPacket } from "mysql2"
-
 export type shape = 'rect' | 'circle'
 
-export interface Type extends RowDataPacket {
+export interface Type {
   id?: number
   name: string
   icon?: string
   numProducts?: number
 }
 
-export interface SubType extends RowDataPacket {
+export interface SubType {
   id?: number
   name: string
   type_id?: number
@@ -40,12 +38,11 @@ export interface Broadcast extends Repository {
   receivers: number[]
 }
 
-export interface Repository extends RowDataPacket {
-
-}
+/** Base of the API entities (kept for the generic constraints of the client). */
+export interface Repository { }
 
 export interface Invitation extends User {
-  
+  token?: string
 }
 
 export interface Audit extends Repository {
@@ -116,6 +113,9 @@ export interface Order extends Repository {
 
 export interface Item extends Repository {
   id?: number
+  name?: string
+  event_id?: number
+  sub_type_id?: number
   table_id?: number
   order_id?: number
   master_item_id?: number
@@ -156,7 +156,7 @@ export interface Room extends Repository {
 
 export interface RestaurantLayout extends Repository {
   rooms: Room[],
-  tables: MasterTable[]
+  tables: AvailableTable[]
 }
 
 export interface TableUpdatePayload {
@@ -197,6 +197,8 @@ export interface MasterItem extends Repository {
   price?: number
   destination_id?: number
   destination?: string
+  sub_type_id?: number
+  icon?: string
   available?: boolean | number
   status?: string
   menu_id?: number

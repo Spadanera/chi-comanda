@@ -1,17 +1,16 @@
-import db from "./db"
-import { server } from "./app"
+import config from './config'
+import db from './db'
+import { server, sessionStore } from './app'
 
-const port = process.env.PORT || 3000
-server.listen(port, () => {
-    console.log(`App is listening on port ${port}`)
+server.listen(config.port, () => {
+    console.log(`App is listening on port ${config.port}`)
 })
 
 process.on('SIGTERM', () => {
     console.log('SIGTERM received')
-    server.close(() => {
-        db.closePool().then(() => {
-            console.log('Database pool closed')
-            process.exit(0)
-        })
+    server.close(async () => {
+        await Promise.allSettled([db.closePool(), sessionStore.close()])
+        console.log('Database pool closed')
+        process.exit(0)
     })
 })

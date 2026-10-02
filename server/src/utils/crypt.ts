@@ -1,19 +1,11 @@
 import bcrypt from 'bcrypt'
 
-const saltRounds = 10
+const SALT_ROUNDS = 10
 
-export async function hashPassword(password: string | undefined): Promise<string> {
-    try {
-        const salt = await bcrypt.genSalt(saltRounds)
-        const hash = await bcrypt.hash(password || '', salt)
-        return hash;
-    } catch (error) {
-        // Handle error appropriately (e.g., log it, throw a custom error)
-        console.error("Error hashing password:", error)
-        throw error
-    }
+export function hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, SALT_ROUNDS)
 }
 
-export async function checkPassword(password:string, hash:string): Promise<boolean> {
-    return await bcrypt.compare(password, hash)
+export function checkPassword(password: string, hash: string): Promise<boolean> {
+    return bcrypt.compare(password, hash)
 }

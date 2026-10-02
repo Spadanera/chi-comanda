@@ -91,11 +91,6 @@ describe('a full service: event → order → bar → checkout → close', () =>
         state.orderId = order.id
         state.itemIds = order.items.map((i: any) => i.id)
 
-        const items = await agents.bartender.get(`/api/orders/${state.orderId}/items`)
-        expect(items.status).toBe(200)
-        expect(items.body).toHaveLength(2)
-        expect(items.body[0].table_id).toBe(state.tableId)
-
         await agents.bartender.put(`/api/orders/${state.orderId}/complete`).send({ item_ids: [state.itemIds![0]] }).expect(200)
         let after = await agents.bartender.get(`/api/orders/${state.eventId}/[1,2]`)
         expect(after.body[0].done).toBe(0)

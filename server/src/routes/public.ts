@@ -1,47 +1,37 @@
-import router, { Router, Request, Response } from "express"
-import userApi from "../api/user"
+import { Router } from 'express'
 import multer from 'multer'
-import { fileToBase64String } from '../utils/helper'
-import { asyncHandler } from "../utils/asyncHandler"
+import userService from '../services/user'
+import paymentService from '../services/payment'
+import { asyncHandler, jsonHandler } from '../http/middleware'
+import { toId } from '../http/validate'
+import { avatarToDataUri } from '../utils/image'
 
-const upload = multer({ storage: multer.memoryStorage() })
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } })
 
-const publicApiRouter: Router = router()
+/** Endpoints reachable without a session. */
+const router = Router()
 
-publicApiRouter.post("/invitation/accept", upload.single('avatar'), asyncHandler(async (req: Request, res: Response) => {
+router.post('/invitation/accept', upload.single('avatar'), jsonHandler(async req => {
     if (req.file) {
-        req.body.avatar = await fileToBase64String(req.file)
+        req.body.avatar = await avatarToDataUri(req.file)
     }
-    const result = await userApi.acceptInvitation(req.body)
-    res.status(200).json(result)
+    return userService.acceptInvitation(req.body)
 }))
 
-publicApiRouter.post("/askreset", asyncHandler(async (req: Request, res: Response) => {
-    const result = await userApi.askResetPassword(req.body)
-    res.status(200).json(result)
-}))
+router.post('/askreset', jsonHandler(req => userService.askResetPassword(req.body.email)))
 
-publicApiRouter.post("/reset", asyncHandler(async (req: Request, res: Response) => {
-    const result = await userApi.resetPassword(req.body)
-    res.status(200).json(result)
-}))
+router.post('/reset', jsonHandler(req => userService.resetPassword(req.body)))
 
-// ── SumUp POS callback (chiamato dall'app SumUp dopo il pagamento) ────────────
-// Rotta pubblica: nessuna autenticazione richiesta (la chiama SumUp, non l'utente)
-publicApiRouter.get('/payment/sumup/pos-callback', asyncHandler(async (req: Request, res: Response) => {
-    const tx_id = parseInt(req.query['tx_id'] as string, 10)
-    const smpStatus = (req.query['smp-status'] as string) || ''
-    const smpTxCode = (req.query['smp-tx-code'] as string) || undefined
-
-    if (!tx_id || isNaN(tx_id)) {
-        return res.status(400).send('tx_id mancante')
-    }
-
-    const paymentApi = (await import('../api/payment')).default
-    await paymentApi.handlePosCallback(tx_id, smpStatus, smpTxCode)
-
-    // SumUp si aspetta una risposta 200 per considerare il callback andato a buon fine
+/** Called by the SumUp app once a POS payment ends; authenticated by the `sig` query parameter. */
+router.get('/payment/sumup/pos-callback', asyncHandler(async (req, res) => {
+    await paymentService.handlePosCallback(
+        toId(req.query.tx_id, 'tx_id'),
+        String(req.query.sig || ''),
+        String(req.query['smp-status'] || ''),
+        req.query['smp-tx-code'] ? String(req.query['smp-tx-code']) : undefined,
+    )
+    // SumUp only needs a 200 to consider the callback delivered
     res.status(200).send('OK')
 }))
 
-export default publicApiRouter
+export default router

@@ -3,7 +3,10 @@ import bcrypt from 'bcrypt'
 import request from 'supertest'
 import { vi } from 'vitest'
 
-vi.mock('../src/utils/mail', () => ({ default: vi.fn(async () => undefined) }))
+vi.mock('../src/utils/mail', async importOriginal => ({
+    ...(await importOriginal<typeof import('../src/utils/mail')>()),
+    default: vi.fn(async () => undefined),
+}))
 
 export const PASSWORD = 'Password1!'
 

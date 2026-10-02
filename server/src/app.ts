@@ -1,183 +1,47 @@
-import express, { Express, Request, Response } from "express"
-import session from "express-session"
-import path from "path"
-import passport from "passport"
-import history from "connect-history-api-fallback"
-import * as passportStrategy from "passport-local"
-import { Strategy as GoogleStrategy } from "passport-google-oauth20"
-import apiRouter from "./routes"
-import publicApiRouter from "./routes/public"
-import { errorMiddleware } from "./utils/asyncHandler"
+import express from 'express'
+import session from 'express-session'
+import MySQLStoreFactory from 'express-mysql-session'
+import path from 'path'
+import passport from 'passport'
+import history from 'connect-history-api-fallback'
 import { createServer } from 'http'
-import { SocketIOService } from "./socket"
-import { Audit, User } from "../../models/src"
-import db from "./db"
-import connection from "./db/connection"
-import userApi from "./api/user"
-import auditApi from "./api/audit"
+import config from './config'
+import { configurePassport } from './auth/passport'
+import apiRouter, { publicRouter } from './routes'
+import { errorMiddleware } from './http/middleware'
+import { initializeSocket } from './socket'
 
-const AUTH_COOKIE_NAME: string = 'lp-session'
+const MySQLStore = MySQLStoreFactory(session as any)
+const sessionStore = new MySQLStore({ ...config.db, createDatabaseTable: true } as any)
 
-const MySQLStore = require('express-mysql-session')(session);
-const options = {
-    ...connection,
-    createDatabaseTable: true
-}
-const sessionStore = new MySQLStore(options);
+configurePassport()
 
-const app: Express = express()
-
+const app = express()
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(session({
-    name: AUTH_COOKIE_NAME,
+    name: config.sessionCookieName,
     store: sessionStore,
-    cookie: {
-        maxAge: 1000 * 60 * 60 * 24 * 30,
-    },
-    secret: process.env.SECRET || '',
+    cookie: { maxAge: config.sessionMaxAgeMs },
+    secret: config.sessionSecret,
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: true,
 }))
 app.use(passport.initialize())
 app.use(passport.session())
 
-passport.use(new passportStrategy.Strategy(
-    { usernameField: 'email', passwordField: 'password' }, async (email, password, done) => {
-        try {
-            if (!email) { done(null, false) }
-            const user = await userApi.getByEmailAndPassword(email, password)
-            done(null, user)
-        } catch (e:any) {
-            done(e, false, {
-                message: e.message
-            });
-        }
-    }));
+app.use('/api', apiRouter)
+// Public endpoints are also reachable outside /api, as in previous versions
+app.use('/public', publicRouter)
 
-passport.use(new GoogleStrategy(
-    {
-        clientID: process.env.GOOGLE_CLIENT_ID || '',
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-        callbackURL: `${process.env.BASE_URL}/api/auth/google/callback`,
-        passReqToCallback: true
-    },
-    async (req: any, _accessToken, _refreshToken, profile, done) => {
-        try {
-            const email = profile.emails?.[0]?.value || ''
-            const avatar = profile.photos?.[0]?.value || ''
-            const displayName = profile.displayName || email
-
-            // Check if this is an invitation flow (token passed via state)
-            const invitationToken = req.query.state as string | undefined
-            let user: User
-            if (invitationToken) {
-                user = await userApi.acceptInvitationWithGoogle(invitationToken, profile.id, displayName, avatar)
-            } else {
-                user = await userApi.findOrCreateGoogleUser(profile.id, email, displayName, avatar)
-            }
-            done(null, user)
-        } catch (e: any) {
-            done(e, false)
-        }
-    }
-))
-
-passport.serializeUser((user, done) => {
-    done(null, user)
-});
-
-passport.deserializeUser((user: User, done) => {
-    done(null, user);
-});
-
-
-app.post("/api/login", passport.authenticate('local'), async (req: Request, res: Response) => {
-    if (req.isAuthenticated()) {
-        res.json(req.user)
-    } else {
-        res.status(401).json("Credenziali non valide")
-    }
-})
-
-app.post("/api/logout", async (req: Request, res: Response) => {
-    res.clearCookie(AUTH_COOKIE_NAME)
-    res.json(1)
-})
-
-app.get("/api/checkauthentication", async (req: Request, res: Response) => {
-    if (req.isAuthenticated()) {
-        res.json(req.user)
-    }
-    else {
-        res.json(0)
-    }
-})
-
-// Google OAuth routes — must be before the /api auth guard
-app.get('/api/auth/google', (req: Request, res: Response, next: any) => {
-    const state = req.query.state as string | undefined
-    passport.authenticate('google', {
-        scope: ['profile', 'email'],
-        ...(state ? { state } : {})
-    })(req, res, next)
-})
-
-app.get('/api/auth/google/callback',
-    passport.authenticate('google', { failureRedirect: '/login?error=google' }),
-    (req: Request, res: Response) => {
-        res.redirect('/')
-    }
-)
-
-app.use('/public', publicApiRouter)
-
-app.use('/api', (req: Request, res: Response, next: any) => {
-    if (req.isAuthenticated() || /\/public\//.test(req.path)) {
-        next()
-    }
-    else {
-        res.status(401).json('Unauthorized')
-    }
-}, (req: Request, res: Response, next: any) => {
-    if (req.isAuthenticated() && ['POST', 'PUT', 'DELETE'].includes(req.method)) {
-        auditApi.insert({
-            user_id: (req.user as any).id,
-            method: req.method,
-            path: req.path,
-            data: req.body,
-            event_id: req.body?.event_id,
-            table_id: req.body?.table_id,
-            order_id: req.body?.order_id
-        } as Audit)
-    }
-    next()
-}, apiRouter)
-
-
-app.use(history())
+// Single page application
+app.use(history() as unknown as express.RequestHandler)
 app.use(express.static(path.join(__dirname, 'static')))
+
 app.use(errorMiddleware)
 
 const server = createServer(app)
+initializeSocket(server, { path: '/socket' })
 
-SocketIOService.instance().initialize(server, {
-    path: "/socket"
-})
-
-SocketIOService.instance().getServer().on('connection', function (socket) {
-    socket.on('end', function () {
-        socket.disconnect()
-    });
-
-    socket.on('leave', async (room) => {
-        await socket.leave(room)
-    });
-
-    socket.on('join', (room) => {
-        socket.join(room);
-    });
-});
-
-export { app, server }
+export { app, server, sessionStore }

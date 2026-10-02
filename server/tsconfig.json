@@ -16,6 +16,7 @@
     "sourceMap": false,
     "removeComments": true
   },
+  "include": ["src"],
   "references": [
     {
       "path": "../models"
