@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { type Audit, type User } from "../../../../models/src";
 import { onMounted, ref } from 'vue';
-import Axios from '@/services/client'
+import api from '@/services/client'
 import Avatar from "@/components/Avatar.vue";
 
 const props = defineProps(['event'])
 
-const axios = new Axios()
 
 const itemsPerPage = ref<number>(25)
 const totalItems = ref<number>(0)
@@ -29,7 +28,7 @@ async function loadItems(input: { page: number, itemsPerPage: number, sortBy: { 
         })
     }
     loading.value = true
-    const result = await axios.GetAudit(input.page, input.itemsPerPage, input.sortBy[0].key, input.sortBy[0].order)
+    const result = await api.GetAudit(input.page, input.itemsPerPage, input.sortBy[0].key, input.sortBy[0].order)
     serverItems.value = result.data
     totalItems.value = result.totalCount
     loading.value = false

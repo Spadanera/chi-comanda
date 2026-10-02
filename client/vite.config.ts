@@ -27,9 +27,6 @@ export default defineConfig({
           if (id.includes('node_modules/vuetify')) {
             return 'vuetify'
           }
-          if (id.includes('node_modules/axios')) {
-            return 'axios'
-          }
           if (id.includes('node_modules/socket.io-client')) {
             return 'socket.io-client'
           }

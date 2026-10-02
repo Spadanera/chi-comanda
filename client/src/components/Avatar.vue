@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import type { User } from '../../../models/src'
-import Axios from '@/services/client'
-const axios = new Axios()
+import api from '@/services/client'
 
 const props = defineProps<{
     user: User,
@@ -12,7 +11,7 @@ const props = defineProps<{
 }>()
 
 onMounted(async () => {
-    props.user.avatar = await axios.GetUserAvatar(props.user.id)
+    props.user.avatar = await api.GetUserAvatar(props.user.id)
 })
 </script>
 

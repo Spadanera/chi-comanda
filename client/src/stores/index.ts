@@ -1,30 +1,38 @@
-import { defineStore, type StoreDefinition } from 'pinia'
-import Axios from "../services/client"
+import { defineStore } from 'pinia'
+import api from '@/services/client'
 import type { User } from '../../../models/src'
 
-export const UserStore: StoreDefinition = defineStore('user', {
-    state: () => {
-        return {
-            id: 0,
-            username: '',
-            email: '',
-            password: '',
-            roles: [],
-            isLoggedIn: false,
-            avatar: ''
-        } as User
-    },
+export interface SessionUser {
+    id: number
+    username: string
+    email: string
+    roles: string[]
+    avatar: string
+    isLoggedIn: boolean
+}
+
+const anonymous = (): SessionUser => ({ id: 0, username: '', email: '', roles: [], avatar: '', isLoggedIn: false })
+
+function readStorage(key: string): string | null {
+    try {
+        return localStorage.getItem(key)
+    } catch {
+        return null
+    }
+}
+
+function writeStorage(key: string, value: string) {
+    try {
+        localStorage.setItem(key, value)
+    } catch {
+        // storage unavailable (private mode): the preference just won't persist
+    }
+}
+
+export const UserStore = defineStore('user', {
+    state: anonymous,
     getters: {
-        user: (state: any) => {
-            return {
-                id: state.id,
-                username: state.username,
-                email: state.email,
-                roles: state.roles,
-                isLoggedIn: state.isLoggedIn,
-                avatar: state.avatar
-            }
-        },
+        user: (state): SessionUser => ({ ...state, roles: [...state.roles] }),
     },
     actions: {
         setUsername(username: string) {
@@ -33,82 +41,66 @@ export const UserStore: StoreDefinition = defineStore('user', {
         setAvatar(avatar: string) {
             this.avatar = avatar
         },
-        setUser(user: User, isLoggedIn: boolean) {
-            this.id = user.id
-            this.username = user.username
-            this.email = user.email
-            this.avatar = user.avatar
-            this.roles = user.roles
-            this.isLoggedIn = isLoggedIn
-        },
         login(user: User) {
-            this.setUser(user, true)
+            this.$patch({
+                id: user.id || 0,
+                username: user.username || '',
+                email: user.email || '',
+                avatar: user.avatar || '',
+                roles: user.roles || [],
+                isLoggedIn: true,
+            })
         },
         logout() {
-            this.setUser({} as User, false)
+            this.$patch(anonymous())
         },
-        async checkAuthentication() {
-            const axios: Axios = new Axios()
-            const user = await axios.CheckAuthentication()
-            if (user.username) {
+        /** Syncs the store with the server session and returns the current user. */
+        async checkAuthentication(): Promise<SessionUser> {
+            const user = await api.CheckAuthentication()
+            if (user && user.username) {
                 this.login(user)
-                return {
-                    id: this.id,
-                    username: this.username,
-                    email: this.email,
-                    avatar: this.avatar,
-                    roles: this.roles,
-                    isLoggedIn: true
-                }
-            }
-            else {
+            } else {
                 this.logout()
-                return {}
             }
-        }
+            return this.user
+        },
     },
 })
 
-export const SnackbarStore: StoreDefinition = defineStore('snackbar', {
-    state: () => ({ enable: false, text: '', timeout: 3000, location: 'bottom', color: 'default', reload: false }),
+type SnackbarLocation = 'top' | 'bottom'
+
+export const SnackbarStore = defineStore('snackbar', {
+    state: () => ({ enable: false, text: '', timeout: 3000, location: 'bottom' as SnackbarLocation, color: 'default', reload: false }),
     actions: {
-        show(text: string, timeout: number = 3000, location: string = 'bottom', color: string = 'default', reload: boolean = false) {
-            this.enable = true
-            this.text = text
-            this.timeout = timeout
-            this.location = location
-            this.color = color
-            this.reload = reload
-        }
+        /** `timeout: -1` keeps the snackbar open; `reload` shows a reload button. */
+        show(text: string, timeout = 3000, location: SnackbarLocation | string = 'bottom', color = 'default', reload = false) {
+            this.$patch({ enable: true, text, timeout, location: location as SnackbarLocation, color, reload })
+        },
     },
 })
 
-export const ProgressStore: StoreDefinition = defineStore('progress', {
-    state: () => ({ loading: false, activeRequestCount: 0 })
+export const ProgressStore = defineStore('progress', {
+    state: () => ({ loading: false, activeRequestCount: 0 }),
 })
 
 export const ZoomStore = defineStore('zoom', {
     state: () => ({
-        level: Number(localStorage.getItem('zoom_level')) || 1
+        level: Number(readStorage('zoom_level')) || 1,
     }),
     actions: {
         setLevel(val: number) {
             this.level = val
-            localStorage.setItem('zoom_level', val.toString())
-        }
-    }
+            writeStorage('zoom_level', val.toString())
+        },
+    },
 })
 
-export const ThemeStore: StoreDefinition = defineStore('theme', {
-    state: () => ({ theme: localStorage.getItem('theme') || 'light' }),
+export const ThemeStore = defineStore('theme', {
+    state: () => ({ theme: readStorage('theme') || 'light' }),
     actions: {
         toggle() {
             this.theme = this.theme === 'light' ? 'dark' : 'light'
-            this.persistToLocalStorage()
+            writeStorage('theme', this.theme)
         },
-        persistToLocalStorage() {
-            localStorage.setItem("theme", this.theme);
-        }
     },
-
 })

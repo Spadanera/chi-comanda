@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { RestaurantLayout, AvailableTable, Room } from "../../../models/src"
 import { ref, computed, onUnmounted, watch } from "vue"
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { useRoute } from 'vue-router'
 import RoomTabs from '@/components/RoomTabs.vue'
 import RestaurantMap from "@/components/RestaurantMap.vue"
@@ -35,7 +35,6 @@ const route = useRoute()
 const queryToPass = route.query.origin ? `?origin=${route.query.origin}` : ''
 const tables = ref<AvailableTable[]>([])
 const snackbarStore = SnackbarStore()
-const axios = new Axios()
 const loading = ref<boolean>(false)
 const activeRoomId = ref<number>()
 const rooms = ref<Room[]>([])
@@ -62,7 +61,7 @@ function reloadTableHandler() {
 }
 
 async function getTables() {
-  const layout: RestaurantLayout = await axios.GetWaiterLayout(props.event.id)
+  const layout: RestaurantLayout = await api.GetWaiterLayout(props.event.id)
   rooms.value = layout.rooms || []
   tables.value = layout.tables
   if (tables.value.find(t => t.room_id === 0)) {

@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import Axios from '@/services/client'
-import type { Invitation } from '../../../models/src';
+import api from '@/services/client'
 import { requiredRule, passwordMatchRule } from '@/services/utils';
 
 const props = defineProps(['token'])
-const axios: Axios = new Axios()
 const form = ref(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const files = ref()
@@ -14,9 +12,8 @@ const credentials = ref({
   username: '',
   password: '',
   confirmPassword: '',
-  token: props.token,
-  avatar: ''
-} as Invitation)
+  token: props.token as string,
+})
 
 function handleFileChange() {
   files.value = fileInput.value?.files
@@ -32,9 +29,8 @@ async function accept() {
       }
       formData.append('username', credentials.value.username)
       formData.append('password', credentials.value.password)
-      formData.append('confirmPassword', credentials.value.confirmPassword)
       formData.append('token', credentials.value.token)
-      await axios.AcceptInvitation(formData)
+      await api.AcceptInvitation(formData)
     } catch (error) {
       console.error(error)
     }
@@ -62,7 +58,7 @@ async function accept() {
                 color="primary"
                 prepend-icon="mdi-google"
                 class="mb-4"
-                @click="axios.loginWithGoogle(props.token)"
+                @click="api.loginWithGoogle(props.token)"
               >
                 Accetta con Google
               </v-btn>

@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { type PaymentSetting } from '../../../../models/src'
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { SnackbarStore } from '@/stores'
 
-const axios = new Axios()
 const snackbarStore = SnackbarStore()
 
 // ── Definizione statica dei provider disponibili ────────────────────────────
@@ -100,7 +99,7 @@ async function saveSettings() {
             }
         }
 
-        await axios.SavePaymentSettings({
+        await api.SavePaymentSettings({
             provider: activeProviderDef.value.key,
             enabled: editingEnabled.value,
             config: configToSave
@@ -118,7 +117,7 @@ async function saveSettings() {
 
 async function toggleEnabled(setting: PaymentSetting) {
     try {
-        await axios.SavePaymentSettings({ ...setting, config: {} })
+        await api.SavePaymentSettings({ ...setting, config: {} })
         await loadSettings()
         snackbarStore.show(
             setting.enabled ? 'Provider abilitato' : 'Provider disabilitato',
@@ -131,7 +130,7 @@ async function toggleEnabled(setting: PaymentSetting) {
 }
 
 async function loadSettings() {
-    settings.value = await axios.GetPaymentSettings()
+    settings.value = await api.GetPaymentSettings()
 }
 
 onMounted(loadSettings)

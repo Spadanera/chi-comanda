@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { UserStore } from '@/stores'
 import { requiredRule, emailRule } from '@/services/utils'
 import Logo from '@/components/Logo.vue';
 
 const userStore = UserStore()
-const axios: Axios = new Axios()
 const form = ref(null)
 const asked = ref<boolean>(false)
 
@@ -16,7 +15,7 @@ async function askReset() {
     const { valid } = await form.value?.validate()
     if (valid) {
         try {
-            await axios.AskReset(email.value)
+            await api.AskReset(email.value)
         } catch (error) {
             console.error(error)
         }

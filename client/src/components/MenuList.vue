@@ -2,11 +2,10 @@
 import { onMounted, ref } from 'vue';
 import { type Menu } from '../../../models/src';
 import { copy, requiredRule } from '@/services/utils';
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { RouterLink } from 'vue-router';
 
 const menu = ref<Menu[]>([])
-const axios = new Axios()
 const confirmDeleteMenu = ref<boolean>(false)
 const selectedMenu = ref<Menu>(null)
 const dialog = ref<boolean>(null)
@@ -14,7 +13,7 @@ const form = ref(null)
 const copyFromOtherMenu = ref(null)
 
 async function getMenu() {
-    menu.value = await axios.GetAllMenu()
+    menu.value = await api.GetAllMenu()
 }
 
 async function deleteMenuConfirm(menu: Menu) {
@@ -23,7 +22,7 @@ async function deleteMenuConfirm(menu: Menu) {
 }
 
 async function deleteMenu() {
-    await axios.DeleteMenu(selectedMenu.value.id)
+    await api.DeleteMenu(selectedMenu.value.id)
     await getMenu()
     confirmDeleteMenu.value = false
 }
@@ -31,7 +30,7 @@ async function deleteMenu() {
 async function createMenu() {
     const { valid } = await form.value?.validate()
     if (valid) {
-        await axios.CreateMenu(selectedMenu.value)
+        await api.CreateMenu(selectedMenu.value)
         await getMenu()
         dialog.value = false
     }
@@ -40,7 +39,7 @@ async function createMenu() {
 async function editMenu() {
     const { valid } = await form.value?.validate()
     if (valid) {
-        await axios.EditMenu(selectedMenu.value)
+        await api.EditMenu(selectedMenu.value)
         await getMenu()
         dialog.value = false
     }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, onUnmounted, computed } from 'vue'
-import type { MasterTable, Room, SubType, TableUpdatePayload } from '../../../models/src'
+import type { AvailableTable, Room, SubType, TableUpdatePayload } from '../../../models/src'
 import SubTypeSummary from "@/components/SubTypeSummary.vue"
 import { useDisplay } from 'vuetify'
 
@@ -8,7 +8,7 @@ const { smAndUp } = useDisplay()
 
 const props = defineProps<{
   room: Room | undefined
-  tables: MasterTable[]
+  tables: AvailableTable[]
   zoom: number
   selectedTableId: number
   editable?: boolean
@@ -17,7 +17,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'click-table', table: MasterTable): void
+  (e: 'click-table', table: AvailableTable): void
   (e: 'update-table', payload: TableUpdatePayload): void
 }>()
 
@@ -70,7 +70,7 @@ const updatePosition = (clientX: number, clientY: number) => {
   draggingState.currentY = Math.max(0, Math.min(newY, roomHeightCm - currentTable.height))
 }
 
-const startDrag = (event: MouseEvent, table: MasterTable) => {
+const startDrag = (event: MouseEvent, table: AvailableTable) => {
   if (!props.editable || event.button !== 0) return
 
   prepareDragState(table, event.clientX, event.clientY)
@@ -91,7 +91,7 @@ const onGlobalMouseUp = () => {
   finishDrag()
 }
 
-const startTouchDrag = (event: TouchEvent, table: MasterTable) => {
+const startTouchDrag = (event: TouchEvent, table: AvailableTable) => {
   if (!props.editable || event.touches.length !== 1) return
 
   const touch = event.touches[0]
@@ -131,7 +131,7 @@ const finishDrag = () => {
   cleanupListeners()
 }
 
-const prepareDragState = (table: MasterTable, clientX: number, clientY: number) => {
+const prepareDragState = (table: AvailableTable, clientX: number, clientY: number) => {
   draggingState.isDragging = true
   draggingState.hasMoved = false
   draggingState.activeTableId = table.id
@@ -159,7 +159,7 @@ const cleanupListeners = () => {
   window.removeEventListener('touchcancel', onGlobalTouchEnd)
 }
 
-const handleTableClick = (table: MasterTable) => {
+const handleTableClick = (table: AvailableTable) => {
   if (!draggingState.hasMoved) {
     emit('click-table', table)
   }

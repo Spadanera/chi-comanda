@@ -138,6 +138,13 @@ export enum Roles {
     client = 'client'
 }
 
+/** True when the user has at least one of `allowed`. Superusers are always allowed. */
+export function hasAnyRole(userRoles: string[] | undefined, allowed: Roles | Roles[]): boolean {
+    const roles = userRoles || []
+    const wanted = Array.isArray(allowed) ? allowed : [allowed]
+    return roles.includes(Roles.superuser) || wanted.some(r => roles.includes(r))
+}
+
 export const icons = [
     "mdi-baguette",
     "mdi-barley",

@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import Axios from '@/services/client'
+import api from '@/services/client'
 import type { Invitation } from '../../../models/src'
 import { requiredRule, passwordMatchRule } from '@/services/utils'
 import Logo from '@/components/Logo.vue'
 
 const props = defineProps(['token'])
-const axios: Axios = new Axios()
 const form = ref(null)
 
 const credentials = ref({
@@ -18,7 +17,7 @@ async function reset() {
     const { valid } = await form.value?.validate()
     if (valid) {
         try {
-            await axios.Reset({
+            await api.Reset({
                 token: props.token,
                 password: credentials.value.password
             } as Invitation)

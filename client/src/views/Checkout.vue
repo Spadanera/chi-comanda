@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type Table, type Item, type SubType, type CompleteOrderInput, type User } from "../../../models/src"
 import { ref, computed, onUnmounted, watch } from "vue"
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { copy, sortTables } from "@/services/utils"
 import { RouterLink } from 'vue-router'
@@ -11,7 +11,6 @@ import { useSocket } from '@/composables/useSocket'
 
 const props = defineProps(['event'])
 
-const axios = new Axios()
 const socket = useSocket()
 const user = defineModel<User>()
 const snackbarStore = SnackbarStore()
@@ -35,7 +34,7 @@ function getSubTypeCount(table: Table, subtype: string[]) {
 }
 
 async function getTables() {
-  const _tables = await axios.GetTablesInEvent(props.event?.id || 0)
+  const _tables = await api.GetTablesInEvent(props.event?.id || 0)
   _tables.forEach((t: Table) => {
     if (!t.items) {
       t.items = []
@@ -94,7 +93,7 @@ async function handleReconnection() {
 async function init() {
   if (props.event && props.event.id) {
     loading.value = true
-    types.value = await axios.GetSubTypes()
+    types.value = await api.GetSubTypes()
     await getTables()
     socket.emit('join', 'checkout')
     socket.on('new-order', newOrderHandler)

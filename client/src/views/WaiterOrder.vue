@@ -2,7 +2,7 @@
 import { type Order, type MasterItem, type Item, type SubType, type Type, type Destination, type User } from "../../../models/src"
 import { ref, onMounted, computed, nextTick } from "vue"
 import router from '@/router'
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { groupItems, copy, sortItem } from "@/services/utils"
 import { useRoute } from 'vue-router'
@@ -11,7 +11,6 @@ import ItemList from "@/components/ItemList.vue"
 
 const route = useRoute()
 const origin = route.query.origin ? `${route.query.origin}` : '/waiter'
-const axios = new Axios()
 const user = defineModel<User>()
 const snackbarStore = SnackbarStore()
 const destinations = ref<Destination[]>([])
@@ -140,7 +139,7 @@ async function sendOrder() {
     items: orderItems.value,
     table_name: table_name.value
   } as Order
-  await axios.CreateOrder(_order)
+  await api.CreateOrder(_order)
   loading.value = false
   snackbarStore.show("Ordine inviato con successo", 3000, 'bottom', 'success')
   router.push(origin)
@@ -156,7 +155,7 @@ async function setTableName() {
   } else {
     const { valid } = await formMultiple.value?.validate()
     if (valid) {
-      await axios.InsertMultipleTables(parseInt(props.event_id), names.value)
+      await api.InsertMultipleTables(parseInt(props.event_id), names.value)
       router.push(origin)
     }
   }
@@ -177,14 +176,14 @@ const removeName = (index: number) => {
 }
 
 onMounted(async () => {
-  destinations.value = await axios.GetDestinations()
-  types.value = await axios.GetSubTypes()
-  master_items.value = await axios.GetAvailableMasterItems(props.menu_id)
+  destinations.value = await api.GetDestinations()
+  types.value = await api.GetSubTypes()
+  master_items.value = await api.GetAvailableMasterItems(props.menu_id)
   if (parseInt(props.table_id)) {
-    table_name.value = (await axios.GetTable(props.table_id)).name
+    table_name.value = (await api.GetTable(props.table_id)).name
   }
   else if (parseInt(props.master_table_id)) {
-    table_name.value = (await axios.GetMasterTable(props.master_table_id)).name
+    table_name.value = (await api.GetMasterTable(props.master_table_id)).name
   }
   else {
     dialogTable.value = true

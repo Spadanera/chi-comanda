@@ -1,24 +1,23 @@
 <script setup lang="ts">
-import { type MasterTable, type Table } from "../../../models/src"
+import { type AvailableTable, type Table } from "../../../models/src"
 import { ref, watch } from "vue"
-import Axios from '@/services/client'
+import api from '@/services/client'
 
 const props = defineProps(['event', 'selectedTable'])
 const model = defineModel<boolean>()
 const emit = defineEmits(['changed'])
 
-const axios = new Axios()
-const freeTables = ref<MasterTable[]>([])
+const freeTables = ref<AvailableTable[]>([])
 
 watch(model, async (val) => {
     if (val && props.event?.id) {
-        freeTables.value = await axios.GetFreeTables(props.event.id)
+        freeTables.value = await api.GetFreeTables(props.event.id)
     }
 })
 
 async function changeTable(table_id: number) {
     if (props.selectedTable && props.selectedTable.length) {
-        await axios.ChangeTable(props.selectedTable[0].id, table_id)
+        await api.ChangeTable(props.selectedTable[0].id, table_id)
         emit('changed')
         model.value = false
     }

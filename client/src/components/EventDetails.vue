@@ -2,11 +2,10 @@
 import { onMounted, ref, computed } from 'vue';
 import { type Event, type Item, type Table, type SubType, type Type } from "../../../models/src"
 import { groupItems } from "@/services/utils"
-import Axios from '@/services/client'
+import api from '@/services/client'
 import ItemList from '@/components/ItemList.vue'
 
 const selectedEvent = defineModel<Event>()
-const axios = new Axios()
 const emit = defineEmits(['close'])
 const selectedTable = ref<Table[]>([{
     items: []
@@ -44,8 +43,8 @@ function getSubTypeCount(table: Table, subtype: string[]) {
 }
 
 onMounted(async () => {
-    subTypes.value = await axios.GetSubTypes()
-    types.value = await axios.GetTypes()
+    subTypes.value = await api.GetSubTypes()
+    types.value = await api.GetTypes()
     if (selectedEvent.value && selectedEvent.value.tables && selectedEvent.value.tables.length) {
         selectedTable.value[0] = selectedEvent.value.tables[0]
     }

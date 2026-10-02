@@ -1,19 +1,21 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { type SubType, type Type } from '../../../models/src';
-import { copy, requiredRule, icons } from '@/services/utils';
-import Axios from '@/services/client'
 
-const axios = new Axios()
+/** Dialog model for both categories and sub-categories (those have a `type_id`). */
+type CategoryForm = Partial<SubType> & { isSub?: boolean }
+import { copy, requiredRule, icons } from '@/services/utils';
+import api from '@/services/client'
+
 const dialogType = ref<boolean>(null)
 const confirmDelete = ref<boolean>(null)
 const form = ref(null)
 const types = ref<Type[]>([])
 const subTypes = ref<SubType[]>([])
-const selectedType = ref<Type | SubType>(null)
+const selectedType = ref<CategoryForm>({})
 
-function openDialog(type?: Type | SubType) {
-    selectedType.value = copy<Type | SubType>(type)
+function openDialog(type?: CategoryForm) {
+    selectedType.value = copy<CategoryForm>(type || {})
     dialogType.value = true
 }
 
@@ -21,11 +23,11 @@ async function createType() {
     const { valid } = await form.value?.validate()
     if (valid) {
         if (selectedType.value.type_id) {
-            await axios.CreateSubType(selectedType.value)
+            await api.CreateSubType(selectedType.value as SubType)
             await getSubTypes()
         }
         else {
-            await axios.CreateType(selectedType.value)
+            await api.CreateType(selectedType.value as Type)
             await getTypes()
         }
         dialogType.value = false
@@ -36,11 +38,11 @@ async function editType() {
     const { valid } = await form.value?.validate()
     if (valid) {
         if (selectedType.value.type_id) {
-            await axios.EditSubType(selectedType.value)
+            await api.EditSubType(selectedType.value as SubType)
             await getSubTypes()
         }
         else {
-            await axios.EditType(selectedType.value)
+            await api.EditType(selectedType.value as Type)
             await getTypes()
         }
         dialogType.value = false
@@ -53,11 +55,11 @@ async function deleteTypeConfirm() {
 
 async function deleteType() {
     if (selectedType.value.type_id) {
-        await axios.DeleteSubType(selectedType.value.id)
+        await api.DeleteSubType(selectedType.value.id)
         await getSubTypes()
     }
     else {
-        await axios.DeleteType(selectedType.value.id)
+        await api.DeleteType(selectedType.value.id)
         await getTypes()
     }
     confirmDelete.value = false
@@ -65,11 +67,11 @@ async function deleteType() {
 }
 
 async function getTypes() {
-    types.value = await axios.GetTypes()
+    types.value = await api.GetTypes()
 }
 
 async function getSubTypes() {
-    subTypes.value = await axios.GetSubTypes()
+    subTypes.value = await api.GetSubTypes()
 }
 
 onMounted(async () => {
@@ -104,7 +106,7 @@ onMounted(async () => {
                 </tr>
             </tbody>
         </v-table>
-        <v-fab @click="openDialog({ name: '' } as Type)" icon="mdi-plus" absolute offset
+        <v-fab @click="openDialog({ name: '' })" icon="mdi-plus" absolute offset
             location="bottom right" style="margin-right: 10px;"></v-fab>
     </div>
     <div style="margin-bottom: 30px;" v-if="types.length">
@@ -137,7 +139,7 @@ onMounted(async () => {
                 </tr>
             </tbody>
         </v-table>
-        <v-fab @click="openDialog({ name: '', isSub: true } as SubType)" icon="mdi-plus" absolute offset
+        <v-fab @click="openDialog({ name: '', isSub: true })" icon="mdi-plus" absolute offset
             location="bottom right" style="margin-right: 10px;"></v-fab>
     </div>
     <v-dialog v-model="dialogType" width="380px">

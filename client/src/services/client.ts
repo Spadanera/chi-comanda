@@ -1,449 +1,450 @@
-import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance, type AxiosProgressEvent } from 'axios'
-import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation, type Menu, type Type, type SubType, type Audit, type Broadcast, type RestaurantLayout, type PaymentSetting, type PaymentTransaction } from "../../../models/src"
+import type {
+    AvailableTable, Audit, Broadcast, CompleteOrderInput, Destination, Event, Invitation, Item, MasterItem, MasterTable,
+    Menu, Order, PaymentSetting, PaymentTransaction, RestaurantLayout, SubType, Table, Type, User
+} from '../../../models/src'
 import router from '@/router'
 import { UserStore, SnackbarStore, ProgressStore } from '@/stores'
-import type { StoreDefinition } from 'pinia'
 
-export default class Axios {
-    client: AxiosInstance
-    config: AxiosRequestConfig = {
-        headers: {
-            'Content-Type': 'application/json'
-        } as RawAxiosRequestHeaders
-    }
-    userStoreDef: StoreDefinition
-    snackbarStoreDef: StoreDefinition
-    progressStoreDef: StoreDefinition
-
-    constructor() {
-        this.client = axios.create({
-            baseURL: '/api',
-        })
-
-        this.client.interceptors.request.use((request) => {
-            const progressStore = this.progressStoreDef()
-            if (request.url !== "/checkauthentication") {
-                progressStore.activeRequestCount++
-                progressStore.loading = true;
-            }
-            return request
-        }, error => {
-            const progressStore = this.progressStoreDef()
-            progressStore.activeRequestCount--
-            setTimeout(() => {
-                if (progressStore.activeRequestCount === 0) {
-                    progressStore.loading = false;
-                }
-            }, 200)
-            return Promise.reject(error)
-        })
-
-        this.client.interceptors.response.use((response) => {
-            const progressStore = this.progressStoreDef()
-            if (response.config.url !== "/checkauthentication") {
-                progressStore.activeRequestCount--
-                setTimeout(() => {
-                    if (progressStore.activeRequestCount === 0) {
-                        progressStore.loading = false;
-                    }
-                }, 200)
-            }
-            return response
-        }, error => {
-            const progressStore = this.progressStoreDef()
-            progressStore.loading = false;
-            if (error.response) {
-                progressStore.activeRequestCount--
-                setTimeout(() => {
-                    if (progressStore.activeRequestCount === 0) {
-                        progressStore.loading = false;
-                    }
-                }, 200)
-                if (error.response.status === 401) {
-                    const userStore = this.userStoreDef()
-                    userStore.logout()
-                    router.push('/login')
-                } else {
-                    const snackbar = SnackbarStore()
-                    snackbar.show("Si è verificare un errore", 3000, 'top', 'error')
-                }
-            }
-            return Promise.reject(error)
-        })
-
-        this.userStoreDef = UserStore
-        this.snackbarStoreDef = SnackbarStore
-        this.progressStoreDef = ProgressStore
-    }
-
-    private async get<T extends Repository>(path: string, params?: any): Promise<T[]> {
-        const response: AxiosResponse<T[]> = await this.client.get<T[]>(path, { ...this.config, params })
-        return response.data
-    }
-
-    private async getSingle<T extends Repository>(path: string): Promise<T> {
-        const response: AxiosResponse<T> = await this.client.get<T>(path, this.config)
-        return response.data
-    }
-
-    private async post<T extends Repository>(path: string, body: T): Promise<number> {
-        const response: AxiosResponse<number> = await this.client.post(path, body, this.config)
-        return response.data
-    }
-
-    private async put<T extends Repository>(path: string, body: T): Promise<number> {
-        const response: AxiosResponse<number> = await this.client.put(path, body, this.config)
-        return response.data
-    }
-
-    private async delete(path: string): Promise<number> {
-        const response: AxiosResponse<number> = await this.client.delete(path, this.config)
-        return response.data
-    }
-
-    async GetAllEvents(status: string, filters?: { page?: number, start?: string | null, end?: string | null }): Promise<Event[] | { events: Event[], totalPages: number }> {
-        const params: any = {}
-        if (filters) {
-            if (filters.page) params.page = filters.page
-            if (filters.start) params.start_date = filters.start
-            if (filters.end) params.end_date = filters.end
-        }
-        return await this.get(`/events/status/${status}`, params)
-    }
-
-    async GetEvent(event_id: number, status: string): Promise<Event> {
-        return await this.getSingle<Event>(`/events/${event_id}/status/${status}`)
-    }
-
-    async GetOnGoingEvent(): Promise<Event> {
-        return await this.getSingle<Event>("/events/ongoing")
-    }
-
-    async CreateEvent(event: Event): Promise<Number> {
-        return await this.post("/events", event)
-    }
-
-    async SetEventStatus(event: Event): Promise<number> {
-        if (event.users) {
-            event.users = event.users.map((u: User) => {
-                return {
-                    id: u.id
-                } as User
-            })
-        }
-        return await this.put(`/events/setstatus/${event.id}`, event)
-    }
-
-    async EditEvent(event: Event): Promise<number> {
-        return await this.put(`/events`, event)
-    }
-
-    async DeleteEvent(event_id: number): Promise<number> {
-        return await this.delete(`/events/${event_id}`)
-    }
-
-    async GetAvailableTables(event_id: number): Promise<AvailableTable[]> {
-        return await this.get<AvailableTable>(`/events/${event_id}/tables/available`)
-    }
-
-    async GetWaiterLayout(event_id: number): Promise<RestaurantLayout> {
-        return await this.getSingle<RestaurantLayout>(`/events/${event_id}/tables/layout`)
-    }
-
-    async SaveLayoutInEvent(layout: RestaurantLayout, event_id: number): Promise<number> {
-        return await this.put<RestaurantLayout>(`/events/${event_id}/tables/layout`, layout)
-    }
-
-    async GetFreeTables(event_id: number): Promise<AvailableTable[]> {
-        return await this.get<AvailableTable>(`/events/${event_id}/tables/free`)
-    }
-
-    async ChangeTable(table_id: number, master_table_id: number): Promise<number> {
-        return await this.put<AvailableTable>(`/tables/${table_id}/change/${master_table_id}`, {} as AvailableTable)
-    }
-
-    async InsertMultipleTables(event_id: number, tableNames: string[]): Promise<number> {
-        return (await this.client.post(`/events/${event_id}/tables/multiple`, tableNames)).data
-    }
-
-    async GetMasterTable(master_id: string): Promise<MasterTable> {
-        return await this.getSingle<MasterTable>(`/master-tables/${master_id}`)
-    }
-
-    async GetLayout(): Promise<RestaurantLayout> {
-        return await this.getSingle<RestaurantLayout>(`/master-tables/layout`)
-    }
-
-    async SaveLayout(layout: RestaurantLayout): Promise<number> {
-        return await this.put<RestaurantLayout>(`/master-tables/layout`, layout)
-    }
-
-    async GetTable(master_id: string): Promise<MasterTable> {
-        return await this.getSingle<MasterTable>(`/tables/${master_id}`)
-    }
-
-    async GetByTableId(table_id: number, event_id: number): Promise<Table> {
-        return await this.getSingle<MasterTable>(`/events/${event_id}/tables/${table_id}/items`)
-    }
-
-    async GetOrdersInEvent(event_id: number, destinations_ids: string): Promise<Order[]> {
-        return await this.get<Order>(`/orders/${event_id}/[${destinations_ids}]`)
-    }
-
-    async GetTablesInEvent(event_id: number): Promise<Table[]> {
-        return await this.get<Table>(`/events/${event_id}/tables`)
-    }
-
-    async CreateOrder(order: Order): Promise<Number> {
-        return await this.post("/orders", order)
-    }
-
-    async UpdateItem(item: Item, reopenTable?: boolean): Promise<Number> {
-        return await this.put(`/items${reopenTable ? '/open' : ''}`, item)
-    }
-
-    async CompleteOrder(order_id: number, input: CompleteOrderInput): Promise<Number> {
-        return (await this.client.put(`/orders/${order_id}/complete`, input, this.config)).data
-    }
-
-    async CompleteTable(table_id: number): Promise<Number> {
-        return (await this.client.put(`/tables/${table_id}/complete`, {}, this.config)).data
-    }
-
-    async PaySelectedItem(table_id: number, item_ids: number[]): Promise<number> {
-        return (await this.client.put(`/tables/${table_id}/payitems`, item_ids, this.config)).data
-    }
-
-    async InsertDiscount(event_id: number, table_id: number, discount: number): Promise<number> {
-        return (await this.client.post(`/events/${event_id}/tables/${table_id}/discount/${discount}`)).data
-    }
-
-    async DeleteItem(item_id: number) {
-        return await this.delete(`/items/${item_id}`);
-    }
-
-    async GetAllMasterTables(): Promise<MasterTable[]> {
-        return await this.get<MasterTable>("/master-tables");
-    }
-
-    async CreateMasterTables(masterTable: MasterTable): Promise<number> {
-        return await this.post<MasterTable>("/master-tables", masterTable);
-    }
-
-    async EditMasterTables(masterTable: MasterItem): Promise<number> {
-        return await this.put<MasterItem>("/master-tables", masterTable);
-    }
-
-    async GetAllMenu(): Promise<Menu[]> {
-        return await this.get<MasterItem>(`/menu`);
-    }
-
-    async CreateMenu(menu: Menu): Promise<number> {
-        return await this.post<Menu>("/menu", menu);
-    }
-
-    async EditMenu(menu: Menu): Promise<number> {
-        return await this.put<Menu>("/menu", menu);
-    }
-
-    async DeleteMenu(id: number): Promise<number> {
-        return await this.delete(`/menu/${id}`);
-    }
-
-    async GetAllMasterItems(menu_id: number): Promise<MasterItem[]> {
-        return await this.get<MasterItem>(`/master-items/${menu_id}`);
-    }
-
-    async GetAvailableMasterItems(menu_id: number): Promise<MasterItem[]> {
-        return await this.get<MasterItem>(`/master-items/available/${menu_id}`);
-    }
-
-    async CreateMasterItems(masterItem: MasterItem): Promise<number> {
-        return await this.post<MasterItem>("/master-items", masterItem);
-    }
-
-    async EditMasterItems(masterItem: MasterItem): Promise<number> {
-        return await this.put<MasterItem>("/master-items", masterItem);
-    }
-
-    async GetDestinations(): Promise<Destination[]> {
-        return await this.get<Destination>("/destinations");
-    }
-
-    async CreateDestination(destination: Destination): Promise<number> {
-        return await this.post<Destination>("/destinations", destination);
-    }
-
-    async EditDestination(destination: Destination): Promise<number> {
-        return await this.put<Destination>("/destinations", destination);
-    }
-
-    async GetTypes(): Promise<Type[]> {
-        return await this.get<Type>("/types")
-    }
-
-    async CreateType(type: Type): Promise<number> {
-        return await this.post("/types", type)
-    }
-
-    async EditType(type: Type): Promise<number> {
-        return await this.put("/types", type)
-    }
-
-    async DeleteType(id: number): Promise<number> {
-        return await this.delete(`/types/${id}`)
-    }
-
-    async GetSubTypes(): Promise<SubType[]> {
-        return await this.get<SubType>("/subtypes")
-    }
-
-    async CreateSubType(subtypes: SubType): Promise<number> {
-        return await this.post("/subtypes", subtypes)
-    }
-
-    async EditSubType(subtypes: SubType): Promise<number> {
-        return await this.put("/subtypes", subtypes)
-    }
-
-    async DeleteSubType(id: number): Promise<number> {
-        return await this.delete(`/subtypes/${id}`)
-    }
-
-    async AskReset(email: string) {
-        await this.client.post("/public/askreset", {
-            email
-        })
-        this.snackbarStoreDef().show("Richiesta effettuata. Riceverai una mail con le istruzioni per reinpostare la tua password")
-        router.push("/login")
-    }
-
-    async Reset(invitation: Invitation) {
-        await this.client.post("/public/reset", invitation)
-        this.snackbarStoreDef().show("Password reimpostata con successo", 3000, 'top', 'success')
-        router.push("/login")
-    }
-
-    async GetUsers(): Promise<User[]> {
-        return await this.get("/users")
-    }
-
-    async GetAudit(page: number, itemsPerPage: number, sortBy: string, sortDir: string): Promise<any> {
-        return await this.get(`/audit?page=${page}&itemsperpage=${itemsPerPage}&sortby=${sortBy}&sortdir=${sortDir}`)
-    }
-
-    async GetUserAvatar(id: number) {
-        return await this.get(`/users-public/avatar/${id}`)
-    }
-
-    async GetProfile(id: number): Promise<User> {
-        return await this.getSingle<User>(`/profile/${id}`)
-    }
-
-    async EditProfileAvatar(formData: FormData, id: number): Promise<string> {
-        const response: AxiosResponse<string> = await this.client.put(`/profile/avatar/${id}`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        })
-        return response.data
-    }
-
-    async EditProfileUsername(user: User): Promise<number> {
-        return await this.put("/profile/username", user)
-    }
-
-    async BroadcastMessage(broadcast: Broadcast): Promise<number> {
-        return await this.post("/broadcast", broadcast)
-    }
-
-    async GetAvailableUsers(): Promise<User[]> {
-        return await this.get("/events/users")
-    }
-
-    async UpdateUser(user: User): Promise<number> {
-        return await this.put("/users", user)
-    }
-
-    async UpdateUserRoles(user: User): Promise<number> {
-        return await this.put("/users/roles", user)
-    }
-
-    async DeleteUser(user_id: number): Promise<number> {
-        return await this.delete(`/users/${user_id}`)
-    }
-
-    async InviteUser(user: User): Promise<number> {
-        return await this.post("/users/invite", user)
-    }
-
-    async AcceptInvitation(formData: FormData) {
-        await this.client.post("/public/invitation/accept", formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        })
-
-        this.snackbarStoreDef().show("Invito accettato con successo", 3000, 'top', 'success')
-        router.push("/login")
-    }
-
-    loginWithGoogle(invitationToken?: string) {
-        const url = invitationToken
-            ? `/api/auth/google?state=${encodeURIComponent(invitationToken)}`
-            : `/api/auth/google`
-        window.location.href = url
-    }
-
-    async Login(email: string, password: string): Promise<void> {
-        const user = (await this.client.post<User>("/login", {
-            email: email,
-            password: password
-        })).data
-        this.userStoreDef().login(user)
-    }
-
-    async Logout() {
-        await this.client.post('/logout')
-        this.userStoreDef().logout()
-        router.push("/login")
-        this.snackbarStoreDef().show("Logout effettuato con successo")
-    }
-
-    async CheckAuthentication(): Promise<User> {
-        return (await this.client.get<User>('/checkauthentication')).data
-    }
-
-    async GetPaymentSettings(): Promise<PaymentSetting[]> {
-        return await this.get<PaymentSetting>('/payment/settings')
-    }
-
-    async SavePaymentSettings(setting: PaymentSetting): Promise<number> {
-        return (await this.client.post('/payment/settings', setting, this.config)).data
-    }
-
-    async GetAvailablePaymentProviders(): Promise<PaymentSetting[]> {
-        return await this.get<PaymentSetting>('/payment/available')
-    }
-
-    /** sumup_checkout – crea link di pagamento */
-    async CreateSumupCheckoutLink(payload: { table_id: number; event_id: number; amount: number; item_ids: number[]; description: string }): Promise<PaymentTransaction> {
-        return (await this.client.post<PaymentTransaction>('/payment/checkout/sumup-checkout', payload, this.config)).data
-    }
-
-    /** sumup_pos – crea sessione POS (restituisce url_scheme per aprire app SumUp) */
-    async CreateSumupPosSession(payload: { table_id: number; event_id: number; amount: number; item_ids: number[]; description: string }): Promise<PaymentTransaction & { url_scheme: string }> {
-        return (await this.client.post<PaymentTransaction & { url_scheme: string }>('/payment/checkout/sumup-pos', payload, this.config)).data
-    }
-
-    /** sumup_solo – invia pagamento al terminale Solo */
-    async CreateSumupSoloPayment(payload: { table_id: number; event_id: number; amount: number; item_ids: number[]; description: string }): Promise<PaymentTransaction> {
-        return (await this.client.post<PaymentTransaction>('/payment/checkout/sumup-solo', payload, this.config)).data
-    }
-
-    /** Controlla lo stato di una transazione (polling per sumup_checkout e sumup_solo) */
-    async CheckPaymentStatus(transaction_id: number): Promise<{ status: string }> {
-        return (await this.client.get<{ status: string }>(`/payment/checkout/${transaction_id}/status`, this.config)).data
+export interface PaymentPayload {
+    table_id: number
+    event_id: number
+    amount: number
+    item_ids: number[]
+    description: string
+}
+
+export type EventFilters = { page?: number, start?: string | null, end?: string | null }
+
+type Method = 'GET' | 'POST' | 'PUT' | 'DELETE'
+
+/** Error thrown for any failed request; `status` is 0 when the server couldn't be reached. */
+export class ApiError extends Error {
+    constructor(public status: number, message: string, public path: string) {
+        super(message)
+        this.name = 'ApiError'
     }
 }
 
+const BASE_URL = '/api'
+
+/** Requests that must not toggle the global progress bar. */
+const SILENT_PATHS = ['/checkauthentication']
+
+function buildUrl(path: string, params?: Record<string, unknown>): string {
+    const query = new URLSearchParams()
+    for (const [key, value] of Object.entries(params || {})) {
+        if (value !== undefined && value !== null && value !== '') query.append(key, String(value))
+    }
+    const qs = query.toString()
+    return `${BASE_URL}${path}${qs ? `?${qs}` : ''}`
+}
+
+async function parseBody(response: Response): Promise<unknown> {
+    const text = await response.text()
+    if (!text) return undefined
+    try {
+        return JSON.parse(text)
+    } catch {
+        return text
+    }
+}
+
+/**
+ * Typed client of the REST API, built on the native fetch. A single shared instance
+ * (`api`) is exported; stores are resolved lazily because they import this module too.
+ */
+class ApiClient {
+    private async request<T>(method: Method, path: string, body?: unknown, params?: Record<string, unknown>): Promise<T> {
+        const silent = SILENT_PATHS.includes(path)
+        const init: RequestInit = { method, credentials: 'same-origin' }
+        if (body instanceof FormData) {
+            init.body = body
+        } else if (body !== undefined) {
+            init.body = JSON.stringify(body)
+            init.headers = { 'Content-Type': 'application/json' }
+        }
+
+        if (!silent) this.trackRequest(+1)
+        try {
+            let response: Response
+            try {
+                response = await fetch(buildUrl(path, params), init)
+            } catch {
+                throw this.handleError(new ApiError(0, 'Errore di connessione', path))
+            }
+            const data = await parseBody(response)
+            if (!response.ok) {
+                const message = (data as { message?: string } | undefined)?.message || response.statusText
+                throw this.handleError(new ApiError(response.status, message, path))
+            }
+            return data as T
+        } finally {
+            if (!silent) this.trackRequest(-1)
+        }
+    }
+
+    private trackRequest(delta: number) {
+        const progress = ProgressStore()
+        progress.activeRequestCount = Math.max(0, progress.activeRequestCount + delta)
+        if (progress.activeRequestCount > 0) {
+            progress.loading = true
+        } else {
+            // Small delay so back-to-back requests don't make the bar flicker
+            setTimeout(() => {
+                if (progress.activeRequestCount === 0) progress.loading = false
+            }, 200)
+        }
+    }
+
+    /** Shows the error to the user (or redirects to login) and returns it, to be thrown. */
+    private handleError(error: ApiError): ApiError {
+        const snackbar = SnackbarStore()
+        if (error.status === 0) {
+            snackbar.show(error.message, 3000, 'top', 'error')
+        } else if (error.status === 401 && error.path === '/login') {
+            snackbar.show(error.message || 'Credenziali non valide', 3000, 'top', 'error')
+        } else if (error.status === 401) {
+            UserStore().logout()
+            router.push('/login')
+        } else if (error.status === 403) {
+            snackbar.show('Non sei autorizzato a eseguire questa operazione', 3000, 'top', 'error')
+        } else if (error.status < 500) {
+            snackbar.show(error.message, 3000, 'top', 'error')
+        } else {
+            snackbar.show('Si è verificato un errore', 3000, 'top', 'error')
+        }
+        return error
+    }
+
+    private get<T>(path: string, params?: Record<string, unknown>): Promise<T> {
+        return this.request<T>('GET', path, undefined, params)
+    }
+
+    private post<T = number>(path: string, body?: unknown): Promise<T> {
+        return this.request<T>('POST', path, body)
+    }
+
+    private put<T = number>(path: string, body?: unknown): Promise<T> {
+        return this.request<T>('PUT', path, body)
+    }
+
+    private delete<T = number>(path: string): Promise<T> {
+        return this.request<T>('DELETE', path)
+    }
+
+    // ── Auth ─────────────────────────────────────────────────────────────────
+
+    async Login(email: string, password: string): Promise<void> {
+        const user = await this.post<User>('/login', { email, password })
+        UserStore().login(user)
+    }
+
+    loginWithGoogle(invitationToken?: string) {
+        window.location.href = invitationToken
+            ? `/api/auth/google?state=${encodeURIComponent(invitationToken)}`
+            : '/api/auth/google'
+    }
+
+    async Logout() {
+        await this.post('/logout')
+        UserStore().logout()
+        router.push('/login')
+        SnackbarStore().show('Logout effettuato con successo')
+    }
+
+    /** The logged user, or `0` when there is no session. */
+    CheckAuthentication(): Promise<User | 0> {
+        return this.get('/checkauthentication')
+    }
+
+    async AskReset(email: string) {
+        await this.post('/public/askreset', { email })
+        SnackbarStore().show('Richiesta effettuata. Riceverai una mail con le istruzioni per reimpostare la tua password')
+        router.push('/login')
+    }
+
+    async Reset(invitation: Invitation) {
+        await this.post('/public/reset', invitation)
+        SnackbarStore().show('Password reimpostata con successo', 3000, 'top', 'success')
+        router.push('/login')
+    }
+
+    async AcceptInvitation(formData: FormData) {
+        await this.post('/public/invitation/accept', formData)
+        SnackbarStore().show('Invito accettato con successo', 3000, 'top', 'success')
+        router.push('/login')
+    }
+
+    // ── Events ───────────────────────────────────────────────────────────────
+
+    GetAllEvents(status: string, filters?: EventFilters): Promise<Event[] | { events: Event[], totalPages: number }> {
+        return this.get(`/events/status/${status}`, {
+            page: filters?.page || undefined,
+            start_date: filters?.start || undefined,
+            end_date: filters?.end || undefined,
+        })
+    }
+
+    GetEvent(event_id: number, status: string): Promise<Event> {
+        return this.get(`/events/${event_id}/status/${status}`)
+    }
+
+    GetOnGoingEvent(): Promise<Event> {
+        return this.get('/events/ongoing')
+    }
+
+    CreateEvent(event: Event): Promise<number> {
+        return this.post('/events', event)
+    }
+
+    SetEventStatus(event: Event): Promise<number> {
+        return this.put(`/events/setstatus/${event.id}`, { id: event.id, status: event.status })
+    }
+
+    EditEvent(event: Event): Promise<number> {
+        return this.put('/events', event)
+    }
+
+    DeleteEvent(event_id: number): Promise<number> {
+        return this.delete(`/events/${event_id}`)
+    }
+
+    GetAvailableUsers(): Promise<User[]> {
+        return this.get('/events/users')
+    }
+
+    // ── Tables ───────────────────────────────────────────────────────────────
+
+    GetWaiterLayout(event_id: number): Promise<RestaurantLayout> {
+        return this.get(`/events/${event_id}/tables/layout`)
+    }
+
+    SaveLayoutInEvent(layout: RestaurantLayout, event_id: number): Promise<number> {
+        return this.put(`/events/${event_id}/tables/layout`, layout)
+    }
+
+    GetFreeTables(event_id: number): Promise<AvailableTable[]> {
+        return this.get(`/events/${event_id}/tables/free`)
+    }
+
+    GetTablesInEvent(event_id: number): Promise<Table[]> {
+        return this.get(`/events/${event_id}/tables`)
+    }
+
+    InsertMultipleTables(event_id: number, tableNames: string[]): Promise<number> {
+        return this.post(`/events/${event_id}/tables/multiple`, tableNames)
+    }
+
+    InsertDiscount(event_id: number, table_id: number, discount: number): Promise<number> {
+        return this.post(`/events/${event_id}/tables/${table_id}/discount/${discount}`)
+    }
+
+    ChangeTable(table_id: number, master_table_id: number): Promise<number> {
+        return this.put(`/tables/${table_id}/change/${master_table_id}`)
+    }
+
+    GetTable(table_id: string): Promise<Table> {
+        return this.get(`/tables/${table_id}`)
+    }
+
+    CompleteTable(table_id: number): Promise<number> {
+        return this.put(`/tables/${table_id}/complete`)
+    }
+
+    PaySelectedItem(table_id: number, item_ids: number[]): Promise<number> {
+        return this.put(`/tables/${table_id}/payitems`, item_ids)
+    }
+
+    /** A table of the ongoing event layout, or `0` when it doesn't exist. */
+    GetMasterTable(master_id: string): Promise<MasterTable> {
+        return this.get(`/master-tables/${master_id}`)
+    }
+
+    GetLayout(): Promise<RestaurantLayout> {
+        return this.get('/master-tables/layout')
+    }
+
+    SaveLayout(layout: RestaurantLayout): Promise<number> {
+        return this.put('/master-tables/layout', layout)
+    }
+
+    // ── Orders and items ─────────────────────────────────────────────────────
+
+    GetOrdersInEvent(event_id: number, destinations_ids: string): Promise<Order[]> {
+        return this.get(`/orders/${event_id}/[${destinations_ids}]`)
+    }
+
+    CreateOrder(order: Order): Promise<number> {
+        return this.post('/orders', order)
+    }
+
+    CompleteOrder(order_id: number, input: CompleteOrderInput): Promise<number> {
+        return this.put(`/orders/${order_id}/complete`, input)
+    }
+
+    UpdateItem(item: Item, reopenTable?: boolean): Promise<number> {
+        return this.put(`/items${reopenTable ? '/open' : ''}`, item)
+    }
+
+    DeleteItem(item_id: number): Promise<number> {
+        return this.delete(`/items/${item_id}`)
+    }
+
+    // ── Catalogue ────────────────────────────────────────────────────────────
+
+    GetAllMenu(): Promise<Menu[]> {
+        return this.get('/menu')
+    }
+
+    CreateMenu(menu: Menu): Promise<number> {
+        return this.post('/menu', menu)
+    }
+
+    EditMenu(menu: Menu): Promise<number> {
+        return this.put('/menu', menu)
+    }
+
+    DeleteMenu(id: number): Promise<number> {
+        return this.delete(`/menu/${id}`)
+    }
+
+    GetAllMasterItems(menu_id: number): Promise<MasterItem[]> {
+        return this.get(`/master-items/${menu_id}`)
+    }
+
+    GetAvailableMasterItems(menu_id: number): Promise<MasterItem[]> {
+        return this.get(`/master-items/available/${menu_id}`)
+    }
+
+    CreateMasterItems(masterItem: MasterItem): Promise<number> {
+        return this.post('/master-items', masterItem)
+    }
+
+    EditMasterItems(masterItem: MasterItem): Promise<number> {
+        return this.put('/master-items', masterItem)
+    }
+
+    GetTypes(): Promise<Type[]> {
+        return this.get('/types')
+    }
+
+    CreateType(type: Type): Promise<number> {
+        return this.post('/types', type)
+    }
+
+    EditType(type: Type): Promise<number> {
+        return this.put('/types', type)
+    }
+
+    DeleteType(id: number): Promise<number> {
+        return this.delete(`/types/${id}`)
+    }
+
+    GetSubTypes(): Promise<SubType[]> {
+        return this.get('/subtypes')
+    }
+
+    CreateSubType(subType: SubType): Promise<number> {
+        return this.post('/subtypes', subType)
+    }
+
+    EditSubType(subType: SubType): Promise<number> {
+        return this.put('/subtypes', subType)
+    }
+
+    DeleteSubType(id: number): Promise<number> {
+        return this.delete(`/subtypes/${id}`)
+    }
+
+    GetDestinations(): Promise<Destination[]> {
+        return this.get('/destinations')
+    }
+
+    CreateDestination(destination: Destination): Promise<number> {
+        return this.post('/destinations', destination)
+    }
+
+    EditDestination(destination: Destination): Promise<number> {
+        return this.put('/destinations', destination)
+    }
+
+    // ── Users and profile ────────────────────────────────────────────────────
+
+    GetUsers(): Promise<User[]> {
+        return this.get('/users')
+    }
+
+    UpdateUser(user: User): Promise<number> {
+        return this.put('/users', user)
+    }
+
+    UpdateUserRoles(user: User): Promise<number> {
+        return this.put('/users/roles', user)
+    }
+
+    DeleteUser(user_id: number): Promise<number> {
+        return this.delete(`/users/${user_id}`)
+    }
+
+    InviteUser(user: User): Promise<number> {
+        return this.post('/users/invite', user)
+    }
+
+    GetUserAvatar(id: number): Promise<string> {
+        return this.get(`/users-public/avatar/${id}`)
+    }
+
+    EditProfileAvatar(formData: FormData, id: number): Promise<string> {
+        return this.put(`/profile/avatar/${id}`, formData)
+    }
+
+    EditProfileUsername(user: User): Promise<number> {
+        return this.put('/profile/username', user)
+    }
+
+    BroadcastMessage(broadcast: Broadcast): Promise<void> {
+        return this.post('/broadcast', broadcast)
+    }
+
+    GetAudit(page: number, itemsPerPage: number, sortBy: string, sortDir: string): Promise<{ data: Audit[], totalCount: number }> {
+        return this.get('/audit', { page, itemsperpage: itemsPerPage, sortby: sortBy, sortdir: sortDir })
+    }
+
+    // ── Payments ─────────────────────────────────────────────────────────────
+
+    GetPaymentSettings(): Promise<PaymentSetting[]> {
+        return this.get('/payment/settings')
+    }
+
+    SavePaymentSettings(setting: PaymentSetting): Promise<number> {
+        return this.post('/payment/settings', setting)
+    }
+
+    GetAvailablePaymentProviders(): Promise<PaymentSetting[]> {
+        return this.get('/payment/available')
+    }
+
+    /** sumup_checkout: payment link / QR code */
+    CreateSumupCheckoutLink(payload: PaymentPayload): Promise<PaymentTransaction> {
+        return this.post('/payment/checkout/sumup-checkout', payload)
+    }
+
+    /** sumup_pos: returns the `url_scheme` that opens the SumUp app */
+    CreateSumupPosSession(payload: PaymentPayload): Promise<PaymentTransaction & { url_scheme: string }> {
+        return this.post('/payment/checkout/sumup-pos', payload)
+    }
+
+    /** sumup_solo: sends the payment to the Solo terminal */
+    CreateSumupSoloPayment(payload: PaymentPayload): Promise<PaymentTransaction> {
+        return this.post('/payment/checkout/sumup-solo', payload)
+    }
+
+    /** Polled by sumup_checkout and sumup_solo */
+    CheckPaymentStatus(transaction_id: number): Promise<{ status: string }> {
+        return this.get(`/payment/checkout/${transaction_id}/status`)
+    }
+}
+
+const api = new ApiClient()
+
+export default api

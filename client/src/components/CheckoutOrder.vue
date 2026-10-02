@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue"
 import { useDisplay } from 'vuetify'
 import { type Table, type Item, type PaymentSetting, type PaymentTransaction } from "../../../models/src"
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { copy, sortItem } from "@/services/utils"
 import Confirm from "@/components/Confirm.vue"
@@ -16,7 +16,6 @@ const selectedTable = defineModel<Table[]>('selectedTable', { required: true })
 const drawer = defineModel<boolean>('drawer', { required: true })
 
 const { smAndDown } = useDisplay()
-const axios = new Axios()
 const snackbarStore = SnackbarStore()
 const socket = useSocket()
 
@@ -115,7 +114,7 @@ const paymentButtons = computed(() => {
 
 const rollbackItem = async (item: Item) => {
     item.paid = false
-    await axios.UpdateItem(item, activeTable.value.paid)
+    await api.UpdateItem(item, activeTable.value.paid)
     emit('getTables', item.table_id)
 }
 
@@ -125,7 +124,7 @@ const deleteItemConfirm = (item_id: number) => {
 }
 
 const deleteItem = async () => {
-    await axios.DeleteItem(deleteItemId.value)
+    await api.DeleteItem(deleteItemId.value)
     emit('getTables', activeTable.value.table_id || activeTable.value.id)
     confirm.value = false
 }
@@ -133,13 +132,13 @@ const deleteItem = async () => {
 const handleDiscount = async () => {
     if (discount.value && realPaid.value) {
         const discountAmount = currentTotalToPay.value - realPaid.value
-        await axios.InsertDiscount(props.event.id, activeTable.value.table_id || activeTable.value.id, discountAmount)
+        await api.InsertDiscount(props.event.id, activeTable.value.table_id || activeTable.value.id, discountAmount)
     }
 }
 
 const completeTable = async () => {
     await handleDiscount()
-    await axios.CompleteTable(activeTable.value.table_id || activeTable.value.id)
+    await api.CompleteTable(activeTable.value.table_id || activeTable.value.id)
     emit('getTables', 0)
     snackbarStore.show("Tavolo chiuso", 3000, 'bottom', 'success')
     dialogPay.value = false
@@ -147,7 +146,7 @@ const completeTable = async () => {
 
 const paySelectedItem = async () => {
     await handleDiscount()
-    await axios.PaySelectedItem(activeTable.value.table_id || activeTable.value.id, itemToBePaid.value)
+    await api.PaySelectedItem(activeTable.value.table_id || activeTable.value.id, itemToBePaid.value)
     emit('getTables', activeTable.value.table_id || activeTable.value.id)
     itemToBePaid.value = []
     dialogPay.value = false
@@ -207,13 +206,13 @@ async function startElectronicPayment() {
 
         if (selectedProvider.value === 'sumup_checkout') {
             // ── Link / QR code ───────────────────────────────────────────────
-            activeTransaction.value = await axios.CreateSumupCheckoutLink(payload)
+            activeTransaction.value = await api.CreateSumupCheckoutLink(payload)
             // Polling ogni 5 s
             pollingInterval.value = setInterval(pollStatus, 5000)
 
         } else if (selectedProvider.value === 'sumup_pos') {
             // ── App SumUp su tablet ──────────────────────────────────────────
-            const result = await axios.CreateSumupPosSession(payload)
+            const result = await api.CreateSumupPosSession(payload)
             activeTransaction.value = result
             posUrlScheme.value = result.url_scheme
             // Apri l'app SumUp automaticamente
@@ -222,7 +221,7 @@ async function startElectronicPayment() {
 
         } else if (selectedProvider.value === 'sumup_solo') {
             // ── Terminale Solo ───────────────────────────────────────────────
-            activeTransaction.value = await axios.CreateSumupSoloPayment(payload)
+            activeTransaction.value = await api.CreateSumupSoloPayment(payload)
             // Polling ogni 5 s
             pollingInterval.value = setInterval(pollStatus, 5000)
         }
@@ -236,7 +235,7 @@ async function pollStatus() {
     if (!activeTransaction.value?.id) return
     paymentStatus.value = 'checking'
     try {
-        const result = await axios.CheckPaymentStatus(activeTransaction.value.id)
+        const result = await api.CheckPaymentStatus(activeTransaction.value.id)
         if (result.status === 'PAID') {
             onPaymentSuccess()
         } else if (result.status === 'FAILED') {
@@ -292,7 +291,7 @@ function handlePaymentCompleted(data: { transaction_id: number; table_id: number
 onMounted(async () => {
     socket.on('payment-completed', handlePaymentCompleted)
     try {
-        availableProviders.value = await axios.GetAvailablePaymentProviders()
+        availableProviders.value = await api.GetAvailablePaymentProviders()
     } catch {
         // Il modulo di pagamento potrebbe non essere configurato
     }
