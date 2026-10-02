@@ -18,7 +18,7 @@ const sharp = createRequire(join(root, 'server', 'package.json'))('sharp')
 const K = { cream: '#F5ECDA', ink: '#2A2522', blue: '#22427A', teal: '#3E8C8A', ochre: '#D29A3C', coral: '#CF6F55', skin: '#EDD7B9', dark: '#26211F' }
 const VARIANTS = {
     light: { disc: K.cream, ink: K.ink },
-    dark: { disc: '#1E2127', ink: '#EFE5D2' },
+    dark: { disc: '#142447', ink: '#EFE5D2' },
 }
 
 const n = v => +v.toFixed(1)

@@ -3,7 +3,7 @@ import type { ThemeDefinition } from 'vuetify'
 /**
  * Palette Art Déco, la stessa delle illustrazioni del logo: carta crema e inchiostro,
  * blu notte come colore principale, verde acqua, ocra e corallo per stati e accenti.
- * Il tema scuro usa il blu polvere su antracite.
+ * Il tema scuro è in blu notte, come il sito del matrimonio, con il blu polvere come colore principale.
  */
 export const light: ThemeDefinition = {
     dark: false,
@@ -34,12 +34,12 @@ export const light: ThemeDefinition = {
 export const dark: ThemeDefinition = {
     dark: true,
     colors: {
-        background: '#16181D',
-        surface: '#1E2127',
-        'surface-bright': '#2A2E36',
-        'surface-light': '#262A32',
+        background: '#0E1A33',
+        surface: '#142447',
+        'surface-bright': '#1D3260',
+        'surface-light': '#182C55',
         'surface-variant': '#EFE5D2',
-        'on-surface-variant': '#16181D',
+        'on-surface-variant': '#0E1A33',
         'on-background': '#EFE5D2',
         'on-surface': '#EFE5D2',
         primary: '#8AA8DA',
