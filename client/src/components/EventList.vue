@@ -10,7 +10,7 @@ const emit = defineEmits(['reload', 'editevent'])
 const props = defineProps(['ongoing'])
 
 
-const events = defineModel<Event[]>({ default: [] })
+const events = defineModel<Event[]>({ default: () => [] })
 
 const confirmCloseEvent = ref<boolean>(false)
 const confirmDeleteEvent = ref<boolean>(false)
