@@ -56,6 +56,8 @@ class Database extends Queryable {
             connectionLimit: 50,
             waitForConnections: true,
             queueLimit: 0,
+            // Prices are DECIMAL(10,2): return them (and their sums) as numbers, not strings
+            decimalNumbers: true,
         })
         super(pool)
         this.pool = pool

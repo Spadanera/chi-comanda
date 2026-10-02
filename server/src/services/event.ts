@@ -65,9 +65,10 @@ class EventService {
             LEFT JOIN (
                 SELECT
                     event_id,
-                    SUM(CASE WHEN type != 'Sconto' THEN price ELSE 0 END) AS revenue,
+                    -- Off-menu items have no type: IFNULL keeps them in the revenue
+                    SUM(CASE WHEN IFNULL(type, '') != 'Sconto' THEN price ELSE 0 END) AS revenue,
                     SUM(CASE WHEN type = 'Sconto' THEN price ELSE 0 END) AS discount,
-                    SUM(CASE WHEN type != 'Sconto' AND paid = 1 THEN price ELSE 0 END) AS currentPaid
+                    SUM(CASE WHEN IFNULL(type, '') != 'Sconto' AND paid = 1 THEN price ELSE 0 END) AS currentPaid
                 FROM ${items}
                 GROUP BY event_id
             ) i_stats ON i_stats.event_id = e.id

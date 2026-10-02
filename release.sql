@@ -43,3 +43,10 @@ SET @sql := IF(@exists = 0, "ALTER TABLE `payment_transactions` ADD COLUMN `mode
 PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
+
+-- Prezzi in DECIMAL(10,2) invece di DOUBLE (v1.19): somme e sconti senza errori di arrotondamento.
+-- MODIFY si può rieseguire; i valori esistenti vengono arrotondati al centesimo.
+ALTER TABLE `master_items` MODIFY `price` DECIMAL(10,2) NULL;
+ALTER TABLE `items` MODIFY `price` DECIMAL(10,2) NULL;
+ALTER TABLE `items_history` MODIFY `price` DECIMAL(10,2) NULL;
+ALTER TABLE `events` MODIFY `minimumConsumptionPrice` DECIMAL(10,2) NULL;

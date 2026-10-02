@@ -96,7 +96,7 @@ CREATE TABLE `events` (
   `date` date,
   `status` VARCHAR(255) NULL,
   `menu_id` INT NULL,
-  `minimumConsumptionPrice` DOUBLE NULL
+  `minimumConsumptionPrice` DECIMAL(10,2) NULL
 );
 
 CREATE TABLE `menu` (
@@ -136,7 +136,7 @@ CREATE TABLE `destinations` (
 CREATE TABLE `master_items` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `name` varchar(255),
-  `price` double,
+  `price` DECIMAL(10,2),
   `destination_id` integer,
   `available` bool,
   `status` varchar(255),
@@ -155,7 +155,7 @@ CREATE TABLE `items` (
   `sub_type_id` VARCHAR(255) NULL,
   `icon` VARCHAR(255) NULL,
   `name` VARCHAR(255),
-  `price` DOUBLE,
+  `price` DECIMAL(10,2),
   `note` varchar(255),
   `done` bool,
   `paid` bool,
@@ -176,7 +176,7 @@ CREATE TABLE `items_history` (
   `sub_type_id` VARCHAR(255) NULL,
   `icon` VARCHAR(255) NULL,
   `name` VARCHAR(255),
-  `price` DOUBLE,
+  `price` DECIMAL(10,2),
   `note` varchar(255),
   `done` bool,
   `paid` bool,
