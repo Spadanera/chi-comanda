@@ -1,11 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import request from 'supertest'
-import { closeApp, loadApp, loginAs, rawConnection, resetDatabase } from './helpers'
+import { closeApp, loadApp, loginAs, openEvent, openTable, rawConnection, resetDatabase, RoleName } from './helpers'
 
 let app: any
+let users: Record<RoleName, number>
 
 beforeAll(async () => {
-    await resetDatabase()
+    users = await resetDatabase()
     app = await loadApp()
 })
 
@@ -48,13 +49,13 @@ describe('invitations and password reset', () => {
     })
 
     it('resets a password with a fresh token and rejects expired ones', async () => {
-        await request(app).post('/public/askreset').send({ email: 'waiter@test.local' }).expect(200)
-        const { token } = await queryOne('SELECT token FROM reset WHERE email = ? ORDER BY id DESC', ['waiter@test.local'])
+        await request(app).post('/public/askreset').send({ email: 'client@test.local' }).expect(200)
+        const { token } = await queryOne('SELECT token FROM reset WHERE email = ? ORDER BY id DESC', ['client@test.local'])
         await request(app).post('/public/reset').send({ token, password: 'Changed123!' }).expect(200)
-        expect((await request(app).post('/api/login').send({ email: 'waiter@test.local', password: 'Changed123!' })).status).toBe(200)
+        expect((await request(app).post('/api/login').send({ email: 'client@test.local', password: 'Changed123!' })).status).toBe(200)
 
         const conn = await rawConnection()
-        await conn.query(`INSERT INTO reset (email, token, creation_date) VALUES ('waiter@test.local', 'old-token', NOW() - INTERVAL 2 DAY)`)
+        await conn.query(`INSERT INTO reset (email, token, creation_date) VALUES ('client@test.local', 'old-token', NOW() - INTERVAL 2 DAY)`)
         await conn.end()
         const expired = await request(app).post('/public/reset').send({ token: 'old-token', password: 'Nope12345!' })
         expect(expired.status).toBe(400)
@@ -79,9 +80,11 @@ describe('payments', () => {
     })
 
     it('creates a POS session and only accepts a correctly signed callback', async () => {
+        const eventId = await openEvent(app, users)
+        const table = await openTable(app, eventId)
         const checkout = await loginAs(app, 'checkout')
         const session = await checkout.post('/api/payment/checkout/sumup-pos').send({
-            table_id: 1, event_id: 1, amount: 12.5, item_ids: [1, 2],
+            table_id: table.tableId, event_id: eventId, amount: table.total, item_ids: [],
         })
         expect(session.status).toBe(200)
         expect(session.body.url_scheme).toMatch(/^sumupmerchant:\/\/pay\?/)

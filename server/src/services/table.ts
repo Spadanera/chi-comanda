@@ -1,4 +1,4 @@
-import db, { placeholders } from '../db'
+import db, { placeholders, Queryable } from '../db'
 import { MasterTable, RestaurantLayout, Room, Table } from '../../../models/src'
 import { notify } from '../socket'
 import { tableItemsJson, userJson } from '../db/sql'
@@ -152,26 +152,34 @@ class TableService {
     }
 
     /** Adds a discount as a negative, already paid item. */
-    insertDiscount(eventId: number, tableId: number, discount: number): Promise<number> {
-        return db.insert(`
+    insertDiscount(eventId: number, tableId: number, discount: number, q: Queryable = db): Promise<number> {
+        return q.insert(`
             INSERT INTO items (name, event_id, table_id, type, sub_type, price, done, paid, destination_id, icon)
             VALUES ('Sconto', ?, ?, 'Sconto', 'Sconto', ?, TRUE, TRUE, 1, 'mdi-cart-percent')`,
             [eventId, tableId, -discount])
     }
 
-    paySelectedItems(tableId: number, itemIds: number[]): Promise<number> {
+    paySelectedItems(tableId: number, itemIds: number[], q: Queryable = db): Promise<number> {
         if (!itemIds.length) return Promise.resolve(0)
-        return db.execute(`UPDATE items SET paid = TRUE WHERE table_id = ? AND id IN (${placeholders(itemIds)})`, [tableId, ...itemIds])
+        return q.execute(`UPDATE items SET paid = TRUE WHERE table_id = ? AND id IN (${placeholders(itemIds)})`, [tableId, ...itemIds])
+    }
+
+    /** Unpaid items of a table, with their price. */
+    unpaidItems(tableId: number, q: Queryable = db): Promise<{ id: number, price: number }[]> {
+        return q.query('SELECT id, price FROM items WHERE table_id = ? AND IFNULL(paid, FALSE) = FALSE', [tableId])
+    }
+
+    /** Marks everything as paid and frees the layout position, inside the caller's transaction. */
+    async closeWith(q: Queryable, tableId: number): Promise<number> {
+        await q.execute('UPDATE items SET paid = TRUE WHERE table_id = ?', [tableId])
+        const affected = await q.execute(`UPDATE tables SET status = 'CLOSED', paid = TRUE WHERE id = ?`, [tableId])
+        await q.execute('DELETE FROM table_master_table WHERE table_id = ?', [tableId])
+        return affected
     }
 
     /** Marks everything as paid and frees the layout position. */
     async close(tableId: number): Promise<number> {
-        const result = await db.transaction(async tx => {
-            await tx.execute('UPDATE items SET paid = TRUE WHERE table_id = ?', [tableId])
-            const affected = await tx.execute(`UPDATE tables SET status = 'CLOSED', paid = TRUE WHERE id = ?`, [tableId])
-            await tx.execute('DELETE FROM table_master_table WHERE table_id = ?', [tableId])
-            return affected
-        })
+        const result = await db.transaction(tx => this.closeWith(tx, tableId))
         notify.tablesChanged(['waiter', 'table', 'checkout'])
         return result
     }

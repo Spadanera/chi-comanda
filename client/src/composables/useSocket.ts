@@ -44,9 +44,11 @@ function closeSocket() {
  * the next retry of the exponential backoff.
  */
 function reconnectNow() {
-  if (_socket && !_socket.connected && document.visibilityState === 'visible') {
-    _socket.connect()
-  }
+  // Only after a real drop: calling connect() while the first connection is still opening
+  // (pageshow fires right at load) sends a second CONNECT and the server closes the session
+  if (!_socket || _socket.connected || socketOnline.value || document.visibilityState !== 'visible') return
+  // disconnect() stops the pending backoff timer, connect() retries right away
+  _socket.disconnect().connect()
 }
 if (typeof window !== 'undefined') {
   document.addEventListener('visibilitychange', reconnectNow)
