@@ -67,6 +67,10 @@ export function initializeSocket(httpServer: HttpServer, sessionMiddleware: Requ
             if (joined) socket.join(room)
             if (typeof ack === 'function') ack(joined)
         })
+        // Liveness check sent by clients when the screen turns back on
+        socket.on('alive', (ack?: unknown) => {
+            if (typeof ack === 'function') ack()
+        })
         socket.on('leave', (room: unknown) => {
             if (isRoom(room)) socket.leave(room)
         })
