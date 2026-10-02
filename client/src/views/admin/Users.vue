@@ -183,7 +183,7 @@ onMounted(async () => {
             <v-chip :color="getColorByRole(role)" v-for="role in user.roles">{{ formatedRole(role) }}</v-chip>
           </td>
           <td>
-            <v-switch v-if="['ACTIVE', 'BLOCKED'].includes(user.status)" color="green"
+            <v-switch v-if="['ACTIVE', 'BLOCKED'].includes(user.status)" color="success"
               :disabled="user.roles?.includes(Roles.superuser)" v-model:model-value="user.statusSwitch"
               @click.stop="updateUserStatusConfirm(user)"></v-switch>
             <span v-else>Invitato</span>
@@ -224,14 +224,14 @@ onMounted(async () => {
             </v-row>
             <!-- <v-row>
               <v-col>
-                <v-switch color="green" label="Cliente Fidato" v-model="fidelityClient" :rules="[]"></v-switch>
+                <v-switch color="success" label="Cliente Fidato" v-model="fidelityClient" :rules="[]"></v-switch>
               </v-col>
             </v-row> -->
           </v-form>
         </v-card-text>
         <v-card-actions>
           <v-btn variant="plain" @click="dialog = false">ANNULLA</v-btn>
-          <v-btn color="red" v-if="selectedUser.id && !selectedUser.roles?.includes(Roles.superuser)" variant="plain"
+          <v-btn color="error" v-if="selectedUser.id && !selectedUser.roles?.includes(Roles.superuser)" variant="plain"
             @click="deleteConfirm()">ELIMINA</v-btn>
           <v-btn v-if="selectedUser.id" variant="plain" @click="updateUserRole()">AGGIORNA RUOLI</v-btn>
           <v-btn v-else variant="plain" @click="inviteUser()">INVITA</v-btn>

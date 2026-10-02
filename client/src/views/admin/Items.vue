@@ -120,7 +120,7 @@ onMounted(async () => {
             <td>{{ item.price }} €</td>
             <td>{{ item.destination }}</td>
             <td>
-              <v-switch color="green" :false-value="0" :true-value="1" v-model:model-value="item.available"
+              <v-switch color="success" :false-value="0" :true-value="1" v-model:model-value="item.available"
                 @change.stop="updateTableItem(item)"></v-switch>
             </td>
           </tr>
@@ -145,7 +145,7 @@ onMounted(async () => {
                     append-inner-icon="mdi-currency-eur"></v-text-field>
                 </v-col>
                 <v-col>
-                  <v-switch color="green" label="Disponibile" :false-value="0" :true-value="1"
+                  <v-switch color="success" label="Disponibile" :false-value="0" :true-value="1"
                     v-model:model-value="selectedItem.available"></v-switch>
                 </v-col>
                 <v-col cols="12">
@@ -169,7 +169,7 @@ onMounted(async () => {
           </v-card-text>
           <v-card-actions>
             <v-btn variant="plain" @click="dialog = false">ANNULLA</v-btn>
-            <v-btn color="red" v-if="selectedItem.id" variant="plain" @click="confirm = true">ELIMINA</v-btn>
+            <v-btn color="error" v-if="selectedItem.id" variant="plain" @click="confirm = true">ELIMINA</v-btn>
             <v-btn v-if="selectedItem.id" variant="plain" @click="updateItem()">AGGIORNA</v-btn>
             <v-btn v-else variant="plain" @click="createItem">CONFERMA</v-btn>
           </v-card-actions>

@@ -46,7 +46,7 @@ export function actionEmail(opts: { title: string, intro: string, action: string
         <a href="${opts.url}" class="button">${opts.buttonLabel}</a>
         <p>Questo link scadrà tra 24 ore, quindi assicurati di completare la procedura entro tale data.</p>
         <p>A presto su Chi Comanda!</p>
-        <img width="200px" src="https://chicomanda.com/assets/chicomanda-XznG4Dz3.png" alt="Chi Comanda"/>
+        <img width="160" height="160" src="${config.baseUrl}/logo-email.png" alt="Chi Comanda"/>
     </div>
 </body>
 </html>`

@@ -95,12 +95,36 @@ export const ZoomStore = defineStore('zoom', {
     },
 })
 
+export type ThemePreference = 'light' | 'dark' | 'auto'
+
+const THEME_PREFERENCES: ThemePreference[] = ['light', 'dark', 'auto']
+const darkQuery = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : undefined
+
+function readThemePreference(): ThemePreference {
+    const stored = readStorage('theme') as ThemePreference | null
+    return stored && THEME_PREFERENCES.includes(stored) ? stored : 'auto'
+}
+
+/** Tema scelto dall'utente: chiaro, scuro o automatico (segue il dispositivo). */
 export const ThemeStore = defineStore('theme', {
-    state: () => ({ theme: readStorage('theme') || 'light' }),
+    state: () => ({
+        preference: readThemePreference(),
+        systemDark: darkQuery?.matches ?? false,
+    }),
+    getters: {
+        /** Tema effettivo da passare a Vuetify. */
+        theme: (state): 'light' | 'dark' => state.preference === 'auto'
+            ? (state.systemDark ? 'dark' : 'light')
+            : state.preference,
+    },
     actions: {
-        toggle() {
-            this.theme = this.theme === 'light' ? 'dark' : 'light'
-            writeStorage('theme', this.theme)
+        setPreference(preference: ThemePreference) {
+            this.preference = preference
+            writeStorage('theme', preference)
+        },
+        /** Aggiorna il tema quando il dispositivo passa da chiaro a scuro (solo in automatico). */
+        watchSystem() {
+            darkQuery?.addEventListener('change', event => { this.systemDark = event.matches })
         },
     },
 })

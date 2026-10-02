@@ -7,15 +7,8 @@ a:visited {
     color: inherit
 }
 
-.waiter-foooter {
-    position: fixed;
-    background-color: red;
-    bottom: 0;
-    width: 100%;
-}
-
 .text-danger {
-    color: red !important;
+    color: rgb(var(--v-theme-error)) !important;
 }
 
 .inner-elevation {

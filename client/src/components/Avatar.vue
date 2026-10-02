@@ -16,7 +16,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <v-avatar :color="user.avatar ? 'default' : 'red'" :size="size" :start="start" v-if="user.username">
+    <v-avatar :color="user.avatar ? 'default' : 'primary'" :size="size" :start="start" v-if="user.username">
         <v-img v-if="user.avatar" :alt="user.username" :src="user.avatar"></v-img>
         <span v-else-if="user.username && alt">{{ user.username[0] }}</span>
     </v-avatar>

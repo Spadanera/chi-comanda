@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import api from '@/services/client'
+import Logo from '@/components/Logo.vue'
 import { requiredRule, passwordMatchRule } from '@/services/utils';
 
 const props = defineProps(['token'])
@@ -45,7 +46,7 @@ async function accept() {
         <v-col sm="8" cols="12" lg="4" xl="4">
           <v-card>
             <v-card-text style="text-align: center;">
-              <img alt="Chi Comanda" class="logo" src="@/assets/chicomanda.png" width="240" height="240" />
+              <Logo></Logo>
 
               <p class="text-body-2 text-medium-emphasis mb-4">
                 Scegli come configurare il tuo account

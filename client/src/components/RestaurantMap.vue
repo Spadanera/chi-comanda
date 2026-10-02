@@ -171,7 +171,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="viewport-scroller bg-grey-lighten-3" style="max-height: calc(100vh - 112px)">
+  <div class="viewport-scroller bg-surface-light" style="max-height: calc(100vh - 112px)">
     <div :class="{ 'canvas-centering-wrapper': smAndUp }" style="width: 100%">
       <div v-if="room && room.id > 0" class="room-scaler" :style="{
         width: (room.width * 100 * zoom) + 'px',
@@ -197,7 +197,7 @@ onUnmounted(() => {
               left: (draggingState.activeTableId === table.id ? draggingState.currentX : table.x) + 'px',
               width: table.width + 'px',
               height: table.height + 'px',
-              border: highlightSelection && table.table_id === props.selectedTableId ? '1px solid red' : ''
+              border: highlightSelection && table.table_id === props.selectedTableId ? '2px solid rgb(var(--v-theme-error))' : ''
             }" @mousedown.stop="startDrag($event, table)" @touchstart.stop="startTouchDrag($event, table)"
             @click.stop="handleTableClick(table)">
             <div class="text-center unselectable"
@@ -217,7 +217,7 @@ onUnmounted(() => {
           <v-row justify="center">
             <v-col v-for="table in activeTables" cols="12" sm="6" md="4" lg="3" xl="2">
               <v-card :style="{
-                border: highlightSelection && table.table_id === props.selectedTableId ? '1px solid red' : ''
+                border: highlightSelection && table.table_id === props.selectedTableId ? '2px solid rgb(var(--v-theme-error))' : ''
               }" style="padding: 10px; text-align: center" @click.stop="handleTableClick(table)">
                 <v-card-title>
                   {{ table.table_name }}
@@ -267,10 +267,10 @@ onUnmounted(() => {
   overflow: hidden;
   transform-origin: 0 0;
   will-change: transform;
-  background-color: #ffffff;
+  background-color: rgb(var(--v-theme-surface));
   background-image:
-    linear-gradient(#e5e5e5 1px, transparent 1px),
-    linear-gradient(90deg, #e5e5e5 1px, transparent 1px);
+    linear-gradient(rgba(var(--v-border-color), var(--v-border-opacity)) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--v-border-color), var(--v-border-opacity)) 1px, transparent 1px);
   background-size: 50px 50px;
   background-repeat: repeat !important;
 }
@@ -282,8 +282,8 @@ onUnmounted(() => {
   right: 0;
   bottom: 0;
   background-image:
-    linear-gradient(#e0e0e0 1px, transparent 1px),
-    linear-gradient(90deg, #e0e0e0 1px, transparent 1px);
+    linear-gradient(rgba(var(--v-border-color), var(--v-border-opacity)) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--v-border-color), var(--v-border-opacity)) 1px, transparent 1px);
   background-size: 50px 50px;
   opacity: 0.5;
   pointer-events: none
@@ -291,7 +291,8 @@ onUnmounted(() => {
 
 .table-item {
   position: absolute;
-  background-color: #fff;
+  background-color: rgb(var(--v-theme-surface-bright));
+  color: rgb(var(--v-theme-on-surface));
   user-select: none;
   transition: box-shadow 0.1s;
   touch-action: none;
@@ -304,8 +305,8 @@ onUnmounted(() => {
 }
 
 .in-use {
-  border: 2px solid #007bff;
-  box-shadow: inset 0 0 10px rgba(0, 123, 255, 0.2);
+  border: 2px solid rgb(var(--v-theme-primary));
+  box-shadow: inset 0 0 10px rgba(var(--v-theme-primary), 0.2);
 }
 
 .table-item.cursor-grab:active {
@@ -313,8 +314,8 @@ onUnmounted(() => {
 }
 
 .ring-active {
-  box-shadow: 0 0 0 3px #1976D2 !important;
-  border-color: #1565C0
+  box-shadow: 0 0 0 3px rgb(var(--v-theme-primary)) !important;
+  border-color: rgb(var(--v-theme-primary))
 }
 
 .unselectable {
@@ -324,15 +325,15 @@ onUnmounted(() => {
 
 @keyframes pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.4)
+    box-shadow: 0 0 0 0 rgba(var(--v-theme-primary), 0.4)
   }
 
   70% {
-    box-shadow: 0 0 0 10px rgba(33, 150, 243, 0)
+    box-shadow: 0 0 0 10px rgba(var(--v-theme-primary), 0)
   }
 
   100% {
-    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0)
+    box-shadow: 0 0 0 0 rgba(var(--v-theme-primary), 0)
   }
 }
 </style>

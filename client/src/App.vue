@@ -6,6 +6,9 @@ import router from '@/router'
 import { UserStore, SnackbarStore, ProgressStore, ThemeStore } from '@/stores'
 import { type User, type Event } from '../../models/src'
 import Avatar from './components/Avatar.vue'
+import ThemeSwitch from './components/ThemeSwitch.vue'
+import logoLight from '@/assets/logo/maitre-light.svg'
+import logoDark from '@/assets/logo/maitre-dark.svg'
 import { requireRuleArray, requiredRule } from './services/utils'
 import { socketConnected, destroySocket, onSocketCreated, joinRoom } from './composables/useSocket'
 import { useBroadcast } from './composables/useBroadcast'
@@ -95,6 +98,7 @@ onBeforeMount(() => {
 })
 
 onMounted(async () => {
+  themeStore.watchSystem()
   await userStore.checkAuthentication()
   user.value = userStore.user
   if (user.value?.id) {
@@ -115,16 +119,14 @@ onBeforeUnmount(() => {
       <v-app-bar>
         <template v-slot:prepend>
           <RouterLink to="/">
-            <img alt="Chi Comanda" v-if="themeStore.theme === 'light'" class="logo" src="@/assets/chicomanda.png"
-              style="margin-left: 8px; margin-top: 7px;" width="40" height="40" />
-            <img alt="Chi Comanda" v-else class="logo" src="@/assets/chicomanda-invert.png"
+            <img alt="Chi Comanda" :src="themeStore.theme === 'dark' ? logoDark : logoLight"
               style="margin-left: 8px; margin-top: 7px;" width="40" height="40" />
           </RouterLink>
         </template>
         <v-app-bar-title>
           <RouterLink to="/" class="d-flex flex-column"
             style="text-decoration: none; color: inherit; line-height: 1.1;">
-            <span>CHI COMANDA</span>
+            <span class="brand-title">CHI COMANDA</span>
             <span v-if="routeTitle" class="text-caption font-weight-light"
               style="font-size: 0.75rem !important; opacity: 0.8; text-transform: uppercase;">
               {{ routeTitle }}
@@ -150,14 +152,7 @@ onBeforeUnmount(() => {
               </v-list-item-title>
             </v-list-item>
             <v-list-item>
-              <v-list-item-title>
-                <v-btn @click="themeStore.toggle" variant="text">
-                  INVERTI TEMA
-                  <template v-slot:prepend>
-                    <v-icon>{{ themeStore.theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
-                  </template>
-                </v-btn>
-              </v-list-item-title>
+              <ThemeSwitch labels @click.stop></ThemeSwitch>
             </v-list-item>
             <v-list-item>
               <v-list-item-title>
@@ -187,8 +182,7 @@ onBeforeUnmount(() => {
           <RouterLink to="/landing" style="text-decoration: none;">
             <v-btn variant="text" slim>Info</v-btn>
           </RouterLink>
-          <v-btn :prepend-icon="themeStore.theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'"
-            text="Inverti tema" slim @click="themeStore.toggle"></v-btn>
+          <ThemeSwitch class="mr-2"></ThemeSwitch>
         </template>
       </v-app-bar>
       <v-main>
@@ -284,4 +278,9 @@ onBeforeUnmount(() => {
   </v-responsive>
 </template>
 
-<style scoped></style>
+<style scoped>
+.brand-title {
+  font-family: 'Federo', 'Futura', 'Century Gothic', sans-serif;
+  letter-spacing: .14em;
+}
+</style>
