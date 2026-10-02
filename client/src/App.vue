@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import api from '@/services/client'
-import { ref, onBeforeMount, onBeforeUnmount, onMounted, computed } from 'vue'
+import { ref, onBeforeMount, onBeforeUnmount, onMounted, computed, watch } from 'vue'
 import router from '@/router'
 import { UserStore, SnackbarStore, ProgressStore, ThemeStore } from '@/stores'
 import { type User, type Event } from '../../models/src'
@@ -10,7 +10,7 @@ import ThemeSwitch from './components/ThemeSwitch.vue'
 import logoLight from '@/assets/logo/maitre-light.svg'
 import logoDark from '@/assets/logo/maitre-dark.svg'
 import { requireRuleArray, requiredRule } from './services/utils'
-import { socketConnected, destroySocket, onSocketCreated, joinRoom } from './composables/useSocket'
+import { socketConnected, socketOnline, destroySocket, onSocketCreated, joinRoom } from './composables/useSocket'
 import { useBroadcast } from './composables/useBroadcast'
 
 const route = useRoute()
@@ -78,13 +78,27 @@ async function getOnGoingEvent() {
 
 let unregisterSocketSetup: (() => void) | undefined
 
+// Brief drops (screen off, phone in the pocket) are restored silently: tell the user only when
+// the real-time connection stays down, and offer a reload only after a long outage.
+const offline = ref(false)
+const longOffline = ref(false)
+let offlineTimers: number[] = []
+watch(socketOnline, online => {
+  offlineTimers.forEach(clearTimeout)
+  offlineTimers = []
+  offline.value = false
+  longOffline.value = false
+  if (!online) {
+    offlineTimers = [
+      window.setTimeout(() => { offline.value = true }, 6000),
+      window.setTimeout(() => { longOffline.value = true }, 30000),
+    ]
+  }
+})
+
 onBeforeMount(() => {
   // Registered again on the new socket opened after login / logout
   unregisterSocketSetup = onSocketCreated(socket => {
-    socket.on('connect_error', () => {
-      snackbarStore.show('Errore nella connessione, prova a ricaricare la pagina', -1, 'top', 'error', true)
-      socket.emit('end')
-    })
     socket.on('reload', async () => {
       if (user.value?.id) {
         getOnGoingEvent()
@@ -189,6 +203,13 @@ onBeforeUnmount(() => {
         <RouterView v-if="socketConnected || route.name === 'Landing'" v-model="user" @login="login" @reload="reload" :event="event" />
 
       </v-main>
+      <v-snackbar :model-value="offline && userStore.isLoggedIn" location="top" color="warning" :timeout="-1">
+        <v-progress-circular v-if="!longOffline" indeterminate size="16" width="2" class="mr-2"></v-progress-circular>
+        {{ longOffline ? 'Aggiornamenti in tempo reale non disponibili' : 'Connessione persa, mi sto ricollegando…' }}
+        <template v-slot:actions v-if="longOffline">
+          <v-btn variant="text" @click="reloadPage">Ricarica</v-btn>
+        </template>
+      </v-snackbar>
       <v-snackbar v-model="snackbarStore.enable" :timeout="snackbarStore.timeout" :location="snackbarStore.location"
         :color="snackbarStore.color">
         {{ snackbarStore.text }}

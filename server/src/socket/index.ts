@@ -62,7 +62,6 @@ export function initializeSocket(httpServer: HttpServer, sessionMiddleware: Requ
     io.on('connection', socket => {
         const sessionId = (socket.request as SessionRequest).session?.id
         if (sessionId) socket.join(sessionRoom(sessionId))
-        socket.on('end', () => socket.disconnect())
         socket.on('join', async (room: unknown, ack?: unknown) => {
             const joined = isRoom(room) && canJoin(await sessionUser(socket), room)
             if (joined) socket.join(room)
@@ -73,6 +72,11 @@ export function initializeSocket(httpServer: HttpServer, sessionMiddleware: Requ
         })
     })
     return io
+}
+
+/** Disconnects every client, e.g. on shutdown: they reconnect on their own to the next instance. */
+export function disconnectAll() {
+    io?.disconnectSockets(true)
 }
 
 /** Disconnects every socket opened with the given session (e.g. after logout). */
