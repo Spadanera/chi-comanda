@@ -186,7 +186,7 @@ defineExpose({
     <v-container fluid class="bg-grey-lighten-4 pa-0" style="height: calc(100vh - 64px) !important">
         <v-row no-gutters class="fill-height">
             <v-col cols="12" class="d-flex flex-column relative overflow-hidden fill-height">
-                <v-toolbar density="compact" color="white" class="border-b pr-4" style="z-index: 10">
+                <v-toolbar density="compact" color="surface" class="border-b pr-4" style="z-index: 10">
                     <v-btn-group class="ml-1" variant="text" v-if="props.editRoom">
                         <v-btn prepend-icon="mdi-plus" @click="openRoomDialog()">Stanza</v-btn>
                     </v-btn-group>
@@ -227,7 +227,7 @@ defineExpose({
 
         <Confirm v-model="deleteConfirmDialog">
             <template v-slot:action>
-                <v-btn text="Conferma" color="red" variant="plain" @click="deleteRoom"></v-btn>
+                <v-btn text="Conferma" color="error" variant="plain" @click="deleteRoom"></v-btn>
             </template>
         </Confirm>
     </v-container>

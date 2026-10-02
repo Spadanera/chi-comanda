@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import Logo from '@/components/Logo.vue'
-import { ThemeStore } from '@/stores'
 
-const themeStore = ThemeStore()
 
 const features = [
   {

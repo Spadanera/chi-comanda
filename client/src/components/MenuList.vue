@@ -71,7 +71,7 @@ onMounted(async () => {
                         Sono presenti eventi attivi o pianificati collegati a questo menu
                     </v-card-subtitle>
                     <v-card-actions>
-                        <v-btn @click="deleteMenuConfirm(m)" :readonly="m.canDelete > 0" :disabled="m.canDelete > 0" color="red"
+                        <v-btn @click="deleteMenuConfirm(m)" :readonly="m.canDelete > 0" :disabled="m.canDelete > 0" color="error"
                             text="ELIMINA" variant="plain"></v-btn>
                         <v-btn text="MODIFICA" @click="openDialog(m)" variant="plain"></v-btn>
                         <RouterLink :to="`items/${m.id}/${m.name}`">
@@ -97,7 +97,7 @@ onMounted(async () => {
                     <v-text-field label="Nome" :rules="[requiredRule]" v-model="selectedMenu.name"></v-text-field>
                     <v-row v-if="!selectedMenu.id">
                         <v-col>
-                            <v-switch color="green" label="Copia da un altro menu" v-model="copyFromOtherMenu"
+                            <v-switch color="success" label="Copia da un altro menu" v-model="copyFromOtherMenu"
                                 :rules="[]"></v-switch>
                         </v-col>
                     </v-row>

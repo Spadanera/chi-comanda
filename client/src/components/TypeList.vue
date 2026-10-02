@@ -168,7 +168,7 @@ onMounted(async () => {
             </v-card-text>
             <v-card-actions>
                 <v-btn variant="plain" @click="dialogType = false">ANNULLA</v-btn>
-                <v-btn v-if="selectedType.id && selectedType.numProducts === 0" variant="plain" @click="deleteTypeConfirm" color="red">ELIMINA</v-btn>
+                <v-btn v-if="selectedType.id && selectedType.numProducts === 0" variant="plain" @click="deleteTypeConfirm" color="error">ELIMINA</v-btn>
                 <v-btn v-if="!selectedType.id" variant="plain" @click="createType">CONFERMA</v-btn>
                 <v-btn v-else variant="plain" @click="editType">CONFERMA</v-btn>
             </v-card-actions>

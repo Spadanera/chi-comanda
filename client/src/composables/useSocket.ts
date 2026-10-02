@@ -4,7 +4,10 @@ import { io, type Socket } from 'socket.io-client'
 type SocketSetup = (socket: Socket) => void
 
 let _socket: Socket | null = null
+/** True once the socket has connected at least once (the screens wait for it). */
 export const socketConnected = ref(false)
+/** Current connection state, false while the connection is down and being restored. */
+export const socketOnline = ref(true)
 
 /** Rooms joined through `joinRoom`, (re)joined on every connection. */
 const joinedRooms = new Set<string>()
@@ -15,8 +18,15 @@ function createSocket(): Socket {
   const socket = io(window.location.origin, { path: '/socket/socket.io' })
   socket.on('connect', () => {
     socketConnected.value = true
+    socketOnline.value = true
     joinedRooms.forEach(room => socket.emit('join', room))
   })
+  socket.on('disconnect', reason => {
+    socketOnline.value = false
+    // socket.io doesn't reconnect by itself after a server-side disconnect (e.g. a server restart)
+    if (reason === 'io server disconnect' && _socket === socket) socket.connect()
+  })
+  socket.on('connect_error', () => { socketOnline.value = false })
   setups.forEach(setup => setup(socket))
   return socket
 }
@@ -26,6 +36,22 @@ function closeSocket() {
     _socket.disconnect()
     _socket = null
   }
+}
+
+/**
+ * Phones suspend the page when the screen turns off and drop the connection. When the page
+ * becomes visible again or the network comes back, reconnect right away instead of waiting for
+ * the next retry of the exponential backoff.
+ */
+function reconnectNow() {
+  if (_socket && !_socket.connected && document.visibilityState === 'visible') {
+    _socket.connect()
+  }
+}
+if (typeof window !== 'undefined') {
+  document.addEventListener('visibilitychange', reconnectNow)
+  window.addEventListener('online', reconnectNow)
+  window.addEventListener('pageshow', reconnectNow)
 }
 
 export function useSocket(): Socket {
@@ -74,4 +100,5 @@ export function destroySocket() {
   closeSocket()
   joinedRooms.clear()
   socketConnected.value = false
+  socketOnline.value = true
 }
