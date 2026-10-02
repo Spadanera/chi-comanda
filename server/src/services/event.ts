@@ -1,4 +1,4 @@
-import db, { Queryable } from '../db'
+import db, { placeholders, Queryable } from '../db'
 import { type Event, type User } from '../../../models/src'
 import { notify } from '../socket'
 import { BadRequestError, ConflictError, NotFoundError } from '../http/errors'
@@ -74,7 +74,7 @@ class EventService {
             LEFT JOIN (
                 SELECT
                     ue.event_id,
-                    JSON_ARRAYAGG(JSON_OBJECT('id', u.id, 'username', u.username)) AS users
+                    JSON_ARRAYAGG(JSON_OBJECT('id', u.id, 'username', u.username, 'destination_id', ue.destination_id)) AS users
                 FROM users u
                 INNER JOIN user_event ue ON ue.user_id = u.id
                 GROUP BY ue.event_id
@@ -150,7 +150,7 @@ class EventService {
         const event = await db.queryOne<Event>(`
             SELECT events.*,
             (
-                SELECT JSON_ARRAYAGG(JSON_OBJECT('id', users.id, 'username', users.username, 'avatar', users.avatar))
+                SELECT JSON_ARRAYAGG(JSON_OBJECT('id', users.id, 'username', users.username, 'avatar', users.avatar, 'destination_id', user_event.destination_id))
                 FROM users
                 INNER JOIN user_event ON user_event.user_id = users.id
                 WHERE user_event.event_id = events.id
@@ -173,14 +173,37 @@ class EventService {
         return event || ({} as Event)
     }
 
-    private async replaceStaff(tx: Queryable, eventId: number, users: User[]) {
-        await tx.execute('DELETE FROM user_event WHERE event_id = ?', [eventId])
+    /** Bartenders must be assigned to an existing destination: they get the orders for it. */
+    private async validateStaff(users: User[]) {
+        if (!users.length) return
+        const rows = await db.query<{ id: number, username: string, bartender: number }>(`
+            SELECT id, username, EXISTS (
+                SELECT 1 FROM user_role INNER JOIN roles ON roles.id = user_role.role_id
+                WHERE user_role.user_id = users.id AND roles.name = 'bartender'
+            ) bartender
+            FROM users WHERE id IN (${placeholders(users)})`, users.map(u => u.id))
+        const destinations = new Set((await db.query<{ id: number }>('SELECT id FROM destinations')).map(d => d.id))
         for (const user of users) {
-            await tx.insert('INSERT INTO user_event (user_id, event_id) VALUES (?,?)', [user.id, eventId])
+            const row = rows.find(r => r.id === Number(user.id))
+            if (user.destination_id && !destinations.has(Number(user.destination_id))) {
+                throw new BadRequestError('Destinazione non valida')
+            }
+            if (row?.bartender && !user.destination_id) {
+                throw new BadRequestError(`Scegli la destinazione di ${row.username}`)
+            }
         }
     }
 
-    create(event: Event): Promise<number> {
+    private async replaceStaff(tx: Queryable, eventId: number, users: User[]) {
+        await tx.execute('DELETE FROM user_event WHERE event_id = ?', [eventId])
+        for (const user of users) {
+            await tx.insert('INSERT INTO user_event (user_id, event_id, destination_id) VALUES (?,?,?)',
+                [user.id, eventId, user.destination_id || null])
+        }
+    }
+
+    async create(event: Event): Promise<number> {
+        await this.validateStaff(event.users || [])
         return db.transaction(async tx => {
             const eventId = await tx.insert(
                 `INSERT INTO events (name, date, status, menu_id, minimumConsumptionPrice) VALUES (?,?,'PLANNED',?,?)`,
@@ -194,6 +217,7 @@ class EventService {
         if (!event.users) {
             throw new BadRequestError('Missing users')
         }
+        await this.validateStaff(event.users)
         const result = await db.transaction(async tx => {
             const affected = await tx.execute(
                 'UPDATE events SET name = ?, date = ?, menu_id = ?, minimumConsumptionPrice = ? WHERE id = ?',

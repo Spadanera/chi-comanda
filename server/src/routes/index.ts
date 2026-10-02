@@ -14,6 +14,7 @@ import auditRouter from './audit'
 import profileRouter from './profile'
 import broadcastRouter from './broadcast'
 import paymentsRouter from './payments'
+import pushRouter from './push'
 
 /** Everything under /api. */
 const apiRouter = Router()
@@ -38,6 +39,7 @@ apiRouter.use('/audit', requireRole(Roles.superuser), auditRouter)
 apiRouter.use('/profile', profileRouter)
 apiRouter.use('/broadcast', broadcastRouter)
 apiRouter.use('/payment', paymentsRouter)
+apiRouter.use('/push', pushRouter)
 
 export { publicRouter }
 export default apiRouter

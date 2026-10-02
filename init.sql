@@ -17,7 +17,8 @@ CREATE TABLE `users` (
   `status` varchar(255),
   `googleId` varchar(255),
   `token` varchar(255),
-  `avatar` LONGTEXT NULL DEFAULT NULL
+  `avatar` LONGTEXT NULL DEFAULT NULL,
+  `push_orders` TINYINT(1) NULL
 );
 
 CREATE TABLE `roles` (
@@ -217,7 +218,8 @@ CREATE TABLE `sub_types` (
 CREATE TABLE `user_event` (
   `id` integer UNIQUE PRIMARY KEY AUTO_INCREMENT,
   `user_id` integer,
-  `event_id` integer
+  `event_id` integer,
+  `destination_id` integer NULL
 );
 
 CREATE TABLE `railway`.`rooms` (
@@ -253,6 +255,20 @@ CREATE TABLE IF NOT EXISTS `railway`.`payment_transactions` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `push_subscriptions` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `user_id` INT NOT NULL,
+  `endpoint` VARCHAR(512) NOT NULL,
+  `p256dh` VARCHAR(255) NOT NULL,
+  `auth` VARCHAR(255) NOT NULL,
+  `user_agent` VARCHAR(255) NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_endpoint` (`endpoint`),
+  KEY `idx_user` (`user_id`),
+  CONSTRAINT `push_subscriptions_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 );
 
 ALTER TABLE `railway`.`master_tables` 

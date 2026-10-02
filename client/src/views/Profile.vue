@@ -6,6 +6,8 @@ import { type User } from '../../../models/src';
 import { UserStore, SnackbarStore } from '../stores';
 import Avatar from '@/components/Avatar.vue';
 import { RouterLink } from 'vue-router';
+import { Roles } from '@/services/utils'
+import { disablePush, enablePush, loadPushState, pushStatus } from '@/composables/usePush'
 
 const emit = defineEmits(['reload'])
 const formName = ref(null)
@@ -64,8 +66,33 @@ async function saveUsername() {
     }
 }
 
+const isBartender = userStore.user.roles.includes(Roles.bartender)
+const pushBusy = ref(false)
+
+async function togglePush(on: boolean | null) {
+    pushBusy.value = true
+    try {
+        if (on) {
+            if (await enablePush() === 'on') {
+                snackbarStore.show('Notifiche attivate', 3000, 'bottom', 'success')
+            }
+        } else {
+            await disablePush()
+            snackbarStore.show('Notifiche disattivate', 3000, 'bottom', 'success')
+        }
+    } catch (error) {
+        console.error(error)
+        snackbarStore.show('Non è stato possibile cambiare le notifiche', 4000, 'top', 'error')
+    } finally {
+        pushBusy.value = false
+    }
+}
+
 onMounted(async () => {
     username.value = userStore.user.username
+    if (isBartender) {
+        await loadPushState().catch(error => console.error(error))
+    }
 })
 </script>
 
@@ -124,6 +151,32 @@ onMounted(async () => {
                                 </v-row>
                             </v-form>
                         </v-card-text>
+                        <template v-if="isBartender && pushStatus !== 'hidden'">
+                            <v-divider></v-divider>
+                            <v-card-text>
+                                <v-switch :model-value="pushStatus === 'on'" @update:model-value="togglePush"
+                                    :disabled="pushBusy || ['unsupported', 'needs-install', 'denied'].includes(pushStatus)"
+                                    :loading="pushBusy" color="primary" inset hide-details
+                                    label="Notifiche dei nuovi ordini"></v-switch>
+                                <p class="text-body-2 text-medium-emphasis mt-1">
+                                    <template v-if="pushStatus === 'needs-install'">
+                                        Su iPhone e iPad le notifiche arrivano solo se aggiungi Chi Comanda alla schermata
+                                        Home (Condividi → Aggiungi alla schermata Home) e la apri da lì.
+                                    </template>
+                                    <template v-else-if="pushStatus === 'unsupported'">
+                                        Questo browser non supporta le notifiche.
+                                    </template>
+                                    <template v-else-if="pushStatus === 'denied'">
+                                        Le notifiche sono bloccate nelle impostazioni del browser per questo sito:
+                                        sbloccale lì per poterle attivare.
+                                    </template>
+                                    <template v-else>
+                                        Ricevi una notifica per ogni ordine destinato alla tua postazione, anche con
+                                        l'app chiusa. Vale per tutti i tuoi dispositivi.
+                                    </template>
+                                </p>
+                            </v-card-text>
+                        </template>
                         <v-card-actions>
                             <RouterLink to="/">
                                 <v-btn variant="plain">

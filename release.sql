@@ -1,32 +1,36 @@
 USE railway;
 
-SET SQL_SAFE_UPDATES = 0;
+-- Notifiche push dei nuovi ordini per i bartender (v1.18)
+-- Si può rieseguire senza errori.
 
-CREATE TABLE IF NOT EXISTS `railway`.`payment_settings` (
+-- Preferenza dell'utente: NULL = mai chiesto, 1 = vuole le notifiche, 0 = non le vuole
+SET @exists := (SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'users' AND column_name = 'push_orders');
+SET @sql := IF(@exists = 0, 'ALTER TABLE `users` ADD COLUMN `push_orders` TINYINT(1) NULL', 'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Destinazione (bar, cucina...) del bartender nella serata: riceve le notifiche solo per quella.
+-- NULL per i lavoranti che non sono al bar e per le serate create prima di questa versione.
+SET @exists := (SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'user_event' AND column_name = 'destination_id');
+SET @sql := IF(@exists = 0, 'ALTER TABLE `user_event` ADD COLUMN `destination_id` INT NULL', 'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Un'iscrizione per ogni dispositivo/browser su cui l'utente le ha attivate
+CREATE TABLE IF NOT EXISTS `push_subscriptions` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `provider` VARCHAR(50) NOT NULL,
-  `enabled` TINYINT(1) NOT NULL DEFAULT 1,
-  `config` JSON NOT NULL,
+  `user_id` INT NOT NULL,
+  `endpoint` VARCHAR(512) NOT NULL,
+  `p256dh` VARCHAR(255) NOT NULL,
+  `auth` VARCHAR(255) NOT NULL,
+  `user_agent` VARCHAR(255) NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_provider` (`provider`)
+  UNIQUE KEY `uk_endpoint` (`endpoint`),
+  KEY `idx_user` (`user_id`),
+  CONSTRAINT `push_subscriptions_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 );
-
-CREATE TABLE IF NOT EXISTS `railway`.`payment_transactions` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `table_id` INT NOT NULL,
-  `event_id` INT NOT NULL,
-  `provider` VARCHAR(50) NOT NULL,
-  `external_id` VARCHAR(255) NULL,
-  `checkout_reference` VARCHAR(255) NOT NULL,
-  `amount` DECIMAL(10,2) NOT NULL,
-  `currency` VARCHAR(3) NOT NULL DEFAULT 'EUR',
-  `status` VARCHAR(50) NOT NULL DEFAULT 'PENDING',
-  `item_ids` JSON NULL,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-);
-
-SET SQL_SAFE_UPDATES = 1;

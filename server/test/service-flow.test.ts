@@ -33,7 +33,7 @@ describe('a full service: event → order → bar → checkout → close', () =>
             date: '2026-10-02T18:00:00.000Z',
             menu_id: 1,
             minimumConsumptionPrice: 5,
-            users: [{ id: users.waiter }, { id: users.bartender }, { id: users.checkout }],
+            users: [{ id: users.waiter }, { id: users.bartender, destination_id: 1 }, { id: users.checkout }],
         })
         expect(res.status).toBe(200)
         expect(res.body).toBeGreaterThan(0)
@@ -41,6 +41,15 @@ describe('a full service: event → order → bar → checkout → close', () =>
 
         const planned = await agents.admin.get('/api/events/status/PLANNED')
         expect(planned.body.map((e: any) => e.id)).toContain(state.eventId)
+    })
+
+    it('requires a destination for every bartender of the event', async () => {
+        const res = await agents.admin.put('/api/events').send({
+            id: state.eventId, name: 'Serata test', date: '2026-10-02', menu_id: 1,
+            users: [{ id: users.waiter }, { id: users.bartender }],
+        })
+        expect(res.status).toBe(400)
+        expect(res.body.message).toBe('Scegli la destinazione di bartender')
     })
 
     it('admin starts the event, copying the master tables layout', async () => {

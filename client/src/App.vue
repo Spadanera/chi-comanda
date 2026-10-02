@@ -7,6 +7,7 @@ import { UserStore, SnackbarStore, ProgressStore, ThemeStore } from '@/stores'
 import { type User, type Event } from '../../models/src'
 import Avatar from './components/Avatar.vue'
 import ThemeSwitch from './components/ThemeSwitch.vue'
+import PushPrompt from './components/PushPrompt.vue'
 import logoLight from '@/assets/logo/maitre-light.svg'
 import logoDark from '@/assets/logo/maitre-dark.svg'
 import { requireRuleArray, requiredRule } from './services/utils'
@@ -203,6 +204,7 @@ onBeforeUnmount(() => {
         <RouterView v-if="socketConnected || route.name === 'Landing'" v-model="user" @login="login" @reload="reload" :event="event" />
 
       </v-main>
+      <PushPrompt></PushPrompt>
       <v-snackbar :model-value="offline && userStore.isLoggedIn" location="top" color="warning" :timeout="-1">
         <v-progress-circular v-if="!longOffline" indeterminate size="16" width="2" class="mr-2"></v-progress-circular>
         {{ longOffline ? 'Aggiornamenti in tempo reale non disponibili' : 'Connessione persa, mi sto ricollegando…' }}
