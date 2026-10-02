@@ -1,116 +1,79 @@
 import mysql, { Pool, PoolConnection, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
-import connection from './connection'
+import config from '../config'
 
-class Database {
+type Params = unknown[]
+type Executor = Pool | PoolConnection
+
+/** mysql2 rejects `undefined` bind values: map them to NULL. */
+function normalize(params: Params = []): any[] {
+    return params.map(p => (p === undefined ? null : p))
+}
+
+/** Builds `?,?,?` for an IN (...) clause. Callers must guard against empty lists. */
+export function placeholders(values: readonly unknown[]): string {
+    return values.map(() => '?').join(',')
+}
+
+/** Query helpers bound to either the pool or a single transactional connection. */
+export class Queryable {
+    constructor(protected executor: Executor) { }
+
+    private async run<T>(sql: string, params?: Params): Promise<T> {
+        try {
+            const [result] = await this.executor.execute(sql, normalize(params))
+            return result as T
+        } catch (error) {
+            console.error('Error executing query:', sql, params)
+            throw error
+        }
+    }
+
+    query<T = any>(sql: string, params?: Params): Promise<T[]> {
+        return this.run<(T & RowDataPacket)[]>(sql, params)
+    }
+
+    async queryOne<T = any>(sql: string, params?: Params): Promise<T | undefined> {
+        return (await this.query<T>(sql, params))[0]
+    }
+
+    /** Returns the number of affected rows. */
+    async execute(sql: string, params?: Params): Promise<number> {
+        return (await this.run<ResultSetHeader>(sql, params)).affectedRows
+    }
+
+    /** Returns the id of the inserted row. */
+    async insert(sql: string, params?: Params): Promise<number> {
+        return (await this.run<ResultSetHeader>(sql, params)).insertId
+    }
+}
+
+class Database extends Queryable {
     private pool: Pool
 
     constructor() {
-        this.pool = mysql.createPool({
-            ...connection,
+        const pool = mysql.createPool({
+            ...config.db,
             connectionLimit: 50,
             waitForConnections: true,
             queueLimit: 0,
         })
+        super(pool)
+        this.pool = pool
     }
 
-    private safeNull(values: any[] | undefined): any[] | undefined {
-        if (values) {
-            for (let i = 0; i < values.length; i++) {
-                values[i] = values[i] === undefined ? null : values[i]
-            }
-        }
-        return values
-    }
-
-    async getConnection(): Promise<PoolConnection> {
-        return this.pool.getConnection()
-    }
-
-    async query<T extends RowDataPacket>(query: string, values?: any[]): Promise<T[]> {
-        let connection: PoolConnection | null = null
+    /** Runs `work` inside a transaction, committing on success and rolling back on any error. */
+    async transaction<T>(work: (tx: Queryable) => Promise<T>): Promise<T> {
+        const connection = await this.pool.getConnection()
         try {
-            connection = await this.getConnection()
-            const [rows] = await connection.execute<T[]>(query, this.safeNull(values))
-            return rows
-        }
-        catch (error: any) {
-            console.error("Error executing query: ", query, values)
-            throw new Error(error)
-        }
-        finally {
-            if (connection) {
-                connection.release()
-            }
-        }
-    }
-
-    async queryOne<T extends RowDataPacket>(query: string, values?: any[]): Promise<T> {
-        const result = await this.query<T>(query, this.safeNull(values))
-        if (result.length) {
-            return result[0]
-        }
-        return {} as T
-    }
-
-    async executeUpdate(query: string, values?: any[]): Promise<number> {
-        let connection: PoolConnection | null = null
-        try {
-            connection = await this.getConnection();
-            const [result] = await connection.execute<ResultSetHeader>(query, this.safeNull(values))
-            return result.affectedRows
-        }
-        catch (error: any) {
-            console.error("Error executing query: ", query, values)
-            throw new Error(error)
-        }
-        finally {
-            if (connection) {
-                connection.release()
-            }
-        }
-    }
-
-    async executeInsert(query: string, values?: any[]): Promise<number> {
-        let connection: PoolConnection | null = null
-        try {
-            connection = await this.getConnection()
-            const [result] = await connection.execute<ResultSetHeader>(query, this.safeNull(values))
-            return result.insertId
-        } catch (error: any) {
-            console.error("Error executing query: ", query, values)
-            throw new Error(error)
-        } finally {
-            if (connection) {
-                connection.release()
-            }
-        }
-    }
-
-    async executeTransaction(queries: string[], valuesArray: any[][] = []): Promise<any> {
-        let connection: PoolConnection | null = null
-        try {
-            connection = await this.getConnection()
             await connection.beginTransaction()
-
-            const results = []
-            for (let i = 0; i < queries.length; i++) {
-                const query = queries[i]
-                const values = valuesArray[i] || []
-                const [rows] = await connection.execute(query, this.safeNull(values))
-                results.push(rows)
-            }
-
+            const result = await work(new Queryable(connection))
             await connection.commit()
-            return results
+            return result
         } catch (error) {
-            if (connection) {
-                await connection.rollback()
-            }
+            await connection.rollback()
             throw error
         } finally {
-            if (connection) {
-                connection.release()
-            }
+            connection.release()
         }
     }
 

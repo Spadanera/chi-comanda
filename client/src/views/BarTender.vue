@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { type Order, type Item, type SubType, type User } from "../../../models/src"
 import { ref, onMounted, computed, onUnmounted, watch } from "vue"
-import { Roles } from '@/services/utils'
-import Axios from '@/services/client'
+import { minutesSinceItalianTime, Roles } from '@/services/utils'
+import api from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { groupItems, copy, sortOrder } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
@@ -14,7 +14,6 @@ import fileAudio3 from '@/assets/nuovo-ordine-3.ogg'
 import fileAudio4 from '@/assets/nuovo-ordine-4.mp3'
 import { useSocket } from '@/composables/useSocket'
 
-const axios = new Axios()
 const socket = useSocket()
 let interval: number
 let reloadTimeout: ReturnType<typeof setTimeout>
@@ -58,7 +57,7 @@ async function doneItem(item_ids: number[], multiple: boolean = false) {
     const _item = selectedOrder.value[0].items.find((i: Item) => i.id === id)
     _item.done = true
     try {
-      await axios.UpdateItem(_item)
+      await api.UpdateItem(_item)
     } catch {
       _item.done = false
     }
@@ -67,7 +66,7 @@ async function doneItem(item_ids: number[], multiple: boolean = false) {
       const _item = selectedOrder.value[0].items.find((i: Item) => i.id === item_ids[j])
       _item.done = true
       try {
-        await axios.UpdateItem(_item)
+        await api.UpdateItem(_item)
       } catch {
         _item.done = false
       }
@@ -81,7 +80,7 @@ async function doneItem(item_ids: number[], multiple: boolean = false) {
 async function rollbackItem(item: Item) {
   item.done = false
   try {
-    await axios.UpdateItem(item)
+    await api.UpdateItem(item)
   } catch {
     item.done = true
   }
@@ -93,7 +92,7 @@ async function deleteItemConfirm(item_id: number) {
 }
 
 async function deleteItem() {
-  await axios.DeleteItem(deleteItemId.value)
+  await api.DeleteItem(deleteItemId.value)
   orders.value.forEach((order: Order) => {
     order.items = copy<Item[]>(order.items.filter((i: Item) => i.id !== deleteItemId.value))
   })
@@ -101,7 +100,7 @@ async function deleteItem() {
 }
 
 async function completeOrder() {
-  await axios.CompleteOrder(selectedOrder.value[0].id || 0, {
+  await api.CompleteOrder(selectedOrder.value[0].id || 0, {
     event_id: props.event?.id || 0,
     table_id: selectedOrder.value[0].table_id || 0,
     item_ids: selectedOrder.value[0].items?.map(i => i.id) || []
@@ -117,7 +116,7 @@ async function completeOrder() {
 }
 
 async function getOrders() {
-  orders.value = await axios.GetOrdersInEvent(props.event?.id || 0, props.destinations)
+  orders.value = await api.GetOrdersInEvent(props.event?.id || 0, props.destinations)
   calculateMinPassed()
   if (orders.value.length && !orders.value[0].done) {
     if (selectedOrder.value.length === 0) {
@@ -130,25 +129,10 @@ async function getOrders() {
   }
 }
 
-function getMinutesPassed(datetimeString: string): number {
-  try {
-    const [datePart, timePart] = datetimeString.split(/T| /)
-    const [year, month, day] = datePart.split('-').map(Number)
-    const [hours, minutes, seconds] = timePart.split('.')[0].split(':').map(Number)
-    const then = new Date(year, month - 1, day, hours, minutes, seconds)
-    const nowItaly = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Rome" }))
-    return Math.floor((nowItaly.getTime() - then.getTime()) / (1000 * 60))
-  } catch {
-    return 0
-  }
-}
-
 function calculateMinPassed() {
   orders.value.forEach((o: Order) => {
     if (!o.done) {
-      o.minPassed = o.order_date !== '2024-01-01T00:00:00.000Z'
-        ? getMinutesPassed(o.order_date)
-        : -1
+      o.minPassed = minutesSinceItalianTime(o.order_date)
     }
   })
 }
@@ -210,7 +194,7 @@ async function handleReconnection() {
 async function init() {
   if (props.event && props.event.id) {
     loading.value = true
-    types.value = await axios.GetSubTypes()
+    types.value = await api.GetSubTypes()
     await getOrders()
     socket.emit('join', 'bartender')
     socket.on('new-order', newOrderHandler)

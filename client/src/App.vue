@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRoute } from 'vue-router'
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { ref, onBeforeMount, onBeforeUnmount, onMounted, computed } from 'vue'
 import router from '@/router'
 import { UserStore, SnackbarStore, ProgressStore, ThemeStore } from '@/stores'
@@ -10,7 +10,6 @@ import { requireRuleArray, requiredRule } from './services/utils'
 import { useSocket, socketConnected, destroySocket } from './composables/useSocket'
 import { useBroadcast } from './composables/useBroadcast'
 
-const axios: Axios = new Axios()
 const route = useRoute()
 const userStore = UserStore()
 const snackbarStore = SnackbarStore()
@@ -57,7 +56,7 @@ function login() {
 }
 
 async function logout() {
-  await axios.Logout()
+  await api.Logout()
   user.value = userStore.user
 }
 
@@ -70,7 +69,7 @@ function reloadPage() {
 }
 
 async function getOnGoingEvent() {
-  event.value = await axios.GetOnGoingEvent()
+  event.value = await api.GetOnGoingEvent()
   initReceivers()
 }
 

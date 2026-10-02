@@ -1,59 +1,62 @@
-import {Server, ServerOptions} from "socket.io"
-import {Server as HttpServer} from "http"
-import { Message } from "../../../models/src"
+import { Server, ServerOptions } from 'socket.io'
+import { Server as HttpServer } from 'http'
+import { Message } from '../../../models/src'
 
-export class SocketIOService {
-  private static _instance: SocketIOService | undefined;
-  private static server: Server | undefined;
+/** Rooms a client may join. Each screen of the app listens on its own room. */
+export const ROOMS = ['main', 'waiter', 'bartender', 'checkout', 'table'] as const
+export type Room = typeof ROOMS[number]
 
-  private constructor() {
-    // Private constructor ensures singleton instance
-  }
+let io: Server | undefined
 
-  static instance(): SocketIOService {
-    if (!SocketIOService._instance) {
-      SocketIOService._instance = new SocketIOService();
+export function initializeSocket(httpServer: HttpServer, opts?: Partial<ServerOptions>): Server {
+    io = new Server(httpServer, opts)
+    io.on('connection', socket => {
+        socket.on('end', () => socket.disconnect())
+        socket.on('join', (room: string) => {
+            if ((ROOMS as readonly string[]).includes(room)) socket.join(room)
+        })
+        socket.on('leave', (room: string) => socket.leave(room))
+    })
+    return io
+}
+
+export function sendMessage(message: Message) {
+    if (!io) {
+        console.error('Socket server not initialized, dropping message', message.event)
+        return
     }
-
-    return SocketIOService._instance;
-  }
-
-  initialize(httpServer: HttpServer, opts?: Partial<ServerOptions>) {
-    SocketIOService.server = new Server(httpServer, opts);
-
-    return SocketIOService.server;
-  }
-
-  ready() {
-    return SocketIOService.server !== null;
-  }
-
-  getServer(): Server {
-    if (!SocketIOService.server) {
-      throw new Error('IO server requested before initialization');
+    const rooms = message.rooms ?? (message.room ? [message.room] : [])
+    for (const room of rooms) {
+        io.to(room).emit(message.event, message.body)
     }
+}
 
-    return SocketIOService.server;
-  }
-
-  sendMessage(message: Message) {
-    try {
-      if (message.room) {
-        this.getServer().to(message.room).emit(message.event, message.body)
-      }
-      else if (message.rooms) {
-        message.rooms.forEach((r: string) => this.getServer().to(r).emit(message.event, message.body))
-      }
-    } catch (error) {
-      console.error(error)
-    }
-  }
-
-  emitAll(key: string, message: string) {
-    this.getServer().emit(key, message)
-  }
-
-  getRooms() {
-    return this.getServer().sockets.adapter.rooms;
-  }
+/** Typed notifications sent to the connected screens. */
+export const notify = {
+    tablesChanged(rooms: Room[] = ['waiter', 'bartender', 'table', 'checkout']) {
+        sendMessage({ rooms, event: 'reload-table', body: {} })
+    },
+    eventsChanged() {
+        sendMessage({ room: 'main', event: 'reload' })
+    },
+    broadcast(body: unknown) {
+        sendMessage({ room: 'main', event: 'broadcast', body })
+    },
+    newOrder(order: unknown, table: unknown) {
+        sendMessage({ room: 'bartender', event: 'new-order', body: order })
+        sendMessage({ room: 'checkout', event: 'new-order', body: table })
+    },
+    orderCompleted(checkoutBody: unknown) {
+        sendMessage({ room: 'checkout', event: 'order-completed', body: checkoutBody })
+        sendMessage({ room: 'bartender', event: 'order-completed', body: {} })
+    },
+    itemUpdated(item: unknown) {
+        sendMessage({ room: 'bartender', event: 'item-updated', body: item })
+    },
+    itemRemoved(itemId: number) {
+        sendMessage({ rooms: ['bartender', 'checkout'], event: 'item-removed', body: itemId })
+    },
+    paymentCompleted(body: { transaction_id: number, table_id?: number, status: string }) {
+        sendMessage({ room: 'checkout', event: 'payment-completed', body })
+    },
 }

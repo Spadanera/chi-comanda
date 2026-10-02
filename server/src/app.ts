@@ -1,0 +1,47 @@
+import express from 'express'
+import session from 'express-session'
+import MySQLStoreFactory from 'express-mysql-session'
+import path from 'path'
+import passport from 'passport'
+import history from 'connect-history-api-fallback'
+import { createServer } from 'http'
+import config from './config'
+import { configurePassport } from './auth/passport'
+import apiRouter, { publicRouter } from './routes'
+import { errorMiddleware } from './http/middleware'
+import { initializeSocket } from './socket'
+
+const MySQLStore = MySQLStoreFactory(session as any)
+const sessionStore = new MySQLStore({ ...config.db, createDatabaseTable: true } as any)
+
+configurePassport()
+
+const app = express()
+
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+app.use(session({
+    name: config.sessionCookieName,
+    store: sessionStore,
+    cookie: { maxAge: config.sessionMaxAgeMs },
+    secret: config.sessionSecret,
+    resave: false,
+    saveUninitialized: true,
+}))
+app.use(passport.initialize())
+app.use(passport.session())
+
+app.use('/api', apiRouter)
+// Public endpoints are also reachable outside /api, as in previous versions
+app.use('/public', publicRouter)
+
+// Single page application
+app.use(history() as unknown as express.RequestHandler)
+app.use(express.static(path.join(__dirname, 'static')))
+
+app.use(errorMiddleware)
+
+const server = createServer(app)
+initializeSocket(server, { path: '/socket' })
+
+export { app, server, sessionStore }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onBeforeMount, onMounted } from 'vue'
 import { type Destination, type User } from '../../../models/src'
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { Roles } from '@/services/utils'
 
 interface Role {
@@ -11,7 +11,6 @@ interface Role {
   role: string | string[]
 }
 
-const axios = new Axios()
 
 const roles = ref<Role[]>([
   {
@@ -56,7 +55,7 @@ const filteredRole = computed(() => {
 })
 
 onMounted(async () => {
-  const destinations = await axios.GetDestinations()
+  const destinations = await api.GetDestinations()
   roles.value.push(...(destinations.map((d: Destination) => {
     return {
       title: d.name,

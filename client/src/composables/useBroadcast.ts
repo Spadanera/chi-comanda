@@ -2,7 +2,7 @@ import { ref, type Ref } from 'vue'
 import { type Broadcast, type Event, type User } from '../../../models/src'
 import { UserStore, SnackbarStore } from '@/stores'
 import { copy } from '@/services/utils'
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { useSocket } from './useSocket'
 import bendingString from '@/assets/bending-string.mp3'
 
@@ -11,7 +11,6 @@ const messageSound = new Audio(bendingString)
 export function useBroadcast(event: Ref<Event | undefined>) {
   const userStore = UserStore()
   const snackbarStore = SnackbarStore()
-  const axios = new Axios()
   const socket = useSocket()
 
   const messageDialog = ref<boolean>(false)
@@ -52,9 +51,9 @@ export function useBroadcast(event: Ref<Event | undefined>) {
         receivers: messageReceivers.value,
         sender
       } as Broadcast
-      await axios.BroadcastMessage(broad)
+      await api.BroadcastMessage(broad)
       messageDialog.value = false
-      snackbarStore.show('Messaggio inviato', 3000, 'success')
+      snackbarStore.show('Messaggio inviato', 3000, 'bottom', 'success')
       broad.dateTime = new Date()
       broadcasts.value.unshift(broad)
       localStorage.setItem('broadcasts', JSON.stringify(broadcasts.value))

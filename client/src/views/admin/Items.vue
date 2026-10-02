@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { type MasterItem, type SubType, type Destination } from "../../../../models/src"
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { sortItem, copy, requiredRule } from '@/services/utils'
 import { RouterLink } from 'vue-router'
-const axios = new Axios()
 const snackbarStore = SnackbarStore()
 const props = defineProps(['menu_id', 'menu_name'])
 
@@ -39,7 +38,7 @@ async function updateItem(del: boolean = false) {
     if (del) {
       selectedItem.value.status = 'DELETED'
     }
-    await axios.EditMasterItems(selectedItem.value)
+    await api.EditMasterItems(selectedItem.value)
     dialog.value = false
     confirm.value = false
     getMasterItems()
@@ -51,7 +50,7 @@ async function createItem() {
   const { valid } = await form.value?.validate()
   if (valid) {
     setType()
-    await axios.CreateMasterItems(selectedItem.value)
+    await api.CreateMasterItems(selectedItem.value)
     dialog.value = false
     getMasterItems()
     snackbarStore.show("Tavolo creato")
@@ -60,7 +59,7 @@ async function createItem() {
 
 async function getMasterItems() {
   loading.value = true
-  items.value = await axios.GetAllMasterItems(props.menu_id)
+  items.value = await api.GetAllMasterItems(props.menu_id)
   loading.value = false
 }
 
@@ -69,10 +68,10 @@ function setType() {
 }
 
 onMounted(async () => {
-  types.value = await axios.GetSubTypes()
-  destinations.value = await axios.GetDestinations()
+  types.value = await api.GetSubTypes()
+  destinations.value = await api.GetDestinations()
   await getMasterItems()
-  destinations.value = await axios.GetDestinations()
+  destinations.value = await api.GetDestinations()
 })
 </script>
 

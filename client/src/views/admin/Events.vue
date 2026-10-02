@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue"
 import { type Event, type Event as EventType, type User } from "../../../../models/src"
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { requiredRule, copy } from "@/services/utils"
 import EventList from "@/components/EventList.vue"
@@ -17,7 +17,6 @@ function formatDate(date: any) {
   return new Date(date).toLocaleDateString('it-IT')
 }
 
-const axios = new Axios()
 const snackbarStore = SnackbarStore()
 const tab = ref('ONGOING')
 const events = ref<EventType[]>([])
@@ -44,7 +43,7 @@ async function getAllEvents(status: string) {
   const filters = status === 'CLOSED'
     ? { page: page.value, start: dateRange.value.start, end: endString }
     : undefined
-  const data = await axios.GetAllEvents(status, filters)
+  const data = await api.GetAllEvents(status, filters)
 
   if ('events' in data) {
     events.value = data.events
@@ -68,8 +67,8 @@ async function openDialog(event?: Event) {
   }
 
   const [menuRes, usersRes] = await Promise.all([
-    axios.GetAllMenu(),
-    axios.GetAvailableUsers()
+    api.GetAllMenu(),
+    api.GetAvailableUsers()
   ])
 
   menu.value = menuRes
@@ -93,10 +92,10 @@ async function upsertEvent() {
   _event.users = _event.users.map(({ id }) => ({ id } as User))
 
   if (!_event.id) {
-    await axios.CreateEvent(_event)
+    await api.CreateEvent(_event)
     snackbarStore.show('Evento creato con successo', 3000, 'bottom', 'success')
   } else {
-    await axios.EditEvent(_event)
+    await api.EditEvent(_event)
     snackbarStore.show('Evento modificato con successo', 3000, 'bottom', 'success')
   }
   await load()

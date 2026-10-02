@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { type User } from '../../../../models/src'
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { copy, requiredRule, emailRule, Roles } from '@/services/utils'
 import Avatar from '@/components/Avatar.vue'
 
 const props = defineProps(['event'])
 
-const axios = new Axios()
 const loading = ref<boolean>(null)
 const dialog = ref<boolean>(null)
 const filter = ref<string>(null)
@@ -89,7 +88,7 @@ async function updateUserStatus() {
   const _user = copy<User>(selectedUser.value)
   _user.status = _user.status === 'ACTIVE' ? 'BLOCKED' : 'ACTIVE'
   delete _user.avatar
-  await axios.UpdateUser(_user)
+  await api.UpdateUser(_user)
   await getUsers()
   confirm.value = false
 }
@@ -99,7 +98,7 @@ async function deleteConfirm() {
 }
 
 async function deleteUser() {
-  await axios.DeleteUser(selectedUser.value.id)
+  await api.DeleteUser(selectedUser.value.id)
   await getUsers()
   confirmDelete.value = false
   dialog.value = false
@@ -118,7 +117,7 @@ async function updateUserRole() {
       id: selectedUser.value.id,
       roles: selectedUser.value.roles
     } as User
-    await axios.UpdateUserRoles(_user)
+    await api.UpdateUserRoles(_user)
     await getUsers()
     dialog.value = false
   }
@@ -133,14 +132,14 @@ async function inviteUser() {
     else {
       selectedUser.value.roles = selectedRoles.value
     }
-    await axios.InviteUser(selectedUser.value)
+    await api.InviteUser(selectedUser.value)
     await getUsers()
     dialog.value = false
   }
 }
 
 async function getUsers() {
-  users.value = await axios.GetUsers()
+  users.value = await api.GetUsers()
 }
 
 onMounted(async () => {

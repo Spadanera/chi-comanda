@@ -1,15 +1,13 @@
-import { RowDataPacket } from "mysql2"
-
 export type shape = 'rect' | 'circle'
 
-export interface Type extends RowDataPacket {
+export interface Type {
   id?: number
   name: string
   icon?: string
   numProducts?: number
 }
 
-export interface SubType extends RowDataPacket {
+export interface SubType {
   id?: number
   name: string
   type_id?: number
@@ -40,12 +38,11 @@ export interface Broadcast extends Repository {
   receivers: number[]
 }
 
-export interface Repository extends RowDataPacket {
-
-}
+/** Base of the API entities (kept for the generic constraints of the client). */
+export interface Repository { }
 
 export interface Invitation extends User {
-  
+  token?: string
 }
 
 export interface Audit extends Repository {
@@ -62,6 +59,7 @@ export interface Event extends Repository {
   id?: number
   name?: string
   date?: Date
+  status?: string
   menu_id?: number
   tables?: Table[]
   users?: User[]
@@ -84,6 +82,9 @@ export interface Table extends Repository {
   name?: string
   paid?: boolean
   status?: string
+  table_name?: string
+  room_id?: number
+  revenue?: number
   user?: User
   items?: Item[]
   discuntItems?: Item[]
@@ -96,6 +97,8 @@ export interface AvailableTable extends MasterTable {
   master_table_name?: string
   default_seats?: number
   event_id?: number
+  items?: Item[]
+  user?: User
 }
 
 export interface Order extends Repository {
@@ -116,6 +119,9 @@ export interface Order extends Repository {
 
 export interface Item extends Repository {
   id?: number
+  name?: string
+  event_id?: number
+  sub_type_id?: number
   table_id?: number
   order_id?: number
   master_item_id?: number
@@ -128,6 +134,7 @@ export interface Item extends Repository {
   price?: number
   destination_id?: number
   grouped_ids?: number[]
+  quantity?: number
   setMinimum?: boolean
 }
 
@@ -156,7 +163,7 @@ export interface Room extends Repository {
 
 export interface RestaurantLayout extends Repository {
   rooms: Room[],
-  tables: MasterTable[]
+  tables: AvailableTable[]
 }
 
 export interface TableUpdatePayload {
@@ -185,6 +192,8 @@ export interface Role extends Repository {
 export interface Menu extends Repository {
   id?: number
   name?: string
+  creation_date?: string
+  canDelete?: number
   status?: string
   from_id?: number
 }
@@ -197,6 +206,8 @@ export interface MasterItem extends Repository {
   price?: number
   destination_id?: number
   destination?: string
+  sub_type_id?: number
+  icon?: string
   available?: boolean | number
   status?: string
   menu_id?: number
@@ -208,4 +219,31 @@ export interface Destination extends Repository {
   status?: string
   canDelete?: number
   minute_to_alert?: number
+}
+
+export interface PaymentSetting extends Repository {
+  id?: number
+  provider: string
+  enabled: boolean
+  configured?: boolean
+  config?: {
+    api_key?: string
+    currency?: string
+    merchant_code?: string
+  }
+}
+
+export interface PaymentTransaction extends Repository {
+  id?: number
+  table_id: number
+  event_id: number
+  provider: string
+  external_id?: string
+  checkout_reference?: string
+  amount: number
+  currency: string
+  status: string
+  item_ids?: number[]
+  payment_url?: string
+  created_at?: string
 }

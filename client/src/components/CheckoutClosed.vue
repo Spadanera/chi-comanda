@@ -6,14 +6,13 @@ let cachedTypes: SubType[] | null = null
 <script setup lang="ts">
 import type { Table, Item } from "../../../models/src"
 import { ref, computed, watch } from "vue"
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { useDisplay } from 'vuetify'
 
 const { smAndUp } = useDisplay()
 
 const props = defineProps(['event', 'tables'])
 
-const axios = new Axios()
 
 const emit = defineEmits(['clickTable'])
 
@@ -44,7 +43,7 @@ async function init() {
 
   if (props.event && props.event.id) {
     loading.value = true
-    const res = await axios.GetSubTypes()
+    const res = await api.GetSubTypes()
     cachedTypes = res
     types.value = res
 

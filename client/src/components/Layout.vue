@@ -6,7 +6,7 @@ import RoomTabs from '@/components/RoomTabs.vue'
 import RoomDialog from '@/components/RoomDialog.vue'
 import TableDialog from '@/components/TableDialog.vue'
 import { useDisplay } from 'vuetify'
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { SnackbarStore, ZoomStore } from '@/stores'
 import { storeToRefs } from 'pinia'
 
@@ -30,7 +30,6 @@ const zoomOut = () => {
     zoomStore.setLevel(next)
 }
 
-const axios = new Axios()
 const snackbarStore = SnackbarStore()
 
 const rooms = ref<Room[]>([])
@@ -151,9 +150,9 @@ const saveLayout = () => {
     const layout: RestaurantLayout = { rooms: rooms.value, tables: tables.value } as RestaurantLayout
 
     if (props.event) {
-        axios.SaveLayoutInEvent(layout, props.event.id)
+        api.SaveLayoutInEvent(layout, props.event.id)
     } else {
-        axios.SaveLayout(layout)
+        api.SaveLayout(layout)
     }
     editing.value = false
     snackbarStore.show("Salvataggio effettuato", 3000, 'bottom', 'success')
@@ -162,9 +161,9 @@ const saveLayout = () => {
 const getLayout = async () => {
     let layout
     if (props.event) {
-        layout = await axios.GetWaiterLayout(props.event.id)
+        layout = await api.GetWaiterLayout(props.event.id)
     } else {
-        layout = await axios.GetLayout()
+        layout = await api.GetLayout()
     }
     rooms.value = layout.rooms || []
     tables.value = layout.tables || []

@@ -2,19 +2,18 @@
 import { onMounted, ref } from 'vue';
 import { type Destination } from '../../../../models/src';
 import { copy, requiredRule, positiveIntegerRule } from '@/services/utils';
-import Axios from '@/services/client'
+import api from '@/services/client'
 
 const props = defineProps(['event'])
 
 const destinations = ref<Destination[]>([])
-const axios = new Axios()
 const confirmDeleteDestination = ref<boolean>(false)
 const selectedDestination = ref<Destination>(null)
 const dialog = ref<boolean>(null)
 const form = ref(null)
 
 async function getDestinations() {
-    destinations.value = await axios.GetDestinations()
+    destinations.value = await api.GetDestinations()
 }
 
 async function deleteDestinationConfirm(destination: Destination) {
@@ -24,7 +23,7 @@ async function deleteDestinationConfirm(destination: Destination) {
 
 async function deleteDestination() {
     selectedDestination.value.status = 'DELETED'
-    await axios.EditDestination(selectedDestination.value)
+    await api.EditDestination(selectedDestination.value)
     await getDestinations()
     confirmDeleteDestination.value = false
 }
@@ -32,7 +31,7 @@ async function deleteDestination() {
 async function createDestination() {
     const { valid } = await form.value?.validate()
     if (valid) {
-        await axios.CreateDestination(selectedDestination.value)
+        await api.CreateDestination(selectedDestination.value)
         await getDestinations()
         dialog.value = false
     }
@@ -41,7 +40,7 @@ async function createDestination() {
 async function editDestination() {
     const { valid } = await form.value?.validate()
     if (valid) {
-        await axios.EditDestination(selectedDestination.value)
+        await api.EditDestination(selectedDestination.value)
         await getDestinations()
         dialog.value = false
     }

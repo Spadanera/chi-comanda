@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { RouterLink } from 'vue-router'
 import { requiredRule, emailRule } from '@/services/utils';
 import Logo from '@/components/Logo.vue';
 
-const axios: Axios = new Axios()
 const form = ref(null)
 
 const emit = defineEmits(['login'])
@@ -19,7 +18,7 @@ async function login() {
   const { valid } = await form.value?.validate()
   if (valid) {
     try {
-      await axios.Login(credentials.value.email, credentials.value.password)
+      await api.Login(credentials.value.email, credentials.value.password)
       emit("login")
     } catch (error) {
       console.error(error)
@@ -53,7 +52,7 @@ async function login() {
                 block
                 variant="outlined"
                 prepend-icon="mdi-google"
-                @click="axios.loginWithGoogle()"
+                @click="api.loginWithGoogle()"
               >
                 Accedi con Google
               </v-btn>

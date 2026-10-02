@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { type Event, type User } from "../../../models/src"
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { copy } from "@/services/utils"
 import EventDetails from '@/components/EventDetails.vue'
 import Avatar from './Avatar.vue';
@@ -9,7 +9,6 @@ import Avatar from './Avatar.vue';
 const emit = defineEmits(['reload', 'editevent'])
 const props = defineProps(['ongoing'])
 
-const axios = new Axios()
 
 const events = defineModel<Event[]>({ default: [] })
 
@@ -30,13 +29,13 @@ function deleteEventConfirm(event: Event) {
 }
 
 async function closeEvent() {
-    await axios.SetEventStatus(selectedEvent.value)
+    await api.SetEventStatus(selectedEvent.value)
     confirmCloseEvent.value = false
     emit('reload', 'CLOSED')
 }
 
 async function deleteEvent() {
-    await axios.DeleteEvent(selectedEvent.value.id)
+    await api.DeleteEvent(selectedEvent.value.id)
     confirmDeleteEvent.value = false
     emit('reload')
 }
@@ -51,14 +50,14 @@ async function setEventStatus(event: Event, status: string) {
             } as User
         })
     }
-    await axios.SetEventStatus(_event)
+    await api.SetEventStatus(_event)
     emit('reload', status)
 }
 
 async function showEvent(event: Event) {
     if (event.status !== 'PLANNED') {
         selectedEvent.value = copy<Event>(event)
-        const _event: Event = await axios.GetEvent(event.id, event.status)
+        const _event: Event = await api.GetEvent(event.id, event.status)
         selectedEvent.value.tables = _event.tables
         bottomSheet.value = true
     }
@@ -119,7 +118,7 @@ onMounted(() => {
                         <v-btn text="CHIUDI EVENTO" v-if="event.status === 'ONGOING' && event.tablesOpen === 0"
                             size="small" density="compact" variant="plain"
                             @click.stop="closeEventConfirm(event)"></v-btn>
-                        <v-btn text="MODIFICA" v-if="event.status !== 'CLOSED'" size="small" density="compact"
+                        <v-btn text="MODIFICA" size="small" density="compact"
                             variant="plain" @click.stop="emit('editevent', event)"></v-btn>
                         <v-btn text="SONO PRESENTI TAVOLI APERTI"
                             v-if="event.status === 'ONGOING' && event.tablesOpen > 0" size="small" density="compact"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import Axios from '@/services/client'
+import api from '@/services/client'
 import { requiredRule, fileRequiredRule } from '@/services/utils';
 import { type User } from '../../../models/src';
 import { UserStore, SnackbarStore } from '../stores';
@@ -8,7 +8,6 @@ import Avatar from '@/components/Avatar.vue';
 import { RouterLink } from 'vue-router';
 
 const emit = defineEmits(['reload'])
-const axios: Axios = new Axios()
 const formName = ref(null)
 const formAvatar = ref(null)
 const username = ref<string>(null)
@@ -31,7 +30,7 @@ async function saveAvatar() {
             const file = files.value[0]
             const formData = new FormData()
             formData.append('avatar', file)
-            const avatar = await axios.EditProfileAvatar(formData, userStore.user.id)
+            const avatar = await api.EditProfileAvatar(formData, userStore.user.id)
             userStore.setAvatar(avatar)
             emit('reload')
             avatarReadOnly.value = true
@@ -51,7 +50,7 @@ async function saveUsername() {
     const { valid } = await formName.value?.validate()
     if (valid) {
         try {
-            await axios.EditProfileUsername({
+            await api.EditProfileUsername({
                 id: userStore.user.id,
                 username: username.value
             } as User)

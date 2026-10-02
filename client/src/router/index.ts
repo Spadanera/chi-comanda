@@ -1,21 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
 import { UserStore, SnackbarStore } from '@/stores'
-import { Roles } from '@/services/utils'
+import { hasAnyRole, Roles } from '@/services/utils'
 
-function hasMatchingRole(arr1: Roles[], arr2: Roles[]): boolean {
-  const set2 = new Set(arr2)
-
-  for (const element of arr1) {
-      if (set2.has(element)) {
-          return true
-      }
+declare module 'vue-router' {
+  interface RouteMeta {
+    /** Roles allowed to open the route (superuser always is). */
+    allowedRole?: Roles | Roles[]
   }
-
-  return false
 }
 
-const publicRoute:String[] = ['Login', 'Reset', 'Invitation', 'AskReset', 'Landing']
+const publicRoutes = ['Login', 'Reset', 'Invitation', 'AskReset', 'Landing']
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -85,7 +80,7 @@ const router = createRouter({
         {
           path: "tables",
           name: "Tavoli",
-          component: () => import('@/views/admin/Tables-v2.vue'),
+          component: () => import('@/views/admin/Tables.vue'),
           props: true,
           meta: {
             allowedRole: Roles.admin
@@ -125,6 +120,15 @@ const router = createRouter({
           props: true,
           meta: {
             allowedRole: Roles.superuser
+          },
+        },
+        {
+          path: "payments",
+          name: "Pagamenti",
+          component: () => import('@/views/admin/Payments.vue'),
+          props: true,
+          meta: {
+            allowedRole: Roles.admin
           },
         }
       ]
@@ -183,30 +187,23 @@ const router = createRouter({
   ]
 })
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to) => {
   const snackbarStore = SnackbarStore()
   const userStore = UserStore()
-  
+
   const user = userStore.user.id ? userStore.user : await userStore.checkAuthentication()
+  const isPublic = publicRoutes.includes(to.name?.toString() || '')
+
   if (user.id && to.name === 'Login') {
-    next({ name: "Home" })
+    return { name: 'Home' }
   }
-  else if (user.id || publicRoute.includes(to.name?.toString())) {
-    if (to.meta.allowedRole) {
-      if ((Array.isArray(to.meta.allowedRole) && hasMatchingRole(to.meta.allowedRole, user.roles)) || user.roles.includes(to.meta.allowedRole)) {
-        next()
-      } else {
-        snackbarStore.show("Non sei autorizzato a visualizzare questa sezione", 3000, 'top', 'error')
-        next({ name: 'Home' })
-      }
-    }
-    else {
-      next()
-    }
+  if (!user.id && !isPublic) {
+    snackbarStore.show('Sessione scaduta')
+    return { name: 'Login' }
   }
-  else {
-    snackbarStore.show("Sessione scaduta")
-    next({ name: 'Login' })
+  if (to.meta.allowedRole && !hasAnyRole(user.roles, to.meta.allowedRole)) {
+    snackbarStore.show('Non sei autorizzato a visualizzare questa sezione', 3000, 'top', 'error')
+    return { name: 'Home' }
   }
 })
 

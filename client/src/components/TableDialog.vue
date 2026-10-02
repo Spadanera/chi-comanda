@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
-import type { MasterTable } from '../../../models/src'
+import type { AvailableTable } from '../../../models/src'
 import { requiredRule, positiveIntegerRule } from '@/services/utils'
 
 const props = defineProps<{
   modelValue: boolean
-  table: MasterTable
+  table: AvailableTable
 }>()
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
-  (e: 'save', table: MasterTable): void
+  (e: 'save', table: AvailableTable): void
   (e: 'delete', tableId: number): void
 }>()
 
 const formRef = ref<any>(null)
-const localTable = reactive<MasterTable>({ 
+const localTable = reactive<AvailableTable>({ 
     name: '', default_seats: 0, x: 0, y: 0, width: 0, height: 0, shape: 'rect', ...props.table 
-} as MasterTable)
+} as AvailableTable)
 
 watch(() => props.table, (newVal) => {
     if(newVal) Object.assign(localTable, newVal)
