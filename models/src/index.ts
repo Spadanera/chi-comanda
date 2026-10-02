@@ -209,3 +209,30 @@ export interface Destination extends Repository {
   canDelete?: number
   minute_to_alert?: number
 }
+
+export interface PaymentSetting extends Repository {
+  id?: number
+  provider: string
+  enabled: boolean
+  configured?: boolean
+  config?: {
+    api_key?: string
+    currency?: string
+    merchant_code?: string
+  }
+}
+
+export interface PaymentTransaction extends Repository {
+  id?: number
+  table_id: number
+  event_id: number
+  provider: string
+  external_id?: string
+  checkout_reference?: string
+  amount: number
+  currency: string
+  status: string
+  item_ids?: number[]
+  payment_url?: string
+  created_at?: string
+}

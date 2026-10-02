@@ -16,6 +16,7 @@ import auditRouter from "./audit-router"
 import profileRouter from "./profile-router"
 import broadcastRouter from "./broadcast-router"
 import userPublicRouter from "./users-public-routes"
+import paymentRouter from "./payment-router"
 
 const apiRouter: Router = router()
 
@@ -34,6 +35,7 @@ apiRouter.use("/audit", authorizationMiddleware(Roles.superuser), auditRouter)
 apiRouter.use("/profile", profileRouter) 
 apiRouter.use("/broadcast", broadcastRouter) 
 apiRouter.use("/users-public", userPublicRouter)
+apiRouter.use("/payment", paymentRouter)
 apiRouter.use("/public", publicApiRouter)
 
 export default apiRouter

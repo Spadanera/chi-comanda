@@ -223,6 +223,33 @@ CREATE TABLE `railway`.`rooms` (
   `status` VARCHAR(255) NULL
 );
 
+CREATE TABLE IF NOT EXISTS `railway`.`payment_settings` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `provider` VARCHAR(50) NOT NULL,
+  `enabled` TINYINT(1) NOT NULL DEFAULT 1,
+  `config` JSON NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_provider` (`provider`)
+);
+
+CREATE TABLE IF NOT EXISTS `railway`.`payment_transactions` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `table_id` INT NOT NULL,
+  `event_id` INT NOT NULL,
+  `provider` VARCHAR(50) NOT NULL,
+  `external_id` VARCHAR(255) NULL,
+  `checkout_reference` VARCHAR(255) NOT NULL,
+  `amount` DECIMAL(10,2) NOT NULL,
+  `currency` VARCHAR(3) NOT NULL DEFAULT 'EUR',
+  `status` VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+  `item_ids` JSON NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+);
+
 ALTER TABLE `railway`.`master_tables` 
 ADD COLUMN `room_id` VARCHAR(45) NULL AFTER `status`,
 ADD COLUMN `x` DOUBLE NULL AFTER `room_id`,

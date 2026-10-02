@@ -292,7 +292,7 @@ class TableApi {
     async saveLayout(layout: RestaurantLayout, event_id: number): Promise<number> {
         let transactionQueries: [string] = ['UPDATE master_tables_event SET status = ? WHERE event_id = ?']
         let transactionParams: [any[]] = [['DELETED', event_id]]
-        layout.tables.filter(t => layout.rooms.map(r => r.id).includes(t.room_id)).forEach(async t => {
+        layout.tables.filter((t: MasterTable) => layout.rooms.map((r: Room) => r.id).includes(t.room_id)).forEach(async (t: MasterTable) => {
             const params = [t.default_seats, 'ACTIVE', t.room_id, t.x, t.y, t.width, t.height, t.shape, event_id]
             if (t.id !== undefined && t.id < 0) {
                 transactionQueries.push(`INSERT INTO master_tables_event 

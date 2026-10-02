@@ -1,5 +1,5 @@
 import axios, { type AxiosResponse, type AxiosRequestConfig, type RawAxiosRequestHeaders, type AxiosInstance, type AxiosProgressEvent } from 'axios'
-import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation, type Menu, type Type, type SubType, type Audit, type Broadcast, type RestaurantLayout } from "../../../models/src"
+import { type AvailableTable, type Repository, type User, type Event, type Table, type MasterItem, type Order, type MasterTable, type Item, type CompleteOrderInput, type Destination, type Invitation, type Menu, type Type, type SubType, type Audit, type Broadcast, type RestaurantLayout, type PaymentSetting, type PaymentTransaction } from "../../../models/src"
 import router from '@/router'
 import { UserStore, SnackbarStore, ProgressStore } from '@/stores'
 import type { StoreDefinition } from 'pinia'
@@ -412,6 +412,38 @@ export default class Axios {
 
     async CheckAuthentication(): Promise<User> {
         return (await this.client.get<User>('/checkauthentication')).data
+    }
+
+    async GetPaymentSettings(): Promise<PaymentSetting[]> {
+        return await this.get<PaymentSetting>('/payment/settings')
+    }
+
+    async SavePaymentSettings(setting: PaymentSetting): Promise<number> {
+        return (await this.client.post('/payment/settings', setting, this.config)).data
+    }
+
+    async GetAvailablePaymentProviders(): Promise<PaymentSetting[]> {
+        return await this.get<PaymentSetting>('/payment/available')
+    }
+
+    /** sumup_checkout – crea link di pagamento */
+    async CreateSumupCheckoutLink(payload: { table_id: number; event_id: number; amount: number; item_ids: number[]; description: string }): Promise<PaymentTransaction> {
+        return (await this.client.post<PaymentTransaction>('/payment/checkout/sumup-checkout', payload, this.config)).data
+    }
+
+    /** sumup_pos – crea sessione POS (restituisce url_scheme per aprire app SumUp) */
+    async CreateSumupPosSession(payload: { table_id: number; event_id: number; amount: number; item_ids: number[]; description: string }): Promise<PaymentTransaction & { url_scheme: string }> {
+        return (await this.client.post<PaymentTransaction & { url_scheme: string }>('/payment/checkout/sumup-pos', payload, this.config)).data
+    }
+
+    /** sumup_solo – invia pagamento al terminale Solo */
+    async CreateSumupSoloPayment(payload: { table_id: number; event_id: number; amount: number; item_ids: number[]; description: string }): Promise<PaymentTransaction> {
+        return (await this.client.post<PaymentTransaction>('/payment/checkout/sumup-solo', payload, this.config)).data
+    }
+
+    /** Controlla lo stato di una transazione (polling per sumup_checkout e sumup_solo) */
+    async CheckPaymentStatus(transaction_id: number): Promise<{ status: string }> {
+        return (await this.client.get<{ status: string }>(`/payment/checkout/${transaction_id}/status`, this.config)).data
     }
 }
 

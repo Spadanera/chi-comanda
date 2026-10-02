@@ -41,13 +41,13 @@ class MasterTableApi {
     }
 
     async saveLayout(layout: RestaurantLayout): Promise<number> {
-        await db.executeUpdate(`UPDATE rooms SET status = 'DELETED' WHERE id NOT IN (${layout.rooms.filter(t => t.id > 0).map(t => t.id).join(',')})`, [])
+        await db.executeUpdate(`UPDATE rooms SET status = 'DELETED' WHERE id NOT IN (${layout.rooms.filter((t: Room) => t.id > 0).map((t: Room) => t.id).join(',')})`, [])
         for (const r of layout.rooms) {
             const params = [r.name, r.width, r.height, 'ACTIVE'];
             if (r.id < 0) {
                 const id = await db.executeInsert(`INSERT INTO rooms (name, width, height, status) VALUES (?,?,?,?)`, params);
 
-                layout.tables = layout.tables.map(t =>
+                layout.tables = layout.tables.map((t: MasterTable) =>
                     t.room_id === r.id
                         ? { ...t, room_id: id }
                         : t
@@ -59,7 +59,7 @@ class MasterTableApi {
         }
         let transactionQueries: [string] = ['UPDATE master_tables SET status = ?']
         let transactionParams: [any[]] = [['DELETED']]
-        layout.tables.filter(t => layout.rooms.map(r => r.id).includes(t.room_id)).forEach(async t => {
+        layout.tables.filter((t: MasterTable) => layout.rooms.map((r: Room) => r.id).includes(t.room_id)).forEach(async (t: MasterTable) => {
             const params = [t.name, t.default_seats, t.status, t.room_id, t.x, t.y, t.width, t.height, t.shape]
             if (t.id !== undefined && t.id < 0) {
                 transactionQueries.push(`INSERT INTO master_tables 
