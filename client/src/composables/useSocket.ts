@@ -50,9 +50,27 @@ function reconnectNow() {
   // disconnect() stops the pending backoff timer, connect() retries right away
   _socket.disconnect().connect()
 }
+/**
+ * When the screen turns back on the socket may look connected while the network died under it
+ * (it would notice only at the ping timeout, up to 45s later, receiving nothing meanwhile):
+ * ask the server whether it's there and, without an answer, drop the connection so it reopens.
+ */
+async function checkOnWake() {
+  if (!_socket || document.visibilityState !== 'visible') return
+  if (!_socket.connected) return reconnectNow()
+  try {
+    await _socket.timeout(3000).emitWithAck('alive')
+  } catch {
+    // Closing the transport triggers 'disconnect' and the automatic reconnection
+    _socket.io.engine?.close()
+  }
+}
+
 if (typeof window !== 'undefined') {
-  document.addEventListener('visibilitychange', reconnectNow)
-  window.addEventListener('online', reconnectNow)
+  document.addEventListener('visibilitychange', checkOnWake)
+  // Page Lifecycle: fired when a frozen page (Android, screen off) runs again
+  document.addEventListener('resume', checkOnWake)
+  window.addEventListener('online', checkOnWake)
   window.addEventListener('pageshow', reconnectNow)
 }
 

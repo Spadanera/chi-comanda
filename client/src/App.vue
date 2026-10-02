@@ -84,18 +84,29 @@ let unregisterSocketSetup: (() => void) | undefined
 const offline = ref(false)
 const longOffline = ref(false)
 let offlineTimers: number[] = []
-watch(socketOnline, online => {
+function restartOfflineTimers() {
   offlineTimers.forEach(clearTimeout)
   offlineTimers = []
   offline.value = false
   longOffline.value = false
-  if (!online) {
+  if (!socketOnline.value) {
+    // A timer may expire while the page is frozen and fire on wake-up just before the
+    // reconnection: show the notice only if the connection is still down at that moment
     offlineTimers = [
-      window.setTimeout(() => { offline.value = true }, 6000),
-      window.setTimeout(() => { longOffline.value = true }, 30000),
+      window.setTimeout(() => { if (!socketOnline.value) offline.value = true }, 6000),
+      window.setTimeout(() => { if (!socketOnline.value) longOffline.value = true }, 30000),
     ]
   }
-})
+}
+watch(socketOnline, restartOfflineTimers)
+// With the screen off the timers would expire unseen and fire all at once on wake-up, even if
+// the connection comes back a moment later: count the outage from when the screen turns on.
+function onVisibilityChange() {
+  if (document.visibilityState === 'visible') restartOfflineTimers()
+}
+document.addEventListener('visibilitychange', onVisibilityChange)
+// Page Lifecycle: a frozen page (Android, screen off) runs again
+document.addEventListener('resume', onVisibilityChange)
 
 onBeforeMount(() => {
   // Registered again on the new socket opened after login / logout
@@ -122,6 +133,8 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  document.removeEventListener('visibilitychange', onVisibilityChange)
+  document.removeEventListener('resume', onVisibilityChange)
   unregisterSocketSetup?.()
   unregisterSocketHandler()
   destroySocket()
@@ -205,7 +218,8 @@ onBeforeUnmount(() => {
 
       </v-main>
       <PushPrompt></PushPrompt>
-      <v-snackbar :model-value="offline && userStore.isLoggedIn" location="top" color="warning" :timeout="-1">
+      <!-- v-if, not just model-value: opened and closed within a few ms (wake-up) the snackbar stayed on screen -->
+      <v-snackbar v-if="offline && userStore.isLoggedIn" :model-value="true" location="top" color="warning" :timeout="-1">
         <v-progress-circular v-if="!longOffline" indeterminate size="16" width="2" class="mr-2"></v-progress-circular>
         {{ longOffline ? 'Aggiornamenti in tempo reale non disponibili' : 'Connessione persa, mi sto ricollegando…' }}
         <template v-slot:actions v-if="longOffline">
