@@ -34,8 +34,9 @@ function sent() {
     return sendNotification.mock.calls.map(([sub, body]) => ({ endpoint: sub.endpoint, payload: JSON.parse(body) }))
 }
 
+/** Off-menu item: keeps the name and destination chosen here (menu items take them from the menu). */
 const item = (name: string, destination_id: number) => ({
-    master_item_id: 1, type: 'Bevanda', sub_type: 'Cocktail', name, price: 5, destination_id, icon: 'mdi-glass-cocktail', done: false, paid: false,
+    type: 'Bevanda', sub_type: 'Fuori Menu', name, price: 5, destination_id, icon: 'mdi-glass-cocktail', done: false, paid: false,
 })
 
 let eventId: number

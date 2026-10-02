@@ -136,6 +136,8 @@ export interface Item extends Repository {
   grouped_ids?: number[]
   quantity?: number
   setMinimum?: boolean
+  /** PREMIUM version of a cocktail: the server applies the premium price. */
+  premium?: boolean
 }
 
 export interface MasterTable extends Repository {

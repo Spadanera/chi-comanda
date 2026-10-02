@@ -109,8 +109,10 @@ function changeItemQuantity(item: Item, quantity: number) {
 function openNoteDialog(item: Item, premium: boolean = false) {
   dialogItem.value = copy<Item>(item)
   if (premium) {
+    // Shown to the waiter; the server applies the same premium price (PREMIUM_PRICE)
     dialogItem.value.price = 9
     dialogItem.value.name = `${item.name} - PREMIUM`
+    dialogItem.value.premium = true
   }
   dialog.value = true
 }

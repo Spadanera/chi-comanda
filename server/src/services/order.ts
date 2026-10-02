@@ -1,10 +1,11 @@
 import db, { placeholders } from '../db'
-import { CompleteOrderInput, Order, User } from '../../../models/src'
+import { CompleteOrderInput, Item, Order, User } from '../../../models/src'
 import { notify } from '../socket'
 import { ITEM_CATEGORY_JOINS, ITEM_ICON, ITEM_SUB_TYPE, ITEM_TYPE } from '../db/sql'
 import { nowInItaly } from '../utils/date'
 import tableService from './table'
 import pushService from './push'
+import { priceOrderItems } from './pricing'
 
 class OrderService {
     /** Orders of the event with only the items going to the given destinations (bar, kitchen, ...). */
@@ -57,10 +58,13 @@ class OrderService {
      * position). Returns the id of the table the order belongs to.
      */
     async create(order: Order, userId: number): Promise<number> {
-        const items = order.items || []
         const orderDate = nowInItaly()
+        let items: Item[] = []
 
         const { orderId, tableId } = await db.transaction(async tx => {
+            // Prices, names and destinations are decided here, never trusted from the client
+            items = await priceOrderItems(tx, Number(order.event_id), order.items || [])
+            order.items = items
             let tableId = order.table_id
             if (!tableId) {
                 tableId = await tx.insert(`INSERT INTO tables (name, event_id, status, user_id) VALUES (?, ?, 'ACTIVE', ?)`,
@@ -74,10 +78,10 @@ class OrderService {
             for (const item of items) {
                 item.id = await tx.insert(`
                     INSERT INTO items
-                    (event_id, order_id, table_id, master_item_id, type, sub_type, name, price, note, destination_id, icon, done, paid, setMinimum)
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [
-                    order.event_id, orderId, tableId, item.master_item_id, item.type, item.sub_type, item.name, item.price,
-                    item.note || '', item.destination_id, item.icon, item.done, item.paid, item.setMinimum,
+                    (event_id, order_id, table_id, master_item_id, type, sub_type, sub_type_id, name, price, note, destination_id, icon, done, paid, setMinimum)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, [
+                    order.event_id, orderId, tableId, item.master_item_id, item.type, item.sub_type, item.sub_type_id, item.name, item.price,
+                    item.note, item.destination_id, item.icon, item.done, item.paid, item.setMinimum,
                 ])
             }
             return { orderId, tableId }
