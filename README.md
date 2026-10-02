@@ -30,6 +30,18 @@ http://localhost
 
 You need to do the reset password procedure to access the website
 
+## Server tests
+
+Integration tests run the real Express app against a disposable MySQL loaded with `init.sql`:
+
+```
+cd server
+npm run test:db   # starts mysql:8 on port 3317 (wait ~20s on first start)
+npm test
+```
+
+Google login and e-mails are optional: without `GOOGLE_CLIENT_*` / `MAIL_*` the server starts with those features disabled.
+
 ## Docker structure
 
 There are 4 services defined in docker compose:
