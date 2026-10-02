@@ -12,7 +12,7 @@ import fileAudio1 from '@/assets/nuovo-ordine-1.ogg'
 import fileAudio2 from '@/assets/nuovo-ordine-2.ogg'
 import fileAudio3 from '@/assets/nuovo-ordine-3.ogg'
 import fileAudio4 from '@/assets/nuovo-ordine-4.mp3'
-import { useSocket } from '@/composables/useSocket'
+import { useSocket, joinRoom, leaveRoom } from '@/composables/useSocket'
 
 const socket = useSocket()
 let interval: number
@@ -187,7 +187,6 @@ function itemRemovedHandler(data: number) {
 }
 
 async function handleReconnection() {
-  socket.emit('join', 'bartender')
   await getOrders()
 }
 
@@ -196,7 +195,7 @@ async function init() {
     loading.value = true
     types.value = await api.GetSubTypes()
     await getOrders()
-    socket.emit('join', 'bartender')
+    joinRoom('bartender')
     socket.on('new-order', newOrderHandler)
     socket.on('order-completed', orderCompletedHandler)
     socket.on('item-updated', itemUpdatedHandler)
@@ -225,7 +224,7 @@ watch(() => props.event, init, { immediate: true })
 onUnmounted(() => {
   window.clearInterval(interval)
   clearTimeout(reloadTimeout)
-  socket.emit('leave', 'bartender')
+  leaveRoom('bartender')
   socket.off('new-order', newOrderHandler)
   socket.off('order-completed', orderCompletedHandler)
   socket.off('item-updated', itemUpdatedHandler)

@@ -20,14 +20,16 @@ const app = express()
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-app.use(session({
+const sessionMiddleware = session({
     name: config.sessionCookieName,
     store: sessionStore,
     cookie: { maxAge: config.sessionMaxAgeMs },
     secret: config.sessionSecret,
     resave: false,
     saveUninitialized: true,
-}))
+})
+
+app.use(sessionMiddleware)
 app.use(passport.initialize())
 app.use(passport.session())
 
@@ -42,6 +44,6 @@ app.use(express.static(path.join(__dirname, 'static')))
 app.use(errorMiddleware)
 
 const server = createServer(app)
-initializeSocket(server, { path: '/socket' })
+initializeSocket(server, sessionMiddleware, { path: '/socket' })
 
 export { app, server, sessionStore }

@@ -4,6 +4,7 @@ import type {
 } from '../../../models/src'
 import router from '@/router'
 import { UserStore, SnackbarStore, ProgressStore } from '@/stores'
+import { recreateSocket } from '@/composables/useSocket'
 
 export interface PaymentPayload {
     table_id: number
@@ -136,6 +137,8 @@ class ApiClient {
 
     async Login(email: string, password: string): Promise<void> {
         const user = await this.post<User>('/login', { email, password })
+        // The session id changed: reconnect so the server sees the logged user
+        recreateSocket()
         UserStore().login(user)
     }
 
@@ -148,7 +151,9 @@ class ApiClient {
     async Logout() {
         await this.post('/logout')
         UserStore().logout()
-        router.push('/login')
+        // Leave the screens (and their rooms) before opening the anonymous socket
+        await router.push('/login')
+        recreateSocket()
         SnackbarStore().show('Logout effettuato con successo')
     }
 

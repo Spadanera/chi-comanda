@@ -1,23 +1,83 @@
-import { Server, ServerOptions } from 'socket.io'
-import { Server as HttpServer } from 'http'
-import { Message } from '../../../models/src'
+import { Server, ServerOptions, Socket } from 'socket.io'
+import { IncomingMessage, Server as HttpServer, ServerResponse } from 'http'
+import { RequestHandler } from 'express'
+import { Session, SessionData } from 'express-session'
+import { Message, User } from '../../../models/src'
+import { hasAnyRole, Roles } from '../http/middleware'
 
 /** Rooms a client may join. Each screen of the app listens on its own room. */
 export const ROOMS = ['main', 'waiter', 'bartender', 'checkout', 'table'] as const
 export type Room = typeof ROOMS[number]
 
+/**
+ * Roles allowed in each room (superuser always passes); `null` means any logged user.
+ * Keep in sync with the `allowedRole` of the client routes that join the room.
+ */
+const ROOM_ROLES: Record<Room, Roles[] | null> = {
+    main: null,
+    waiter: [Roles.waiter, Roles.checkout, Roles.bartender],
+    table: [Roles.waiter, Roles.checkout],
+    bartender: [Roles.bartender, Roles.waiter],
+    checkout: [Roles.checkout],
+}
+
+type SessionRequest = IncomingMessage & {
+    session?: Session & Partial<SessionData> & { passport?: { user?: User } }
+}
+
 let io: Server | undefined
 
-export function initializeSocket(httpServer: HttpServer, opts?: Partial<ServerOptions>): Server {
+const isRoom = (room: unknown): room is Room => (ROOMS as readonly unknown[]).includes(room)
+
+/** Private room grouping the sockets opened with a given session, used to drop them on logout. */
+const sessionRoom = (sessionId: string) => `session:${sessionId}`
+
+export function canJoin(user: User | undefined, room: Room): boolean {
+    if (!user) return false
+    const roles = ROOM_ROLES[room]
+    return roles === null || hasAnyRole(user, roles)
+}
+
+/**
+ * The user logged in the session the socket was opened with. The session is reloaded from the
+ * store on every call, so a logout or an expired session is noticed.
+ */
+function sessionUser(socket: Socket): Promise<User | undefined> {
+    const req = socket.request as SessionRequest
+    if (!req.session) return Promise.resolve(undefined)
+    // reload() replaces req.session with a fresh object: read it again in the callback
+    return new Promise(resolve => req.session!.reload(error => resolve(error ? undefined : req.session?.passport?.user)))
+}
+
+export function initializeSocket(httpServer: HttpServer, sessionMiddleware: RequestHandler, opts?: Partial<ServerOptions>): Server {
     io = new Server(httpServer, opts)
+    // Share the express session, only on the handshake request (later polling requests carry a `sid`)
+    io.engine.use((req: IncomingMessage & { _query?: { sid?: string } }, res: ServerResponse, next: (error?: unknown) => void) => {
+        if (req._query?.sid === undefined) {
+            sessionMiddleware(req as any, res as any, next)
+        } else {
+            next()
+        }
+    })
     io.on('connection', socket => {
+        const sessionId = (socket.request as SessionRequest).session?.id
+        if (sessionId) socket.join(sessionRoom(sessionId))
         socket.on('end', () => socket.disconnect())
-        socket.on('join', (room: string) => {
-            if ((ROOMS as readonly string[]).includes(room)) socket.join(room)
+        socket.on('join', async (room: unknown, ack?: unknown) => {
+            const joined = isRoom(room) && canJoin(await sessionUser(socket), room)
+            if (joined) socket.join(room)
+            if (typeof ack === 'function') ack(joined)
         })
-        socket.on('leave', (room: string) => socket.leave(room))
+        socket.on('leave', (room: unknown) => {
+            if (isRoom(room)) socket.leave(room)
+        })
     })
     return io
+}
+
+/** Disconnects every socket opened with the given session (e.g. after logout). */
+export function disconnectSession(sessionId: string) {
+    io?.in(sessionRoom(sessionId)).disconnectSockets(true)
 }
 
 export function sendMessage(message: Message) {

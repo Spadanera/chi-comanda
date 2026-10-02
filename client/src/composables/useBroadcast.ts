@@ -3,7 +3,7 @@ import { type Broadcast, type Event, type User } from '../../../models/src'
 import { UserStore, SnackbarStore } from '@/stores'
 import { copy } from '@/services/utils'
 import api from '@/services/client'
-import { useSocket } from './useSocket'
+import { onSocketCreated, useSocket } from './useSocket'
 import bendingString from '@/assets/bending-string.mp3'
 
 const messageSound = new Audio(bendingString)
@@ -11,7 +11,6 @@ const messageSound = new Audio(bendingString)
 export function useBroadcast(event: Ref<Event | undefined>) {
   const userStore = UserStore()
   const snackbarStore = SnackbarStore()
-  const socket = useSocket()
 
   const messageDialog = ref<boolean>(false)
   const messageForm = ref(null)
@@ -85,29 +84,34 @@ export function useBroadcast(event: Ref<Event | undefined>) {
     }
   }
 
-  function registerSocketHandler() {
-    socket.on('broadcast', async (data: Broadcast) => {
-      if (data.receivers.includes(userStore.id)) {
-        data.dateTime = new Date()
-        broadcasts.value.unshift(data)
-        localStorage.setItem('broadcasts', JSON.stringify(broadcasts.value))
-        if (!messageDialogReceived.value) {
-          broadcast.value = data
-          messageDialogReceived.value = true
-          try {
-            await messageSound.play()
-          } catch {
-            // autoplay blocked by browser policy
-          }
-        } else {
-          broadcastsQueue.value.push(data)
+  let unregisterSetup: (() => void) | undefined
+
+  async function onBroadcast(data: Broadcast) {
+    if (data.receivers.includes(userStore.id)) {
+      data.dateTime = new Date()
+      broadcasts.value.unshift(data)
+      localStorage.setItem('broadcasts', JSON.stringify(broadcasts.value))
+      if (!messageDialogReceived.value) {
+        broadcast.value = data
+        messageDialogReceived.value = true
+        try {
+          await messageSound.play()
+        } catch {
+          // autoplay blocked by browser policy
         }
+      } else {
+        broadcastsQueue.value.push(data)
       }
-    })
+    }
+  }
+
+  function registerSocketHandler() {
+    unregisterSetup = onSocketCreated(socket => socket.on('broadcast', onBroadcast))
   }
 
   function unregisterSocketHandler() {
-    socket.off('broadcast')
+    unregisterSetup?.()
+    useSocket().off('broadcast', onBroadcast)
   }
 
   return {
