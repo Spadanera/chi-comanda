@@ -34,3 +34,12 @@ CREATE TABLE IF NOT EXISTS `push_subscriptions` (
   KEY `idx_user` (`user_id`),
   CONSTRAINT `push_subscriptions_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 );
+
+-- Pagamenti elettronici chiusi dal server (v1.19): la transazione ricorda cosa paga.
+-- full = chiude il tavolo, partial = paga solo gli item in item_ids.
+SET @exists := (SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'payment_transactions' AND column_name = 'mode');
+SET @sql := IF(@exists = 0, "ALTER TABLE `payment_transactions` ADD COLUMN `mode` VARCHAR(10) NOT NULL DEFAULT 'full' AFTER `status`", 'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;

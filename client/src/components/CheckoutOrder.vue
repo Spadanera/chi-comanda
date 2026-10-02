@@ -250,16 +250,16 @@ async function pollStatus() {
     }
 }
 
+/** The server has already paid the items / closed the table (and recorded any discount). */
 function onPaymentSuccess() {
     stopPolling()
     paymentStatus.value = 'paid'
-    snackbarStore.show('Pagamento ricevuto!', 3000, 'top', 'success')
-    setTimeout(async () => {
-        if (partialPaid.value) {
-            await paySelectedItem()
-        } else {
-            await completeTable()
-        }
+    snackbarStore.show(partialPaid.value ? 'Pagamento ricevuto' : 'Pagamento ricevuto, tavolo chiuso', 3000, 'top', 'success')
+    const tableId = activeTable.value.table_id || activeTable.value.id
+    setTimeout(() => {
+        itemToBePaid.value = []
+        dialogPay.value = false
+        emit('getTables', partialPaid.value ? tableId : 0)
     }, 1000)
 }
 

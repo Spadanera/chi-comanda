@@ -91,3 +91,28 @@ export async function closeApp() {
     const { default: db } = await import('../src/db')
     await db.closePool()
 }
+
+/** Creates an ongoing event (menu 1, minimum consumption 5) with the waiter staffed. */
+export async function openEvent(app: any, ids: Record<RoleName, number>): Promise<number> {
+    const admin = await loginAs(app, 'admin')
+    const eventId = (await admin.post('/api/events').send({
+        name: 'Serata', date: '2026-10-02', menu_id: 1, minimumConsumptionPrice: 5, users: [{ id: ids.waiter }],
+    })).body
+    await admin.put(`/api/events/setstatus/${eventId}`).send({ status: 'ONGOING' })
+    return eventId
+}
+
+/** Opens a table with an order of the first `count` menu products; returns its items as stored. */
+export async function openTable(app: any, eventId: number, count = 2) {
+    const waiter = await loginAs(app, 'waiter')
+    const menu = (await waiter.get('/api/master-items/available/1')).body.slice(0, count)
+    const tableId = (await waiter.post('/api/orders').send({
+        event_id: eventId, table_name: `Tavolo ${Date.now()}`,
+        items: menu.map((m: any) => ({ master_item_id: m.id, done: false, paid: false })),
+    })).body as number
+    const conn = await rawConnection()
+    const [items]: any = await conn.query('SELECT id, price FROM items WHERE table_id = ? ORDER BY id', [tableId])
+    await conn.end()
+    const total = Math.round(items.reduce((sum: number, i: any) => sum + Number(i.price), 0) * 100) / 100
+    return { tableId, items: items as { id: number, price: number }[], total, waiter }
+}
