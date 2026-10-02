@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import type { Item } from '../../../models/src'
+
 const props = defineProps(['subheader', 'done', 'delete', 'quantitybefore', 'showtype', 'shownote'])
-const items = defineModel({ default: [] })
+const items = defineModel<Item[]>({ default: () => [] })
 </script>
 
 <template>
