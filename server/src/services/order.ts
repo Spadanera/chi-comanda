@@ -4,6 +4,7 @@ import { notify } from '../socket'
 import { ITEM_CATEGORY_JOINS, ITEM_ICON, ITEM_SUB_TYPE, ITEM_TYPE } from '../db/sql'
 import { nowInItaly } from '../utils/date'
 import tableService from './table'
+import pushService from './push'
 
 class OrderService {
     /** Orders of the event with only the items going to the given destinations (bar, kitchen, ...). */
@@ -92,6 +93,8 @@ class OrderService {
         const table = (await tableService.getByEvent(order.event_id || 0)).find(t => t.id === tableId)
         notify.newOrder(created, table)
         notify.tablesChanged(['waiter', 'table'])
+        // Not awaited: the waiter doesn't wait for the push services to answer
+        void pushService.notifyNewOrder(created, table?.name || order.table_name || '', userId)
 
         return tableId
     }

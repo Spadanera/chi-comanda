@@ -1,4 +1,7 @@
 import { defineConfig } from 'vitest/config'
+import webpush from 'web-push'
+
+const vapid = webpush.generateVAPIDKeys()
 
 export default defineConfig({
     test: {
@@ -16,6 +19,8 @@ export default defineConfig({
             BASE_URL: 'http://localhost',
             GOOGLE_CLIENT_ID: 'test-client-id',
             GOOGLE_CLIENT_SECRET: 'test-client-secret',
+            VAPID_PUBLIC_KEY: vapid.publicKey,
+            VAPID_PRIVATE_KEY: vapid.privateKey,
         },
     },
 })

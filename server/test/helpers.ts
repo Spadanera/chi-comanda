@@ -33,7 +33,7 @@ export function rawConnection() {
 }
 
 const VOLATILE_TABLES = [
-    'payment_transactions', 'payment_settings', 'audit', 'sessions', 'reset',
+    'push_subscriptions', 'payment_transactions', 'payment_settings', 'audit', 'sessions', 'reset',
     'items', 'items_history', 'orders', 'orders_history', 'table_master_table',
     'tables', 'tables_history', 'master_tables_event', 'user_event', 'events',
 ]

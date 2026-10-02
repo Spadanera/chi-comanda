@@ -22,6 +22,12 @@ const config = {
         clientId: env.GOOGLE_CLIENT_ID || '',
         clientSecret: env.GOOGLE_CLIENT_SECRET || '',
     },
+    /** Web push (VAPID). Without both keys push notifications are disabled. */
+    push: {
+        publicKey: env.VAPID_PUBLIC_KEY || '',
+        privateKey: env.VAPID_PRIVATE_KEY || '',
+        subject: env.VAPID_SUBJECT || `mailto:${env.MAIL_FROM || 'info@chicomanda.com'}`,
+    },
     mail: {
         apiKey: env.MAIL_API_KEY || '',
         apiSecret: env.MAIL_API_SECRET || '',

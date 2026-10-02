@@ -415,6 +415,25 @@ class ApiClient {
         return this.get('/audit', { page, itemsperpage: itemsPerPage, sortby: sortBy, sortdir: sortDir })
     }
 
+    // ── Push notifications ───────────────────────────────────────────────────
+
+    GetPushConfig(): Promise<{ enabled: boolean, publicKey: string | null }> {
+        return this.get('/push/config')
+    }
+
+    /** `null` when the user has never been asked. */
+    async GetPushPreference(): Promise<boolean | null> {
+        return (await this.get<{ preference: boolean | null }>('/push/preference')).preference
+    }
+
+    SetPushPreference(enabled: boolean): Promise<void> {
+        return this.put('/push/preference', { enabled })
+    }
+
+    SavePushSubscription(subscription: PushSubscriptionJSON): Promise<void> {
+        return this.post('/push/subscriptions', subscription)
+    }
+
     // ── Payments ─────────────────────────────────────────────────────────────
 
     GetPaymentSettings(): Promise<PaymentSetting[]> {

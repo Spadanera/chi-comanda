@@ -182,6 +182,8 @@ export interface User extends Repository {
   statusSwitch?: boolean,
   creation_date?: string,
   avatar?: any
+  /** Destination (bar, kitchen...) a bartender serves during an event. */
+  destination_id?: number | null
 }
 
 export interface Role extends Repository {

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue"
-import { type Event, type Event as EventType, type User } from "../../../../models/src"
+import { ref, onMounted, watch, computed } from "vue"
+import { type Destination, type Event, type Event as EventType, type User } from "../../../../models/src"
 import api from '@/services/client'
 import { SnackbarStore } from '@/stores'
-import { requiredRule, copy } from "@/services/utils"
+import { requiredRule, copy, Roles } from "@/services/utils"
 import EventList from "@/components/EventList.vue"
 import Avatar from "@/components/Avatar.vue"
 
@@ -26,6 +26,11 @@ const loading = ref(false)
 const form = ref(null)
 const menu = ref([])
 const users = ref<User[]>([])
+const destinations = ref<Destination[]>([])
+
+const isBartender = (user: User) => !!users.value.find(u => u.id === user.id)?.roles?.includes(Roles.bartender)
+/** Bartenders of the evening: each one is assigned to a destination and gets its orders. */
+const selectedBartenders = computed(() => (dialogEvent.value?.users || []).filter(isBartender))
 
 const page = ref(1)
 const totalPages = ref(1)
@@ -66,13 +71,15 @@ async function openDialog(event?: Event) {
     } as EventType
   }
 
-  const [menuRes, usersRes] = await Promise.all([
+  const [menuRes, usersRes, destinationsRes] = await Promise.all([
     api.GetAllMenu(),
-    api.GetAvailableUsers()
+    api.GetAvailableUsers(),
+    api.GetDestinations()
   ])
 
   menu.value = menuRes
   users.value = usersRes
+  destinations.value = destinationsRes
 
   if (menu.value.length && !dialogEvent.value.id) {
     dialogEvent.value.menu_id = menu.value[0].id
@@ -89,7 +96,7 @@ async function upsertEvent() {
     _event.date = new Date(_event.date)
   }
   _event.date.setHours(_event.date.getHours() + 4)
-  _event.users = _event.users.map(({ id }) => ({ id } as User))
+  _event.users = _event.users.map(u => ({ id: u.id, destination_id: isBartender(u) ? u.destination_id : null } as User))
 
   if (!_event.id) {
     await api.CreateEvent(_event)
@@ -213,6 +220,10 @@ onMounted(async () => {
               </v-chip>
             </template>
           </v-select>
+          <v-select v-for="bartender in selectedBartenders" :key="bartender.id"
+            :label="`Destinazione di ${bartender.username}`" :items="destinations" v-model="bartender.destination_id"
+            item-value="id" item-title="name" :rules="[requiredRule]" prepend-inner-icon="mdi-glass-cocktail"
+            hint="Riceverà le notifiche degli ordini per questa destinazione" persistent-hint class="mb-2"></v-select>
           <v-text-field v-model="dialogEvent.minimumConsumptionPrice" :disabled="!!dialogEvent.id && dialogEvent.status === 'ONGOING'"
             :readonly="!!dialogEvent.id && dialogEvent.status === 'ONGOING'" label="Prezzo Consumazione Minima"
             :clearable="dialogEvent.status !== 'ONGOING'" type="number" append-inner-icon="mdi-currency-eur"></v-text-field>

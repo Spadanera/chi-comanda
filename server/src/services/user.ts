@@ -34,7 +34,7 @@ class UserService {
     getAvailable(): Promise<User[]> {
         const roles = Object.values(Roles)
         return db.query(`
-            SELECT id, username, avatar
+            SELECT id, username, avatar, ${USER_ROLES_JSON} AS roles
             FROM users
             WHERE status = 'ACTIVE'
             AND EXISTS (
