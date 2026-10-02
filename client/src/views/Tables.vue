@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Layout from '@/components/Layout.vue'
 import { ref, onUnmounted, onMounted } from "vue"
-import { useSocket } from '@/composables/useSocket'
+import { useSocket, joinRoom, leaveRoom } from '@/composables/useSocket'
 
 const props = defineProps(['event'])
 
@@ -19,19 +19,18 @@ const reloadTable = () => {
 }
 
 const handleReconnection = () => {
-  socket.emit('join', 'table')
   reloadTable()
 }
 
 onMounted(() => {
-  socket.emit('join', 'table')
+  joinRoom('table')
   socket.on('reload-table', reloadTable)
   socket.on('connect', handleReconnection)
 })
 
 onUnmounted(() => {
   clearTimeout(reloadTimeout)
-  socket.emit('leave', 'table')
+  leaveRoom('table')
   socket.off('reload-table', reloadTable)
   socket.off('connect', handleReconnection)
 })

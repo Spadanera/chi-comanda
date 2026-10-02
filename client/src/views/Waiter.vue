@@ -9,7 +9,7 @@ import { useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { SnackbarStore, ZoomStore } from '@/stores'
 import { storeToRefs } from 'pinia'
-import { useSocket } from '@/composables/useSocket'
+import { useSocket, joinRoom, leaveRoom } from '@/composables/useSocket'
 
 const { smAndUp } = useDisplay()
 
@@ -70,7 +70,6 @@ async function getTables() {
 }
 
 async function handleReconnection() {
-  socket.emit('join', 'waiter')
   await getTables()
 }
 
@@ -81,7 +80,7 @@ async function init() {
     if (rooms.value.length) {
       activeRoomId.value = rooms.value[0].id
     }
-    socket.emit('join', 'waiter')
+    joinRoom('waiter')
     socket.on('reload-table', reloadTableHandler)
     socket.on('connect', handleReconnection)
     loading.value = false
@@ -92,7 +91,7 @@ watch(() => props.event, init, { immediate: true })
 
 onUnmounted(() => {
   clearTimeout(reloadTimeout)
-  socket.emit('leave', 'waiter')
+  leaveRoom('waiter')
   socket.off('reload-table', reloadTableHandler)
   socket.off('connect', handleReconnection)
 })

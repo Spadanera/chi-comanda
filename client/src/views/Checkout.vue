@@ -7,7 +7,7 @@ import { copy, sortTables } from "@/services/utils"
 import { RouterLink } from 'vue-router'
 import CheckoutOrder from "@/components/CheckoutOrder.vue"
 import CheckoutTableSelection from "@/components/CheckoutTableSelection.vue"
-import { useSocket } from '@/composables/useSocket'
+import { useSocket, joinRoom, leaveRoom } from '@/composables/useSocket'
 
 const props = defineProps(['event'])
 
@@ -86,7 +86,6 @@ function orderCompletedHandler(data: CompleteOrderInput) {
 }
 
 async function handleReconnection() {
-  socket.emit('join', 'checkout')
   await getTables()
 }
 
@@ -95,7 +94,7 @@ async function init() {
     loading.value = true
     types.value = await api.GetSubTypes()
     await getTables()
-    socket.emit('join', 'checkout')
+    joinRoom('checkout')
     socket.on('new-order', newOrderHandler)
     socket.on('item-removed', itemRemovedHandler)
     socket.on('order-completed', orderCompletedHandler)
@@ -107,7 +106,7 @@ async function init() {
 watch(() => props.event, init, { immediate: true })
 
 onUnmounted(() => {
-  socket.emit('leave', 'checkout')
+  leaveRoom('checkout')
   socket.off('new-order', newOrderHandler)
   socket.off('item-removed', itemRemovedHandler)
   socket.off('order-completed', orderCompletedHandler)

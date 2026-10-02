@@ -7,7 +7,7 @@ import { UserStore, SnackbarStore, ProgressStore, ThemeStore } from '@/stores'
 import { type User, type Event } from '../../models/src'
 import Avatar from './components/Avatar.vue'
 import { requireRuleArray, requiredRule } from './services/utils'
-import { useSocket, socketConnected, destroySocket } from './composables/useSocket'
+import { socketConnected, destroySocket, onSocketCreated, joinRoom } from './composables/useSocket'
 import { useBroadcast } from './composables/useBroadcast'
 
 const route = useRoute()
@@ -73,18 +73,23 @@ async function getOnGoingEvent() {
   initReceivers()
 }
 
+let unregisterSocketSetup: (() => void) | undefined
+
 onBeforeMount(() => {
-  const socket = useSocket()
-
-  socket.on('connect', () => {
-    socketConnected.value = true
-    socket.emit('join', 'main')
+  // Registered again on the new socket opened after login / logout
+  unregisterSocketSetup = onSocketCreated(socket => {
+    socket.on('connect_error', () => {
+      snackbarStore.show('Errore nella connessione, prova a ricaricare la pagina', -1, 'top', 'error', true)
+      socket.emit('end')
+    })
+    socket.on('reload', async () => {
+      if (user.value?.id) {
+        getOnGoingEvent()
+      }
+    })
   })
-
-  socket.on('connect_error', () => {
-    snackbarStore.show('Errore nella connessione, prova a ricaricare la pagina', -1, 'top', 'error', true)
-    socket.emit('end')
-  })
+  // Refused by the server until the user logs in; rejoined by the socket opened after login
+  joinRoom('main')
 
   registerSocketHandler()
 })
@@ -95,16 +100,10 @@ onMounted(async () => {
   if (user.value?.id) {
     await getOnGoingEvent()
   }
-
-  const socket = useSocket()
-  socket.on('reload', async () => {
-    if (user.value?.id) {
-      getOnGoingEvent()
-    }
-  })
 })
 
 onBeforeUnmount(() => {
+  unregisterSocketSetup?.()
   unregisterSocketHandler()
   destroySocket()
 })

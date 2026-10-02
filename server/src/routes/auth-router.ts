@@ -3,6 +3,7 @@ import passport from 'passport'
 import config from '../config'
 import { isGoogleEnabled } from '../auth/passport'
 import { NotFoundError, UnauthorizedError } from '../http/errors'
+import { disconnectSession } from '../socket'
 
 const authRouter = Router()
 
@@ -15,8 +16,10 @@ authRouter.post('/login', (req: Request, res: Response, next: NextFunction) => {
 })
 
 authRouter.post('/logout', (req: Request, res: Response, next: NextFunction) => {
+    const sessionId = req.session.id
     req.logout(logoutError => {
         if (logoutError) return next(logoutError)
+        disconnectSession(sessionId)
         req.session.destroy(() => {
             res.clearCookie(config.sessionCookieName)
             res.json(1)
