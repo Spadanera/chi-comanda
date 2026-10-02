@@ -11,6 +11,7 @@ import * as directives from 'vuetify/directives'
 import '@mdi/font/css/materialdesignicons.css'
 import '@fontsource/federo/400.css'
 import { light, dark } from './plugins/theme'
+import { aliases, decoIconSet } from './plugins/icons'
 import Confirm from './components/Confirm.vue'
 import NoEvent from './components/NoEvent.vue'
 import { it } from 'vuetify/locale'
@@ -20,7 +21,9 @@ const vuetify = createVuetify({
     components,
     directives,
     icons: {
-      defaultSet: 'mdi'
+      defaultSet: 'mdi',
+      aliases,
+      sets: { mdi: decoIconSet },
     },
     theme: {
       defaultTheme: 'light',

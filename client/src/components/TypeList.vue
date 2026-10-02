@@ -4,7 +4,9 @@ import { type SubType, type Type } from '../../../models/src';
 
 /** Dialog model for both categories and sub-categories (those have a `type_id`). */
 type CategoryForm = Partial<SubType> & { isSub?: boolean }
-import { copy, requiredRule, icons } from '@/services/utils';
+import { copy, requiredRule, CATEGORY_ICONS } from '@/services/utils';
+
+const iconItems = CATEGORY_ICONS.map(([value, title]) => ({ value, title }))
 import api from '@/services/client'
 
 const dialogType = ref<boolean>(null)
@@ -155,11 +157,11 @@ onMounted(async () => {
                     <v-text-field label="Nome" :rules="[requiredRule]" v-model="selectedType.name"></v-text-field>
                     <v-select label="Categoria" :items="types" item-value="id" item-title="name" :rules="[requiredRule]"
                         v-if="selectedType.isSub || selectedType.type_id" v-model="selectedType.type_id"></v-select>
-                    <v-select :append-inner-icon="selectedType.icon" label="Icona" :items="icons" v-model="selectedType.icon" :rules="[requiredRule]">
+                    <v-select :prepend-inner-icon="selectedType.icon" label="Icona" :items="iconItems" v-model="selectedType.icon" :rules="[requiredRule]">
                         <template v-slot:item="{ props, item }">
-                            <v-list-item v-bind="props" :title="item.raw">
+                            <v-list-item v-bind="props">
                                 <template v-slot:prepend>
-                                    <v-icon>{{ item.raw }}</v-icon>
+                                    <v-icon :icon="item.value"></v-icon>
                                 </template>
                             </v-list-item>
                         </template>

@@ -22,7 +22,8 @@ export const light: ThemeDefinition = {
         'secondary-darken-1': '#245B59',
         error: '#B04A33',
         info: '#2F7472',
-        success: '#3F7A5E',
+        // Deep jade: next to the ochre and the night blue, not a generic "success" green
+        success: '#2E6A5A',
         warning: '#A86F14',
     },
     variables: {
@@ -52,8 +53,8 @@ export const dark: ThemeDefinition = {
         'on-error': '#2A1310',
         info: '#7FC2BF',
         'on-info': '#0D2423',
-        success: '#7DBF9E',
-        'on-success': '#0E2419',
+        success: '#5E9C8A',
+        'on-success': '#0B1F1A',
         warning: '#E2C15A',
         'on-warning': '#2A2000',
     },
