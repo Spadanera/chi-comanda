@@ -1,8 +1,10 @@
 -- Multi-venue (docs/multi-venue.md): every domain row belongs to a venue. The existing data goes into venue 1.
 -- `venue_id` comes with DEFAULT 1, so the previous release keeps writing valid rows; the default is dropped later.
 -- Composite FKs (venue_id, x_id) -> parent (venue_id, id) replace the existing single-column ones: the database refuses
--- a row of one venue pointing to a row of another. FKs that don't exist today come in a later migration, after an
--- orphan check on the production data (a failing migration stops the server).
+-- a row of one venue pointing to a row of another. New FKs only towards rows the code never deletes, and checked for
+-- orphans on the production data of 3 October 2026 (a failing migration stops the server). No FK where the code deletes
+-- the parent and keeps the child: items.master_item_id (menu deletion, 4 orphans in production),
+-- master_items.sub_type_id (sub type deletion with archived products), payment_transactions (event closing).
 
 CREATE TABLE IF NOT EXISTS `venues` (
   `id` INT NOT NULL AUTO_INCREMENT,
@@ -85,7 +87,9 @@ ALTER TABLE `master_tables_event`
   ADD UNIQUE KEY `uk_venue_id` (`venue_id`, `id`),
   ADD CONSTRAINT `master_tables_event_venue` FOREIGN KEY (`venue_id`) REFERENCES `venues` (`id`),
   DROP FOREIGN KEY `master_tables_event_ibfk_1`,
-  ADD CONSTRAINT `master_tables_event_event` FOREIGN KEY (`venue_id`, `event_id`) REFERENCES `events` (`venue_id`, `id`);
+  ADD CONSTRAINT `master_tables_event_event` FOREIGN KEY (`venue_id`, `event_id`) REFERENCES `events` (`venue_id`, `id`),
+  ADD CONSTRAINT `master_tables_event_master` FOREIGN KEY (`venue_id`, `master_table_id`) REFERENCES `master_tables` (`venue_id`, `id`),
+  ADD CONSTRAINT `master_tables_event_room` FOREIGN KEY (`venue_id`, `room_id`) REFERENCES `rooms` (`venue_id`, `id`);
 
 ALTER TABLE `tables`
   ADD COLUMN `venue_id` INT NOT NULL DEFAULT 1,
@@ -111,17 +115,21 @@ ALTER TABLE `items`
   DROP FOREIGN KEY `items_ibfk_3`,
   ADD CONSTRAINT `items_event` FOREIGN KEY (`venue_id`, `event_id`) REFERENCES `events` (`venue_id`, `id`),
   ADD CONSTRAINT `items_order` FOREIGN KEY (`venue_id`, `order_id`) REFERENCES `orders` (`venue_id`, `id`),
-  ADD CONSTRAINT `items_table` FOREIGN KEY (`venue_id`, `table_id`) REFERENCES `tables` (`venue_id`, `id`);
+  ADD CONSTRAINT `items_table` FOREIGN KEY (`venue_id`, `table_id`) REFERENCES `tables` (`venue_id`, `id`),
+  ADD CONSTRAINT `items_destination` FOREIGN KEY (`venue_id`, `destination_id`) REFERENCES `destinations` (`venue_id`, `id`);
 
 ALTER TABLE `user_event`
   ADD COLUMN `venue_id` INT NOT NULL DEFAULT 1,
   ADD CONSTRAINT `user_event_venue` FOREIGN KEY (`venue_id`) REFERENCES `venues` (`id`),
   DROP FOREIGN KEY `user_event_ibfk_2`,
-  ADD CONSTRAINT `user_event_event` FOREIGN KEY (`venue_id`, `event_id`) REFERENCES `events` (`venue_id`, `id`);
+  ADD CONSTRAINT `user_event_event` FOREIGN KEY (`venue_id`, `event_id`) REFERENCES `events` (`venue_id`, `id`),
+  ADD CONSTRAINT `user_event_destination` FOREIGN KEY (`venue_id`, `destination_id`) REFERENCES `destinations` (`venue_id`, `id`);
 
 ALTER TABLE `table_master_table`
   ADD COLUMN `venue_id` INT NOT NULL DEFAULT 1,
-  ADD CONSTRAINT `table_master_table_venue` FOREIGN KEY (`venue_id`) REFERENCES `venues` (`id`);
+  ADD CONSTRAINT `table_master_table_venue` FOREIGN KEY (`venue_id`) REFERENCES `venues` (`id`),
+  ADD CONSTRAINT `table_master_table_table` FOREIGN KEY (`venue_id`, `table_id`) REFERENCES `tables` (`venue_id`, `id`),
+  ADD CONSTRAINT `table_master_table_master` FOREIGN KEY (`venue_id`, `master_table_id`) REFERENCES `master_tables_event` (`venue_id`, `id`);
 
 -- Archived rows keep no FK to their (deleted) parents
 ALTER TABLE `items_history`

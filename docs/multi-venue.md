@@ -112,9 +112,16 @@ No production deploy and no production DB writes without an explicit request.
   routes), `path` always relative to `/api`. The superuser keeps passing every role check inside a venue (as today).
   Tests: `session-venue.test.ts`, plus a socket test on a revoked role. `resetDatabase()` now removes venues > 1 and
   their rows.
-- **Open**: composite FKs that don't exist today (`table_master_table`, `payment_transactions`,
-  `user_event.destination_id`, `master_items.sub_type_id`) need an orphan check on a copy of the production dump before
-  they can go into a migration (a failing migration stops the server).
+- **Checked on real data (3 Oct)**: the production dump of 3 October restored locally into database `prodcopy` of the
+  `libra-restore-check` container (plus the additive part of the old `release.sql`, as production has it). Orphans: none
+  for the existing FKs, none for the new ones in `005`, 4 for `items.master_item_id` (items of deleted products: no FK
+  there). No duplicate role rows. Migrations `002`–`005` applied on a copy in about 15 s: 346 events and 34,041
+  `items_history` rows in venue 1, 3 superuser rows with `venue_id NULL`, 46 FKs. The copy on the test server was
+  dropped afterwards; `prodcopy` stays in the local container.
+  Not given an FK because the code deletes the parent and keeps the child: `items.master_item_id`,
+  `master_items.sub_type_id`, `payment_transactions` (closing an event deletes its tables).
+- **Bug to fix in point 3**: `eventService` runs `DELETE FROM table_master_table` and `DELETE FROM master_tables_event`
+  with no condition (starting/closing an event): with several venues it would wipe every venue's event layout.
 
 ---
 
