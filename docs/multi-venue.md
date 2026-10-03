@@ -145,6 +145,11 @@ No production deploy and no production DB writes without an explicit request.
   **Open question for the user:** user management stays superuser-only, as today (Libra unchanged). With several
   venues the venue admin could manage their own staff: it is `requireRole(Roles.superuser)` → `requireRole(Roles.admin)`
   on `/api/users` in `routes/index.ts`, plus the client menu entry.
+- **Point 5 done**. Rooms `venue:<id>:<room>`: the client still asks `join('bartender')`, the server joins the venue
+  room of the session (no venue → refused) and the private `user:<id>` room. `sendMessage(venueId, …)` and every
+  `notify.*` take the venue first. `disconnectUser` after role/status changes (staff and platform), `disconnectVenue`
+  after a venue update, `disconnectSession` after a venue switch (point 2). Tests in `socket.test.ts`: a broadcast of
+  venue 1 doesn't reach venue 2; venue switch and role change drop the sockets.
 - **Checked on real data (3 Oct)**: the production dump of 3 October restored locally into database `prodcopy` of the
   `libra-restore-check` container (plus the additive part of the old `release.sql`, as production has it). Orphans: none
   for the existing FKs, none for the new ones in `005`, 4 for `items.master_item_id` (items of deleted products: no FK

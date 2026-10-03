@@ -107,7 +107,7 @@ class TableService {
                 }
             }
         })
-        notify.tablesChanged()
+        notify.tablesChanged(ctx.venueId)
         return 1
     }
 
@@ -135,7 +135,7 @@ class TableService {
             }
             return tableNames.length
         })
-        notify.tablesChanged(['waiter', 'table', 'checkout'])
+        notify.tablesChanged(ctx.venueId, ['waiter', 'table', 'checkout'])
         return count
     }
 
@@ -152,7 +152,7 @@ class TableService {
             }
             return tx.execute('UPDATE tables SET name = ? WHERE venue_id = :venue AND id = ?', [target.name, tableId])
         })
-        notify.tablesChanged()
+        notify.tablesChanged(ctx.venueId)
         return result
     }
 
@@ -191,7 +191,7 @@ class TableService {
     /** Marks everything as paid and frees the layout position. */
     async close(ctx: VenueContext, tableId: number): Promise<number> {
         const result = await ctx.db.transaction(tx => this.closeWith(tx, tableId))
-        notify.tablesChanged(['waiter', 'table', 'checkout'])
+        notify.tablesChanged(ctx.venueId, ['waiter', 'table', 'checkout'])
         return result
     }
 }

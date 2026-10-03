@@ -5,6 +5,7 @@ import staffService from '../services/staff'
 import { currentUserId, jsonHandler, Roles } from '../http/middleware'
 import { toId } from '../http/validate'
 import { venueContext } from '../venue/context'
+import { disconnectUser, disconnectVenue } from '../socket'
 import { BadRequestError } from '../http/errors'
 
 /** The platform: venues and every user of the installation (superuser only, enforced where mounted; no venue). */
@@ -22,17 +23,29 @@ router.post('/venues', jsonHandler(async req => {
     return venueId
 }))
 
-router.put('/venues/:id', jsonHandler(req => venueService.update(toId(req.params.id), req.body || {})))
+router.put('/venues/:id', jsonHandler(async req => {
+    const id = toId(req.params.id)
+    await venueService.update(id, req.body || {})
+    // A disabled venue (or one with fewer features) must not keep its screens connected
+    disconnectVenue(id)
+}))
 
 router.get('/users', jsonHandler(() => userService.getAll()))
 
-router.put('/users/:id/status', jsonHandler(req => userService.updateStatus({ id: toId(req.params.id), status: req.body?.status })))
+/** Runs a change on an account, then drops its sockets: they rejoin with what the account holds now. */
+const changeUser = (change: (id: number, body: any) => Promise<unknown>) => jsonHandler(async req => {
+    const id = toId(req.params.id)
+    await change(id, req.body || {})
+    disconnectUser(id)
+})
 
-router.put('/users/:id/superuser', jsonHandler(req => {
-    if (typeof req.body?.superuser !== 'boolean') throw new BadRequestError('Valore non valido')
-    return userService.setSuperuser(toId(req.params.id), req.body.superuser)
+router.put('/users/:id/status', changeUser((id, body) => userService.updateStatus({ id, status: body.status })))
+
+router.put('/users/:id/superuser', changeUser((id, body) => {
+    if (typeof body.superuser !== 'boolean') throw new BadRequestError('Valore non valido')
+    return userService.setSuperuser(id, body.superuser)
 }))
 
-router.delete('/users/:id', jsonHandler(req => userService.delete(toId(req.params.id))))
+router.delete('/users/:id', changeUser(id => userService.delete(id)))
 
 export default router

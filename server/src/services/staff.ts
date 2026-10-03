@@ -6,6 +6,7 @@ import { Roles } from '../http/middleware'
 import { BadRequestError, ForbiddenError, NotFoundError } from '../http/errors'
 import { VenueContext } from '../venue/context'
 import userService from './user'
+import { disconnectUser } from '../socket'
 
 /** Roles held inside a venue; `superuser` belongs to the platform. */
 export const VENUE_ROLES: string[] = [Roles.admin, Roles.checkout, Roles.waiter, Roles.bartender, Roles.client]
@@ -98,6 +99,8 @@ class StaffService {
         if (ctx.roles.includes(Roles.superuser)) {
             await userService.setSuperuser(user.id!, superuser)
         }
+        // Open screens rejoin their rooms with the new roles
+        disconnectUser(user.id!)
     }
 
     /**
@@ -158,12 +161,15 @@ class StaffService {
         if (!(await userService.hasAnyRole(user.id!))) {
             await userService.delete(user.id!)
         }
+        disconnectUser(user.id!)
     }
 
     /** Account status (ACTIVE / BLOCKED) of a member: it applies to every venue of the account. */
     async updateStatus(ctx: VenueContext, input: User): Promise<number> {
         const user = await this.findUser(ctx, input.id)
-        return userService.updateStatus({ id: user.id, status: input.status })
+        const result = await userService.updateStatus({ id: user.id, status: input.status })
+        disconnectUser(user.id!)
+        return result
     }
 }
 

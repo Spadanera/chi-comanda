@@ -110,8 +110,8 @@ class OrderService {
         const user = await ctx.db.queryOne<User>('SELECT id, username, avatar FROM users WHERE id = ?', [userId])
         const created: Order = { ...order, id: orderId, table_id: tableId, order_date: orderDate, user }
         const table = (await tableService.getByEvent(ctx, Number(order.event_id))).find(t => t.id === tableId)
-        notify.newOrder(created, table)
-        notify.tablesChanged(['waiter', 'table'])
+        notify.newOrder(ctx.venueId, created, table)
+        notify.tablesChanged(ctx.venueId, ['waiter', 'table'])
         // Not awaited: the waiter doesn't wait for the push services to answer
         void pushService.notifyNewOrder(ctx, created, table?.name || order.table_name || '')
 
@@ -136,7 +136,7 @@ class OrderService {
         } else {
             result = await ctx.db.execute('UPDATE orders SET done = TRUE WHERE venue_id = :venue AND id = ?', [orderId])
         }
-        notify.orderCompleted({ ...input, order_id: orderId })
+        notify.orderCompleted(ctx.venueId, { ...input, order_id: orderId })
         return result
     }
 }

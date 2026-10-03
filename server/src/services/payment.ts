@@ -257,8 +257,8 @@ class PaymentService {
             return tx
         })
         if (!row) return false
-        notify.tablesChanged(['waiter', 'table', 'checkout'])
-        notify.paymentCompleted({ transaction_id: transactionId, table_id: row.table_id, status: 'PAID' })
+        notify.tablesChanged(ctx.venueId, ['waiter', 'table', 'checkout'])
+        notify.paymentCompleted(ctx.venueId, { transaction_id: transactionId, table_id: row.table_id, status: 'PAID' })
         return true
     }
 
@@ -268,7 +268,7 @@ class PaymentService {
         if (!updated) return
         const tx = await ctx.db.queryOne<{ table_id: number }>('SELECT table_id FROM payment_transactions WHERE venue_id = :venue AND id = ?',
             [transactionId])
-        notify.paymentCompleted({ transaction_id: transactionId, table_id: tx?.table_id, status: 'FAILED' })
+        notify.paymentCompleted(ctx.venueId, { transaction_id: transactionId, table_id: tx?.table_id, status: 'FAILED' })
     }
 
     // ── sumup_solo: standalone card terminal (requires SumUp partner access) ──

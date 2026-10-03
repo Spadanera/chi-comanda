@@ -5,7 +5,7 @@ import { VenueContext } from '../venue/context'
 class ItemService {
     async delete(ctx: VenueContext, id: number): Promise<number> {
         const result = await ctx.db.executeOne('DELETE FROM items WHERE venue_id = :venue AND id = ?', [id])
-        notify.itemRemoved(id)
+        notify.itemRemoved(ctx.venueId, id)
         return result
     }
 
@@ -18,7 +18,7 @@ class ItemService {
         if (reopenTable) {
             await ctx.db.execute(`UPDATE tables SET status = 'ACTIVE', paid = NULL WHERE venue_id = :venue AND id = ?`, [stored.table_id])
         }
-        notify.itemUpdated({ ...item, table_id: stored.table_id })
+        notify.itemUpdated(ctx.venueId, { ...item, table_id: stored.table_id })
         return result
     }
 }

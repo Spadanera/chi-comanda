@@ -245,7 +245,7 @@ class EventService {
             await this.replaceStaff(tx, event.id!, event.users!)
             return affected
         })
-        notify.eventsChanged()
+        notify.eventsChanged(ctx.venueId)
         return result
     }
 
@@ -271,7 +271,7 @@ class EventService {
         } else {
             result = await ctx.db.execute('UPDATE events SET status = ? WHERE venue_id = :venue AND id = ?', [status, id])
         }
-        notify.eventsChanged()
+        notify.eventsChanged(ctx.venueId)
         return result
     }
 

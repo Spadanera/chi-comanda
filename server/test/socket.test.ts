@@ -130,6 +130,49 @@ describe('socket rooms', () => {
     })
 })
 
+describe('venues', () => {
+    it('keeps the messages of a venue inside it', async () => {
+        const conn = await rawConnection()
+        await conn.query(`INSERT IGNORE INTO venues (id, name) VALUES (2, 'Secondo')`)
+        await conn.end()
+        const superuserCookie = await sessionCookie('superuser')
+        // Two venues now: the superuser picks the second one
+        await request(app).put('/api/session/venue').set('Cookie', superuserCookie).send({ venueId: 2 }).expect(200)
+
+        const inVenue2 = await openSocket(superuserCookie)
+        expect(await join(inVenue2, 'main')).toBe(true)
+        const inVenue1 = await openSocket(await sessionCookie('checkout'))
+        expect(await join(inVenue1, 'main')).toBe(true)
+        const venue2Received = record(inVenue2, 'broadcast')
+        const venue1Received = nextEvent(inVenue1, 'broadcast')
+
+        const waiter = await loginAs(app, 'waiter')
+        await waiter.post('/api/broadcast').send({ sender: { id: users.waiter }, message: 'ciao' }).expect(200)
+
+        expect(await venue1Received).toMatchObject({ message: 'ciao' })
+        await new Promise(resolve => setTimeout(resolve, 300))
+        expect(venue2Received).toHaveLength(0)
+    })
+
+    it('drops the sockets of a session that switches venue, and of a user whose roles change', async () => {
+        const superuserCookie = await sessionCookie('superuser')
+        await request(app).put('/api/session/venue').set('Cookie', superuserCookie).send({ venueId: 1 }).expect(200)
+        const own = await openSocket(superuserCookie)
+        expect(await join(own, 'main')).toBe(true)
+        const switched = nextEvent(own, 'disconnect')
+        await request(app).put('/api/session/venue').set('Cookie', superuserCookie).send({ venueId: 2 }).expect(200)
+        await switched
+
+        await request(app).put('/api/session/venue').set('Cookie', superuserCookie).send({ venueId: 1 }).expect(200)
+        const bartender = await openSocket(await sessionCookie('bartender'))
+        expect(await join(bartender, 'bartender')).toBe(true)
+        const dropped = nextEvent(bartender, 'disconnect')
+        await request(app).put('/api/users/roles').set('Cookie', superuserCookie)
+            .send({ id: users.bartender, roles: ['bartender', 'waiter'] }).expect(200)
+        await dropped
+    })
+})
+
 describe('table notifications', () => {
     it('reach a logged-in checkout socket but not an anonymous one', async () => {
         const admin = await loginAs(app, 'admin')
