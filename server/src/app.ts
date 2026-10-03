@@ -12,7 +12,8 @@ import { errorMiddleware } from './http/middleware'
 import { initializeSocket } from './socket'
 
 const MySQLStore = MySQLStoreFactory(session as any)
-const sessionStore = new MySQLStore({ ...config.db, createDatabaseTable: true } as any)
+// The `sessions` table is created by the baseline migration
+const sessionStore = new MySQLStore({ ...config.db, createDatabaseTable: false } as any)
 
 configurePassport()
 
