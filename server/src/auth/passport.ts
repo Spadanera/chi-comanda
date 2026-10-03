@@ -1,3 +1,4 @@
+import { Request } from 'express'
 import passport from 'passport'
 import { Strategy as LocalStrategy } from 'passport-local'
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20'
@@ -47,7 +48,31 @@ export function configurePassport() {
         console.warn('GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET not set: Google login disabled')
     }
 
-    // The whole user (id, roles, ...) lives in the session
-    passport.serializeUser((user, done) => done(null, user))
-    passport.deserializeUser((user: User, done) => done(null, user))
+    // Only the id lives in the session; roles and venues are reloaded on every request (see loadSessionUser)
+    passport.serializeUser((user, done) => done(null, (user as User).id))
+    passport.deserializeUser((req: Request, stored: unknown, done: (error: unknown, user?: User | false) => void) => {
+        loadSessionUser(req, stored).then(user => done(null, user ?? false), done)
+    })
+}
+
+/**
+ * The user of the session with the active venue. The venue lives in the session too: it is set here when the
+ * user can enter a single venue, and cleared when the user can no longer enter it.
+ */
+export async function loadSessionUser(req: Request, stored: unknown): Promise<User | undefined> {
+    // Sessions created by earlier releases hold the whole user object
+    const id = Number(typeof stored === 'object' && stored !== null ? (stored as User).id : stored)
+    if (!Number.isInteger(id) || id <= 0) return undefined
+    const user = await userService.getSessionUser(id, req.session.venueId)
+    if (user && req.session.venueId !== user.venueId) {
+        req.session.venueId = user.venueId ?? undefined
+    }
+    return user
+}
+
+declare module 'express-session' {
+    interface SessionData {
+        /** Venue the user is working in. */
+        venueId?: number
+    }
 }

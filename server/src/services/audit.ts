@@ -14,8 +14,8 @@ class AuditService {
     /** Best effort: auditing must never break the request being audited. */
     async insert(audit: Partial<Audit>): Promise<void> {
         try {
-            await db.execute('INSERT INTO audit (user_id, method, path, data, dateTime) VALUES (?,?,?,?,?)',
-                [audit.user_id, audit.method, audit.path, audit.data, nowInItaly()])
+            await db.execute('INSERT INTO audit (venue_id, user_id, method, path, data, dateTime) VALUES (?,?,?,?,?,?)',
+                [audit.venue_id ?? null, audit.user_id, audit.method, audit.path, audit.data, nowInItaly()])
         } catch (error: any) {
             console.error('Error inserting audit', error.message)
         }

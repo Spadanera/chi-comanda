@@ -2,7 +2,7 @@ import { AddressInfo } from 'net'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import request from 'supertest'
 import { io as connect, Socket } from 'socket.io-client'
-import { closeApp, loadApp, loginAs, PASSWORD, resetDatabase, ROLE_USERS, RoleName } from './helpers'
+import { closeApp, loadApp, loginAs, PASSWORD, rawConnection, resetDatabase, ROLE_USERS, RoleName } from './helpers'
 
 let app: any
 let server: any
@@ -101,6 +101,22 @@ describe('socket rooms', () => {
         expect(login.status).toBe(200)
 
         expect(await join(socket, 'checkout')).toBe(false)
+    })
+
+    it('checks the roles held now, not those of the login', async () => {
+        const cookie = await sessionCookie('bartender')
+        const socket = await openSocket(cookie)
+        expect(await join(socket, 'bartender')).toBe(true)
+
+        const conn = await rawConnection()
+        await conn.query('DELETE FROM user_role WHERE user_id = ?', [users.bartender])
+        try {
+            expect(await join(socket, 'waiter')).toBe(false)
+        } finally {
+            await conn.query(`INSERT INTO user_role (user_id, role_id, venue_id) SELECT ?, id, 1 FROM roles WHERE name = 'bartender'`,
+                [users.bartender])
+            await conn.end()
+        }
     })
 
     it('disconnects the sockets of a session on logout', async () => {

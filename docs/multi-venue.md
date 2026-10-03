@@ -101,6 +101,17 @@ No production deploy and no production DB writes without an explicit request.
   release keeps working (expand/contract).
   Note for point 2: a rollback release assigning roles writes the `superuser` row with `venue_id = 1`; the new code
   treats the `superuser` role as global whatever its `venue_id`.
+- **Point 2 done**: the session holds `passport.user = <id>` and `venueId`; `deserializeUser` (and the socket `join`)
+  call `userService.getSessionUser(id, venueId)`, which returns `undefined` for an account no longer `ACTIVE` (the
+  session ends). Session user: `superuser`, `venueId` (`null` = choose), `venues: [{id, name, roles}]`, `roles` = roles
+  in the active venue (+ `superuser`). **Change to the plan:** no `GET /api/session`; `/api/checkauthentication` and the
+  login response return that user. `PUT /api/session/venue {venueId}` (404 for a venue the user can't enter) also
+  disconnects the session's sockets. `src/venue/context.ts`: `VenueContext`, `requireVenue` (409 "Nessun locale
+  selezionato" when `venueId` is null), `ctx(req)`. In `routes/index.ts` the platform routes (`/users`, `/audit`,
+  `/profile`, `/users-public`) come before `requireVenue`. Audit: `venue_id` from the context (`NULL` on platform
+  routes), `path` always relative to `/api`. The superuser keeps passing every role check inside a venue (as today).
+  Tests: `session-venue.test.ts`, plus a socket test on a revoked role. `resetDatabase()` now removes venues > 1 and
+  their rows.
 - **Open**: composite FKs that don't exist today (`table_master_table`, `payment_transactions`,
   `user_event.destination_id`, `master_items.sub_type_id`) need an orphan check on a copy of the production dump before
   they can go into a migration (a failing migration stops the server).

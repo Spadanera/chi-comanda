@@ -3,7 +3,9 @@ import { IncomingMessage, Server as HttpServer, ServerResponse } from 'http'
 import { RequestHandler } from 'express'
 import { Session, SessionData } from 'express-session'
 import { Message, User } from '../../../models/src'
+import { Request } from 'express'
 import { hasAnyRole, Roles } from '../http/middleware'
+import { loadSessionUser } from '../auth/passport'
 
 /** Rooms a client may join. Each screen of the app listens on its own room. */
 export const ROOMS = ['main', 'waiter', 'bartender', 'checkout', 'table'] as const
@@ -22,7 +24,7 @@ const ROOM_ROLES: Record<Room, Roles[] | null> = {
 }
 
 type SessionRequest = IncomingMessage & {
-    session?: Session & Partial<SessionData> & { passport?: { user?: User } }
+    session?: Session & Partial<SessionData> & { passport?: { user?: unknown } }
 }
 
 let io: Server | undefined
@@ -39,14 +41,17 @@ export function canJoin(user: User | undefined, room: Room): boolean {
 }
 
 /**
- * The user logged in the session the socket was opened with. The session is reloaded from the
- * store on every call, so a logout or an expired session is noticed.
+ * The user logged in the session the socket was opened with, with the roles held now. The session is reloaded from
+ * the store on every call, so a logout, an expired session or a role change is noticed.
  */
-function sessionUser(socket: Socket): Promise<User | undefined> {
+async function sessionUser(socket: Socket): Promise<User | undefined> {
     const req = socket.request as SessionRequest
-    if (!req.session) return Promise.resolve(undefined)
+    if (!req.session) return undefined
     // reload() replaces req.session with a fresh object: read it again in the callback
-    return new Promise(resolve => req.session!.reload(error => resolve(error ? undefined : req.session?.passport?.user)))
+    const reloaded = await new Promise<boolean>(resolve => req.session!.reload(error => resolve(!error)))
+    const stored = req.session?.passport?.user
+    if (!reloaded || stored === undefined) return undefined
+    return loadSessionUser(req as unknown as Request, stored).catch(() => undefined)
 }
 
 export function initializeSocket(httpServer: HttpServer, sessionMiddleware: RequestHandler, opts?: Partial<ServerOptions>): Server {

@@ -68,9 +68,12 @@ export const requireAuthentication = (req: Request, _res: Response, next: NextFu
 export const auditMiddleware = (req: Request, _res: Response, next: NextFunction) => {
     if (req.isAuthenticated() && ['POST', 'PUT', 'DELETE'].includes(req.method)) {
         auditService.insert({
+            // NULL: a platform action, outside any venue
+            venue_id: req.venueContext?.venueId ?? null,
             user_id: (req.user as User).id,
             method: req.method,
-            path: req.path,
+            // Relative to /api wherever the middleware is mounted
+            path: `${req.baseUrl}${req.path}`.replace(/^\/api/, ''),
             data: req.body,
         })
     }
