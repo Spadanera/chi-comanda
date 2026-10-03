@@ -59,7 +59,11 @@ async function bootstrap() {
     if (sentry) {
         // Loaded only where error reporting is configured
         const Sentry = await import('@sentry/vue')
-        Sentry.init({ app, dsn: sentry.dsn, environment: sentry.environment, release: sentry.release, sendDefaultPii: false })
+        Sentry.init({
+            app, dsn: sentry.dsn, environment: sentry.environment, release: sentry.release,
+            // Sentry 11 collects user data by default: opt out explicitly
+            dataCollection: { userInfo: false, cookies: false, httpHeaders: false, httpBodies: [], urlQueryParams: false },
+        })
         Sentry.setTag('client', slug || name || 'unknown')
     }
 

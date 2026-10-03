@@ -29,7 +29,7 @@ describe('Sentry', () => {
         expect(Sentry.init).toHaveBeenCalledWith(expect.objectContaining({
             dsn: 'https://server@sentry.example/1',
             environment: 'staging',
-            sendDefaultPii: false,
+            dataCollection: expect.objectContaining({ userInfo: false, cookies: false, httpBodies: [] }),
             initialScope: { tags: { client: 'libra' } },
         }))
     })
