@@ -233,6 +233,8 @@ const LISTS: Case[] = [
     { route: 'GET /payment/available', path: () => '/payment/available' },
     { route: 'GET /settings/', path: () => '/settings/' },
     { route: 'GET /users/', path: () => '/users/' },
+    // B's staff works only in B, a venue the attacker doesn't run: not among the accounts to pick
+    { route: 'GET /users/candidates', path: () => '/users/candidates' },
     // Inviting B's staff into A adds the account to A, it doesn't touch B
     { route: 'POST /users/invite', path: () => '/users/invite', body: () => ({ email: 'staff-b@test.local', roles: ['waiter'] }) },
     { route: 'PUT /settings/', path: () => '/settings/', body: () => ({ venue_name: 'Venue A' }) },

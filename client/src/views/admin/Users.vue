@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { type User } from '../../../../models/src'
 import api from '@/services/client'
-import { copy, requiredRule, emailRule, Roles } from '@/services/utils'
+import { copy, requiredRule, emailRule, Roles, roleLabel } from '@/services/utils'
 import Avatar from '@/components/Avatar.vue'
 import { UserStore } from '@/stores'
 
@@ -21,23 +21,6 @@ const roleOptions = Object.values(Roles).filter((r: Roles) => r !== Roles.client
   && (r !== Roles.superuser || UserStore().user.roles.includes(Roles.superuser)))
 const fidelityClient = ref<boolean>(false)
 const selectedRoles = ref([])
-
-function formatedRole(role: string) {
-  switch (role) {
-    case Roles.admin:
-      return "Amministratore"
-    case Roles.waiter:
-      return "Cameriere"
-    case Roles.checkout:
-      return "Cassiere"
-    case Roles.bartender:
-      return "Barista"
-    case Roles.client:
-      return "Cliente Fedele"
-    case Roles.superuser:
-      return "Super User"
-  }
-}
 
 const customSelectRule = (value: any) => {
   if (value?.length === 0 && !fidelityClient.value) {
@@ -141,8 +124,15 @@ async function inviteUser() {
   }
 }
 
+/** Accounts not in the venue yet, to pick instead of typing the e-mail. */
+const candidates = ref<User[]>([])
+const candidateItems = computed(() => candidates.value.map(u => ({
+  title: u.username ? `${u.username} · ${u.email}` : u.email,
+  value: u.email,
+})))
+
 async function getUsers() {
-  users.value = await api.GetUsers()
+  [users.value, candidates.value] = await Promise.all([api.GetUsers(), api.GetUserCandidates()])
 }
 
 onMounted(async () => {
@@ -183,7 +173,7 @@ onMounted(async () => {
           <td>{{ user.username }}</td>
           <td>{{ user.email }}</td>
           <td>
-            <v-chip :color="getColorByRole(role)" v-for="role in user.roles">{{ formatedRole(role) }}</v-chip>
+            <v-chip :color="getColorByRole(role)" v-for="role in user.roles">{{ roleLabel(role) }}</v-chip>
           </td>
           <td>
             <v-switch v-if="['ACTIVE', 'BLOCKED'].includes(user.status)" color="success"
@@ -206,8 +196,12 @@ onMounted(async () => {
           <v-form ref="form" @submit.prevent>
             <v-row>
               <v-col cols="12">
-                <v-text-field :readonly="selectedUser.id > 0" v-model="selectedUser.email" label="Email" type="email"
-                  :rules="[requiredRule, emailRule]"></v-text-field>
+                <v-text-field v-if="selectedUser.id > 0" readonly v-model="selectedUser.email" label="Email"
+                  type="email"></v-text-field>
+                <!-- Pick someone who already has an account, or type the e-mail of a new person -->
+                <v-combobox v-else v-model="selectedUser.email" :items="candidateItems" :return-object="false"
+                  label="Persona o e-mail" hint="Scegli chi ha già un account o scrivi l'e-mail di una persona nuova"
+                  persistent-hint :rules="[requiredRule, emailRule]"></v-combobox>
               </v-col>
             </v-row>
             <v-row v-show="!fidelityClient">
@@ -215,11 +209,11 @@ onMounted(async () => {
                 <v-select label="Ruoli" v-model="selectedRoles" :items="roleOptions" multiple
                   :rules="[customSelectRule]">
                   <template v-slot:item="{ props, item }">
-                    <v-list-item v-bind="props" :title="formatedRole(item.title)"></v-list-item>
+                    <v-list-item v-bind="props" :title="roleLabel(item.title)"></v-list-item>
                   </template>
                   <template v-slot:selection="{ item }">
                     <v-chip>
-                      <span>{{ formatedRole(item.title) }}</span>
+                      <span>{{ roleLabel(item.title) }}</span>
                     </v-chip>
                   </template>
                 </v-select>

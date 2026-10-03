@@ -193,6 +193,15 @@ All points are on the branch `multi-venue` (not merged, not deployed).
   - Stage rehearsal (restore the production dump into the staging DB, deploy the branch): not done, it needs the
     user's go-ahead (the branch is not on `main`).
   - Contract release, later: drop `DEFAULT 1` from the `venue_id` columns and the `settings` table.
+- **After the user's first local try (3 Oct)**: e-mails redesigned (`actionEmail` in `server/src/utils/mail.ts`:
+  table layout with inline styles, palette of the app, roles in Italian, link to copy, plain-text part, expiry only
+  where a link expires); the "added to a venue" e-mail links to `/?venue=<id>`, and the login keeps the requested page
+  (`/login?redirect=`), so the link opens that venue right away, logged in or not. Roles are always shown with their
+  Italian name (`ROLE_LABELS` in the client's `services/utils.ts` and in `staff.ts`). People to invite are picked
+  among existing accounts (`GET /api/users/candidates`: every active account for the superuser, for a venue admin
+  only the people of the other venues they are admin of), or typed as a new e-mail; the same when creating a venue.
+  Not done: Google login after an e-mail link lands on `/`, not on the venue (the OAuth callback doesn't keep the
+  page).
 - **Checked on real data (3 Oct)**: the production dump of 3 October restored locally into database `prodcopy` of the
   `libra-restore-check` container (plus the additive part of the old `release.sql`, as production has it). Orphans: none
   for the existing FKs, none for the new ones in `005`, 4 for `items.master_item_id` (items of deleted products: no FK

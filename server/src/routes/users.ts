@@ -9,6 +9,7 @@ import { ctx } from '../venue/context'
 const router = Router()
 
 router.get('/', jsonHandler(req => staffService.getAll(ctx(req))))
+router.get('/candidates', jsonHandler(req => staffService.getCandidates(ctx(req))))
 router.put('/', jsonHandler(req => staffService.updateStatus(ctx(req), req.body)))
 router.delete('/:id', jsonHandler(req => staffService.remove(ctx(req), toId(req.params.id))))
 router.put('/roles', jsonHandler(req => staffService.updateRoles(ctx(req), req.body)))

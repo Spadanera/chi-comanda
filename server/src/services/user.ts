@@ -18,7 +18,7 @@ export interface PlatformUser extends User {
 }
 
 /** Outcome of an invitation: a new or refreshed token, or an account that is already active. */
-export type InvitationTarget = { userId: number, token: string } | { userId: number, active: true }
+export type InvitationTarget = { userId: number, token: string } | { userId: number, active: true, username?: string }
 
 class UserService {
     /** Every user that is not deleted, with the venues they work in (platform screen). */
@@ -47,6 +47,26 @@ class UserService {
             }
         }
         return users
+    }
+
+    /**
+     * Active accounts that could join venue `venueId`, to pick instead of typing an e-mail: every account for the
+     * superuser; for a venue admin, the people of the other venues they are admin of (never the staff of a venue
+     * that isn't theirs).
+     */
+    candidatesFor(venueId: number, callerId: number, superuser: boolean): Promise<User[]> {
+        return db.query<User>(`
+            SELECT id, username, email, avatar FROM users
+            WHERE status = 'ACTIVE'
+            AND NOT EXISTS (SELECT 1 FROM user_role WHERE user_role.user_id = users.id AND user_role.venue_id = ?)
+            AND (? OR EXISTS (
+                SELECT 1 FROM user_role theirs
+                WHERE theirs.user_id = users.id AND theirs.venue_id IN (
+                    SELECT mine.venue_id FROM user_role mine INNER JOIN roles ON roles.id = mine.role_id
+                    WHERE mine.user_id = ? AND roles.name = 'admin' AND mine.venue_id IS NOT NULL
+                )
+            ))
+            ORDER BY username, email`, [venueId, superuser, callerId])
     }
 
     /** Grants or revokes the platform's superuser role. */
@@ -138,7 +158,7 @@ class UserService {
      */
     findByEmail(email: string): Promise<User | undefined> {
         return db.queryOne<User>(`
-            SELECT id, status FROM users
+            SELECT id, status, username FROM users
             WHERE email = ? AND IFNULL(status, '') != 'DELETED'
             ORDER BY status IS NULL, id
             LIMIT 1`, [email])
@@ -151,7 +171,7 @@ class UserService {
     async issueInvitation(email: string): Promise<InvitationTarget> {
         const existing = await this.findByEmail(email)
         if (existing && existing.status != null) {
-            return { userId: existing.id!, active: true }
+            return { userId: existing.id!, active: true, username: existing.username }
         }
         const token = uuidv4()
         if (existing) {
@@ -220,17 +240,19 @@ class UserService {
         }
         const token = uuidv4()
         await db.insert('INSERT INTO reset (email, token, creation_date) VALUES (?,?,NOW())', [email, token])
-        await sendEmail({
+        await sendEmail(actionEmail({
             to: email,
-            subject: 'Reimposta la password su Chi Comanda',
-            html: actionEmail({
-                title: 'Reimposta password su Chi Comanda.',
-                intro: 'Hai fatto richiesta per reimpostare la password su Chi Comanda.',
-                action: 'Per reimpostare la password segui il seguente link:',
-                buttonLabel: 'Reimposta Password',
-                url: `${config.baseUrl}/reset/${token}`,
-            }),
-        })
+            subject: 'Reimposta la password di Chi Comanda',
+            title: 'Reimposta la password',
+            paragraphs: [
+                user.username ? `Ciao ${user.username},` : 'Ciao,',
+                'abbiamo ricevuto una richiesta per reimpostare la password del tuo account Chi Comanda.',
+            ],
+            buttonLabel: 'Scegli una nuova password',
+            url: `${config.baseUrl}/reset/${token}`,
+            expiresInHours: config.tokenTtlHours,
+            note: "Se non l'hai chiesto tu, ignora questa e-mail: la tua password resta quella di sempre.",
+        }))
     }
 
     async resetPassword(invitation: Invitation): Promise<number> {

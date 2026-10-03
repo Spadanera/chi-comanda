@@ -61,7 +61,7 @@ describe('staff of a venue', () => {
 
         expect(await rolesOf(ids.waiter)).toEqual(['1:waiter', '2:checkout'])
         expect((await sql(`SELECT COUNT(*) n FROM users WHERE email = 'waiter@test.local'`))[0].n).toBe(1)
-        expect(vi.mocked(sendEmail).mock.calls[0][0]).toMatchObject({ to: 'waiter@test.local', subject: 'Ora lavori anche a Secondo' })
+        expect(vi.mocked(sendEmail).mock.calls[0][0]).toMatchObject({ to: 'waiter@test.local', subject: 'Ora lavori anche con Secondo' })
         // Twice in the same venue: refused, as before venues existed
         await in2.post('/api/users/invite').send({ email: 'waiter@test.local', roles: ['waiter'] }).expect(400)
 
@@ -122,6 +122,36 @@ describe('staff managed by the venue admin', () => {
         await admin.post('/api/users/invite').send({ email: 'nuovo-admin@test.local', roles: ['superuser'] }).expect(200)
         const [invited] = await sql(`SELECT id FROM users WHERE email = 'nuovo-admin@test.local'`)
         expect(await rolesOf(invited.id)).toEqual([])
+    })
+
+    it('offers to pick the people of the venues one runs, every account to the superuser', async () => {
+        // The admin of venue 1 is admin of venue 2 too: venue 2's people can be picked for venue 1, not venue 3's
+        await sql(`INSERT INTO venues (id, name) VALUES (3, 'Terzo')`)
+        await sql(`INSERT INTO user_role (user_id, role_id, venue_id) SELECT ?, id, 2 FROM roles WHERE name = 'admin'`, [ids.admin])
+        const inTwo = await sql(`INSERT INTO users (email, username, status) VALUES ('due@test.local', 'due', 'ACTIVE')`) as any
+        const inThree = await sql(`INSERT INTO users (email, username, status) VALUES ('tre@test.local', 'tre', 'ACTIVE')`) as any
+        await sql(`INSERT INTO user_role (user_id, role_id, venue_id) SELECT ?, id, 2 FROM roles WHERE name = 'waiter'`, [inTwo.insertId])
+        await sql(`INSERT INTO user_role (user_id, role_id, venue_id) SELECT ?, id, 3 FROM roles WHERE name = 'waiter'`, [inThree.insertId])
+
+        const admin = await loginAs(app, 'admin')
+        await admin.put('/api/session/venue').send({ venueId: 1 })
+        const picked = (await admin.get('/api/users/candidates').expect(200)).body.map((u: any) => u.email)
+        expect(picked).toContain('due@test.local')
+        expect(picked).not.toContain('tre@test.local')
+        // Members of the venue are not offered again
+        expect(picked).not.toContain('waiter@test.local')
+
+        const everybody = (await (await superuserIn(1)).get('/api/users/candidates').expect(200)).body.map((u: any) => u.email)
+        expect(everybody).toEqual(expect.arrayContaining(['due@test.local', 'tre@test.local']))
+    })
+
+    it('links the "added to a venue" e-mail to that venue', async () => {
+        const { default: sendEmail } = await import('../src/utils/mail')
+        vi.mocked(sendEmail).mockClear()
+        await (await superuserIn(2)).post('/api/users/invite').send({ email: 'waiter@test.local', roles: ['checkout'] }).expect(200)
+        const mail = vi.mocked(sendEmail).mock.calls[0][0] as any
+        expect(mail.html).toContain('/?venue=2')
+        expect(mail.text).toContain('Il tuo ruolo: Cassiere')
     })
 
     it('lets an admin block only accounts working in their venue alone', async () => {

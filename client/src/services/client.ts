@@ -402,6 +402,11 @@ class ApiClient {
         return this.get('/users')
     }
 
+    /** Accounts that can be added to the venue by picking them instead of typing the e-mail. */
+    GetUserCandidates(): Promise<User[]> {
+        return this.get('/users/candidates')
+    }
+
     UpdateUser(user: User): Promise<number> {
         return this.put('/users', user)
     }

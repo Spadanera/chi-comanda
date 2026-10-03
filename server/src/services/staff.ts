@@ -28,7 +28,17 @@ const IS_SUPERUSER = `EXISTS (
     WHERE user_role.user_id = users.id AND roles.name = 'superuser' AND (user_role.venue_id IS NULL OR user_role.venue_id = :venue)
 )`
 
-const escapeHtml = (text: string) => text.replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`)
+/** Names of the roles shown to people (keep in sync with `ROLE_LABELS` in client/src/services/utils.ts). */
+const ROLE_LABELS: Record<string, string> = {
+    admin: 'Amministratore', checkout: 'Cassiere', waiter: 'Cameriere', bartender: 'Barista', client: 'Cliente fedele',
+    superuser: 'Amministratore della piattaforma',
+}
+
+/** "Cameriere e Barista" */
+function describeRoles(roles: string[]): string {
+    const labels = roles.map(r => ROLE_LABELS[r] || r)
+    return labels.length > 1 ? `${labels.slice(0, -1).join(', ')} e ${labels[labels.length - 1]}` : labels[0] || ''
+}
 
 /** The people working in a venue and their roles there. */
 class StaffService {
@@ -40,6 +50,11 @@ class StaffService {
             WHERE IFNULL(status, '') != 'DELETED' AND ${IS_MEMBER}
             ORDER BY username, email`)
         return users.map(u => ({ ...u, roles: u.roles || [] }))
+    }
+
+    /** Accounts the admin can add to the venue by picking them (see `userService.candidatesFor`). */
+    getCandidates(ctx: VenueContext): Promise<User[]> {
+        return userService.candidatesFor(ctx.venueId, ctx.userId!, ctx.roles.includes(Roles.superuser))
     }
 
     /** Active members of the venue (and superusers): the people that can be staffed on an event. */
@@ -125,30 +140,41 @@ class StaffService {
             await userService.setSuperuser(target.userId, true)
         }
 
-        const venue = escapeHtml(await this.venueName(ctx))
+        const venue = await this.venueName(ctx)
+        const given = [...venueRoles, ...(superuser ? [Roles.superuser] : [])]
+        const highlight: [string, string] | undefined = given.length
+            ? [given.length > 1 ? 'I tuoi ruoli' : 'Il tuo ruolo', describeRoles(given)]
+            : undefined
         await sendEmail('active' in target
-            ? {
+            ? actionEmail({
                 to: email,
-                subject: `Ora lavori anche a ${venue}`,
-                html: actionEmail({
-                    title: `Sei stato aggiunto a ${venue}`,
-                    intro: `Da ora puoi lavorare anche a ${venue} su Chi Comanda, con il tuo solito account.`,
-                    action: 'Accedi e scegli il locale:',
-                    buttonLabel: 'Apri Chi Comanda',
-                    url: `${config.baseUrl}/login`,
-                }),
-            }
-            : {
-                to: email,
-                subject: `Unisciti a ${venue} su Chi Comanda`,
-                html: actionEmail({
-                    title: 'Sei stato invitato ad unirti a Chi Comanda!',
-                    intro: `Sei stato invitato a lavorare a ${venue} su Chi Comanda.`,
-                    action: "Per accettare l'invito e impostare la tua password, clicca sul pulsante qui sotto:",
-                    buttonLabel: 'Accetta invito',
-                    url: `${config.baseUrl}/invitation/${target.token}`,
-                }),
+                subject: `Ora lavori anche con ${venue}`,
+                title: `Ora fai parte dello staff di ${venue}`,
+                paragraphs: [
+                    target.username ? `Ciao ${target.username},` : 'Ciao,',
+                    `da oggi fai parte dello staff di ${venue} su Chi Comanda. Usi il tuo solito account: niente da attivare.`,
+                    'Dopo l\'accesso scegli il locale in cui lavori; puoi passare da uno all\'altro quando vuoi dal menu in alto a destra.',
+                ],
+                highlight,
+                buttonLabel: `Apri ${venue}`,
+                // The app switches to the venue named in the link, right away when already logged in
+                url: `${config.baseUrl}/?venue=${ctx.venueId}`,
             })
+            : actionEmail({
+                to: email,
+                subject: `${venue} ti invita su Chi Comanda`,
+                title: `Un invito da ${venue}`,
+                paragraphs: [
+                    'Ciao,',
+                    `${venue} ti ha invitato a far parte del suo staff su Chi Comanda, l'app con cui si gestiscono ordini, bar e cassa durante le serate.`,
+                    'Per accettare scegli il nome con cui ti vedranno i colleghi e una password.',
+                ],
+                highlight,
+                buttonLabel: "Accetta l'invito",
+                url: `${config.baseUrl}/invitation/${target.token}`,
+                expiresInHours: config.tokenTtlHours,
+                note: 'Se scade, chiedi a chi ti ha invitato di mandarlo di nuovo.',
+            }))
     }
 
     /**

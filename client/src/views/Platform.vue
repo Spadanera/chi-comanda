@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import api from '@/services/client'
-import { requiredRule } from '@/services/utils'
+import { requiredRule, roleLabels } from '@/services/utils'
 import { SnackbarStore, UserStore } from '@/stores'
 import type { Feature, User, VenueSummary } from '../../../models/src'
 
@@ -28,7 +28,11 @@ const dialog = ref(false)
 const form = ref()
 const editing = ref<VenueSummary | null>(null)
 const name = ref('')
-const adminEmail = ref('')
+const adminEmail = ref<string | null>('')
+const adminItems = computed(() => users.value.filter(u => u.status === 'ACTIVE').map(u => ({
+    title: u.username ? `${u.username} · ${u.email}` : u.email!,
+    value: u.email!,
+})))
 /** Every function of the installation, or only the chosen ones. */
 const allFeatures = ref(true)
 const features = ref<Feature[]>([])
@@ -105,7 +109,7 @@ onMounted(load)
             <v-window-item value="users">
                 <v-list>
                     <v-list-item v-for="user in users" :key="user.id" :title="user.username || user.email"
-                        :subtitle="user.venues?.map(v => `${v.name}: ${v.roles.join(', ')}`).join(' · ') || (user.status ? 'nessun locale' : 'invito in attesa')">
+                        :subtitle="user.venues?.map(v => `${v.name}: ${roleLabels(v.roles)}`).join(' · ') || (user.status ? 'nessun locale' : 'invito in attesa')">
                         <template v-slot:append>
                             <v-switch hide-details color="primary" class="mr-4" label="Superuser" :model-value="!!user.superuser"
                                 :disabled="user.id === userStore.user.id" @click.stop="toggleSuperuser(user)"></v-switch>
@@ -122,8 +126,10 @@ onMounted(load)
                 <v-card-text>
                     <v-form ref="form">
                         <v-text-field v-model="name" label="Nome" :rules="[requiredRule]" counter="100"></v-text-field>
-                        <v-text-field v-if="!editing" v-model="adminEmail" label="E-mail del primo admin (facoltativa)"
-                            type="email"></v-text-field>
+                        <!-- Pick an existing account, or type the e-mail of a new person -->
+                        <v-combobox v-if="!editing" v-model="adminEmail" :items="adminItems" :return-object="false"
+                            label="Primo amministratore (facoltativo)" clearable
+                            hint="Scegli chi ha già un account o scrivi l'e-mail di una persona nuova" persistent-hint></v-combobox>
                         <v-switch v-model="allFeatures" color="primary" hide-details
                             label="Tutte le funzioni dell'installazione"></v-switch>
                         <template v-if="!allFeatures">

@@ -59,7 +59,9 @@ const routeTitle = computed(() => {
 function login() {
   user.value = userStore.user
   if (userStore.venueId) getOnGoingEvent()
-  router.push('/')
+  // The page asked before the login (only addresses of this app)
+  const redirect = route.query.redirect
+  router.push(typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/')
 }
 
 async function logout() {

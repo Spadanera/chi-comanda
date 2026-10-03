@@ -234,6 +234,8 @@ router.beforeEach(async (to) => {
     return { name: 'Home' }
   }
   if (!user.id && !isPublic) {
+    // Back here after login (e.g. the link of an e-mail opening a venue)
+    if (to.fullPath !== '/') return { name: 'Login', query: { redirect: to.fullPath } }
     snackbarStore.show('Sessione scaduta')
     return { name: 'Login' }
   }

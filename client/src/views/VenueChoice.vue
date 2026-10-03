@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import router from '@/router'
 import api from '@/services/client'
 import { UserStore } from '@/stores'
+import { roleLabels } from '@/services/utils'
 
 const emit = defineEmits(['reload'])
 const route = useRoute()
@@ -30,7 +31,7 @@ async function choose(venueId: number) {
                     <v-card hover @click="choose(venue.id)" :color="venue.id === userStore.user.venueId ? 'primary' : undefined"
                         :variant="venue.id === userStore.user.venueId ? 'tonal' : 'elevated'">
                         <v-card-title>{{ venue.name }}</v-card-title>
-                        <v-card-text v-if="venue.roles.length">{{ venue.roles.join(', ') }}</v-card-text>
+                        <v-card-text v-if="venue.roles.length">{{ roleLabels(venue.roles) }}</v-card-text>
                     </v-card>
                 </v-col>
             </v-row>
