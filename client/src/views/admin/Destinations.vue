@@ -83,7 +83,7 @@ onMounted(async () => {
             </v-col>
         </v-row>
     </v-container>
-    <v-fab @click="openDialog()" icon="mdi-plus" app style="position: fixed; right: 15px; bottom: 15px;" location="bottom right"></v-fab>
+    <v-fab class="fab-clear" @click="openDialog()" icon="mdi-plus" app style="position: fixed; right: 15px; bottom: 15px;" location="bottom right"></v-fab>
     <v-dialog v-model="dialog" width="380px">
         <v-card>
             <v-card-title v-if="selectedDestination.id">

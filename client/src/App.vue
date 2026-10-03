@@ -209,15 +209,10 @@ onBeforeUnmount(() => {
             </v-list-item>
           </v-list>
         </v-menu>
-        <template v-else>
-          <RouterLink to="/landing" style="text-decoration: none;">
-            <v-btn variant="text" slim>Info</v-btn>
-          </RouterLink>
-          <ThemeSwitch class="mr-2"></ThemeSwitch>
-        </template>
+        <ThemeSwitch v-else class="mr-2"></ThemeSwitch>
       </v-app-bar>
       <v-main>
-        <RouterView v-if="socketConnected || route.name === 'Landing'" v-model="user" @login="login" @reload="reload" :event="event" />
+        <RouterView v-if="socketConnected" v-model="user" @login="login" @reload="reload" :event="event" />
 
       </v-main>
       <PushPrompt></PushPrompt>

@@ -181,7 +181,7 @@ onMounted(async () => {
         </Confirm>
       </v-dialog>
     </div>
-    <v-fab icon="mdi-plus" app style="position: fixed; right: 10px; bottom: 10px;" location="bottom right" @click="openDialog({
+    <v-fab class="fab-clear" icon="mdi-plus" app style="position: fixed; right: 10px; bottom: 10px;" location="bottom right" @click="openDialog({
       status: 'ACTIVE',
       menu_id: menu_id,
       available: 1

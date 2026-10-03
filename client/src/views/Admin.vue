@@ -105,7 +105,7 @@ onMounted(() => {
     </v-list>
   </v-navigation-drawer>
   <RouterView :event="props.event"></RouterView>
-  <v-fab v-show="!drawer" class="hide-xs" icon="mdi-menu" app style="position: fixed; left: 10px; bottom: 10px;"
+  <v-fab v-show="!drawer" class="hide-xs fab-clear" icon="mdi-menu" app style="position: fixed; left: 10px; bottom: 10px;"
     location="bottom left" @click="drawer = !drawer"></v-fab>
 </template>
 

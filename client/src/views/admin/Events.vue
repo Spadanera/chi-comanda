@@ -192,7 +192,7 @@ onMounted(async () => {
     <v-pagination v-model="page" :length="totalPages" density="compact" total-visible="5"></v-pagination>
   </v-footer>
 
-  <v-fab v-if="tab === 'PLANNED'" icon="mdi-plus" app style="position: fixed; right: 10px; bottom: 10px;"
+  <v-fab class="fab-clear" v-if="tab === 'PLANNED'" icon="mdi-plus" app style="position: fixed; right: 10px; bottom: 10px;"
     location="bottom right" @click="openDialog()"></v-fab>
 
   <v-dialog v-model="dialog" width="380px">

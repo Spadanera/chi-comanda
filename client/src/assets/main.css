@@ -102,3 +102,10 @@ a:visited {
     stroke-linecap: round;
     stroke-linejoin: round;
 }
+
+/* Pages with a floating button over a list: room under the last row, so it can scroll above the button
+   (v-show hides a button with an inline display: none, and then no room is needed). Not on the full-height
+   table maps (.full-height-view), where it would only add a scroll. */
+.v-main:has(.fab-clear:not([style*="display: none"])):not(:has(.full-height-view)) {
+  padding-bottom: 88px !important;
+}
