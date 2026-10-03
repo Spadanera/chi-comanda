@@ -1,7 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import passport from 'passport'
 import config from '../config'
-import { isGoogleEnabled } from '../auth/passport'
+import { User } from '../../../models/src'
+import { isGoogleEnabled, loadSessionUser } from '../auth/passport'
+import { asyncHandler, currentUser, currentUserId, requireAuthentication } from '../http/middleware'
+import { toId } from '../http/validate'
 import { NotFoundError, UnauthorizedError } from '../http/errors'
 import { disconnectSession } from '../socket'
 
@@ -11,9 +14,26 @@ authRouter.post('/login', (req: Request, res: Response, next: NextFunction) => {
     passport.authenticate('local', (error: Error | null, user: Express.User | false, info?: { message?: string }) => {
         if (error) return next(error)
         if (!user) return next(new UnauthorizedError(info?.message || 'Credenziali non valide'))
-        req.logIn(user, loginError => (loginError ? next(loginError) : res.json(user)))
+        req.logIn(user, loginError => {
+            if (loginError) return next(loginError)
+            req.session.venueId = (user as User).venueId ?? undefined
+            res.json(user)
+        })
     })(req, res, next)
 })
+
+/** Switches the venue the user works in. A venue the user can't enter doesn't exist for them: 404. */
+authRouter.put('/session/venue', requireAuthentication, asyncHandler(async (req, res) => {
+    const venueId = toId(req.body?.venueId, 'venueId')
+    if (!currentUser(req).venues?.some(v => v.id === venueId)) {
+        throw new NotFoundError()
+    }
+    req.session.venueId = venueId
+    const user = await loadSessionUser(req, currentUserId(req))
+    // Sockets joined the rooms of the previous venue: they reconnect and join again
+    disconnectSession(req.session.id)
+    res.json(user)
+}))
 
 authRouter.post('/logout', (req: Request, res: Response, next: NextFunction) => {
     const sessionId = req.session.id
@@ -31,15 +51,27 @@ authRouter.get('/checkauthentication', (req: Request, res: Response) => {
     res.json(req.isAuthenticated() ? req.user : 0)
 })
 
+/** A page of this app to go back to after login (`/…`), never another site; undefined otherwise. */
+export function safeRedirect(value: unknown): string | undefined {
+    return typeof value === 'string' && /^\/(?![/\\])/.test(value) && value.length <= 500 ? value : undefined
+}
+
 authRouter.get('/auth/google', (req: Request, res: Response, next: NextFunction) => {
     if (!isGoogleEnabled()) return next(new NotFoundError())
+    // The page asked before the login (e.g. the link of an e-mail opening a venue), back to it after Google
+    req.session.returnTo = safeRedirect(req.query.redirect)
     const state = req.query.state as string | undefined
     passport.authenticate('google', { scope: ['profile', 'email'], ...(state ? { state } : {}) })(req, res, next)
 })
 
 authRouter.get('/auth/google/callback', (req: Request, res: Response, next: NextFunction) => {
     if (!isGoogleEnabled()) return next(new NotFoundError())
-    passport.authenticate('google', { failureRedirect: '/login?error=google' })(req, res, () => res.redirect('/'))
+    // keepSessionInfo: the login regenerates the session, returnTo must survive it
+    passport.authenticate('google', { failureRedirect: '/login?error=google', keepSessionInfo: true })(req, res, () => {
+        const returnTo = req.session.returnTo || '/'
+        delete req.session.returnTo
+        res.redirect(returnTo)
+    })
 })
 
 export default authRouter

@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response, Router } from 'express'
 import multer from 'multer'
 import profileService from '../services/profile'
-import { asyncHandler, currentUser, currentUserId, jsonHandler } from '../http/middleware'
+import { asyncHandler, currentUserId, jsonHandler } from '../http/middleware'
 import { BadRequestError, ForbiddenError } from '../http/errors'
 import { toId } from '../http/validate'
 import { avatarToDataUri } from '../utils/image'
@@ -22,14 +22,9 @@ router.put('/avatar/:id', ownProfileOnly, upload.single('avatar'), asyncHandler(
     }
     const avatar = await avatarToDataUri(req.file)
     await profileService.updateAvatar(toId(req.params.id), avatar)
-    currentUser(req).avatar = avatar
     res.status(200).json(avatar)
 }))
 
-router.put('/username', ownProfileOnly, jsonHandler(async req => {
-    const result = await profileService.updateUsername(currentUserId(req), req.body.username)
-    currentUser(req).username = req.body.username
-    return result
-}))
+router.put('/username', ownProfileOnly, jsonHandler(req => profileService.updateUsername(currentUserId(req), req.body.username)))
 
 export default router

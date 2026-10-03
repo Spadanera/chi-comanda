@@ -1,7 +1,7 @@
 import sharp from 'sharp'
 import request from 'supertest'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { FEATURES, parseFeatures } from '../src/features'
+import { Feature, FEATURES, parseFeatures, venueFeatures } from '../src/features'
 import { closeApp, loadApp, loginAs, resetDatabase } from './helpers'
 
 let app: any
@@ -29,6 +29,13 @@ describe('FEATURES', () => {
 
     it('reads a comma separated list', () => {
         expect([...parseFeatures(' push, payments ,')]).toEqual(['push', 'payments'])
+    })
+
+    it('gives a venue its own functions, never more than the installation ones', () => {
+        const installation = new Set<Feature>(['payments', 'push'])
+        expect([...venueFeatures(installation, null)]).toEqual(['payments', 'push'])
+        expect([...venueFeatures(installation, ['push', 'broadcast'])]).toEqual(['push'])
+        expect([...venueFeatures(installation, '["payments","teleport"]')]).toEqual(['payments'])
     })
 
     it('refuses unknown names instead of silently switching a function off', () => {
@@ -82,7 +89,7 @@ describe('settings', () => {
         expect(res.body.has_logo).toBe(true)
 
         const config = (await request(app).get('/api/public/config').expect(200)).body
-        expect(config.logo).toMatch(/^\/api\/public\/logo\/512\.png\?v=\d+$/)
+        expect(config.logo).toMatch(/^\/api\/public\/logo\/512\.png\?venue=1&v=\d+$/)
 
         for (const [size, pixels] of [['512', 512], ['192', 192], ['maskable', 512]] as const) {
             const png = await request(app).get(`/api/public/logo/${size}.png?v=1`)
@@ -96,9 +103,9 @@ describe('settings', () => {
 
         const manifest = JSON.parse((await request(app).get('/api/public/manifest.webmanifest')).text)
         expect(manifest.icons.map((i: any) => i.src)).toEqual([
-            expect.stringMatching(/^\/api\/public\/logo\/192\.png\?v=/),
-            expect.stringMatching(/^\/api\/public\/logo\/512\.png\?v=/),
-            expect.stringMatching(/^\/api\/public\/logo\/maskable\.png\?v=/),
+            expect.stringMatching(/^\/api\/public\/logo\/192\.png\?venue=1&v=/),
+            expect.stringMatching(/^\/api\/public\/logo\/512\.png\?venue=1&v=/),
+            expect.stringMatching(/^\/api\/public\/logo\/maskable\.png\?venue=1&v=/),
         ])
     })
 

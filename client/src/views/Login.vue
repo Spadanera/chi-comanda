@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import api from '@/services/client'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { requiredRule, emailRule } from '@/services/utils';
 import Logo from '@/components/Logo.vue';
 import { useFeature } from '@/composables/useConfig'
+
+const route = useRoute()
+/** Page asked before the login, opened again after it (also through Google). */
+const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : undefined
 
 const googleLogin = useFeature('google-login')
 
@@ -56,7 +60,7 @@ async function login() {
                 block
                 variant="outlined"
                 prepend-icon="mdi-google"
-                @click="api.loginWithGoogle()"
+                @click="api.loginWithGoogle(undefined, redirect)"
               >
                 Accedi con Google
               </v-btn>

@@ -22,6 +22,16 @@ export const FEATURES = [
     'premium',
 ] as const satisfies readonly Feature[]
 
+/**
+ * Functions active in a venue: the venue's own list (`venues.features`, JSON; NULL = all) within the installation's.
+ * Unknown names in the stored list are ignored.
+ */
+export function venueFeatures(installation: ReadonlySet<Feature>, stored: unknown): Set<Feature> {
+    const own = typeof stored === 'string' ? JSON.parse(stored) : stored
+    if (!Array.isArray(own)) return new Set(installation)
+    return new Set(FEATURES.filter(f => installation.has(f) && own.includes(f)))
+}
+
 export function parseFeatures(value: string | undefined): Set<Feature> {
     if (value === undefined) {
         return new Set(FEATURES)

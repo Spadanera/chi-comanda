@@ -56,6 +56,16 @@ export async function resetDatabase(): Promise<Record<RoleName, number>> {
         await conn.query(`DELETE FROM master_tables WHERE id > 21`)
         await conn.query(`UPDATE master_tables SET status = 'ACTIVE', room_id = IF(name IN ('Bagni Dx','Bagni Sx','Noire','Bara','Cor 1','Cor 2','Cor 3'), 1, 2)`)
         await conn.query('UPDATE settings SET venue_name = NULL, logo = NULL, primary_color = NULL, secondary_color = NULL')
+        // Venues other than 1 and everything they own
+        const [venueTables]: any = await conn.query(`
+            SELECT table_name t FROM information_schema.columns
+            WHERE table_schema = DATABASE() AND column_name = 'venue_id'`)
+        for (const { t } of venueTables) {
+            await conn.query(`DELETE FROM \`${t}\` WHERE venue_id > 1`)
+        }
+        await conn.query('DELETE FROM venues WHERE id > 1')
+        await conn.query(`UPDATE venues SET name = NULL, status = 'ACTIVE', features = NULL, logo = NULL,
+            primary_color = NULL, secondary_color = NULL WHERE id = 1`)
         await conn.query('SET FOREIGN_KEY_CHECKS = 1')
 
         const hash = await bcrypt.hash(PASSWORD, 4)
@@ -65,9 +75,10 @@ export async function resetDatabase(): Promise<Record<RoleName, number>> {
                 `INSERT INTO users (email, username, password, status) VALUES (?, ?, ?, 'ACTIVE')`,
                 [email, role, hash])
             ids[role] = res.insertId
+            // Venue 1, except the superuser who belongs to the platform
             await conn.query(
-                `INSERT INTO user_role (user_id, role_id) SELECT ?, id FROM roles WHERE name = ?`,
-                [res.insertId, role])
+                `INSERT INTO user_role (user_id, role_id, venue_id) SELECT ?, id, ? FROM roles WHERE name = ?`,
+                [res.insertId, role === 'superuser' ? null : 1, role])
         }
         return ids
     } finally {
