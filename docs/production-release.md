@@ -9,8 +9,8 @@ it here (on `main`), and ticks it when done. Details live in the linked document
 - **Production** (Libra, `chicomanda.com`, branch `production`): v1.19.3, released 3 Oct 05:36. Prices still `DOUBLE`,
   no `schema_migrations` table yet.
 - **`main`**: 11 commits ahead of `production` (the multi-client work, [multi-client.md](multi-client.md)).
-- **`multi-venue`**: 15 commits on top of `main`, **not merged**: the user is trying it locally
-  ([multi-venue.md](multi-venue.md)).
+- **`multi-venue`**: merged into `main` on 3 Oct and released on stage as v1.20.0 ([multi-venue.md](multi-venue.md)).
+  So `main` now carries release A and release B together.
 - Other branches (`claude/*` worktrees, `refactor/structure`): nothing that is not on `main`.
 
 ## Release A — `main` (multi-client) → production
@@ -32,8 +32,9 @@ optional Sentry, secure session cookie and required config, Node 22.
 What it brings: venues (migration `005_venues.sql`), session with the user id only, staff per venue, platform page,
 real-time rooms per venue, new e-mails.
 
-- [ ] User's local test done; merge `multi-venue` into `main`.
-- [ ] Rehearsal on stage with a fresh copy of production (`005` took ~15 s on the copy of 3 Oct).
+- [x] User's local test done; `multi-venue` merged into `main` (3 Oct).
+- [ ] Rehearsal on stage: v1.20.0 deployed on 3 Oct on the staging DB (a production copy of 3 Oct morning, already
+      migrated to `004`), so `005` runs on real data there. Check the app on stage. (`005` took ~15 s on a local copy.)
 - [ ] Release on a closing day (it can go with release A, but separately is easier to check and roll back).
 - [ ] **Rollback needs one more step**: after redeploying the previous version, `DELETE FROM sessions;` (old sessions
       held the whole user, new ones only the id). See DEPLOY.md, *The multi-venue release*.
