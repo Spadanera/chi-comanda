@@ -192,7 +192,7 @@ class TableService {
     /** Marks everything as paid and frees the layout position. */
     async close(ctx: VenueContext, tableId: number): Promise<number> {
         const result = await ctx.db.transaction(tx => this.closeWith(tx, tableId))
-        notify.tablesChanged(ctx.venueId, ['waiter', 'table', 'checkout'])
+        ctx.afterCommit(root => notify.tablesChanged(root.venueId, ['waiter', 'table', 'checkout']))
         return result
     }
 }

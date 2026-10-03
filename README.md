@@ -103,6 +103,24 @@ http. Locally the cookie is not `Secure`, so the app works on `http://localhost`
 database is unreachable. It is the healthcheck path in `railway.json`: Railway moves traffic to a new deploy only once
 it answers 200, so a release whose migrations fail never replaces the running one.
 
+## Unstable networks
+
+Waiters work on phones with a weak connection: a request may reach the server while its answer is lost, and the
+client cannot tell. The operations that must never happen twice are idempotent.
+
+- **Idempotency keys**: the client sends `Idempotency-Key: <uuid>` (a new one per action of the user, kept across its
+  retries) with `POST /orders`, `PUT /tables/:id/complete`, `PUT /tables/:id/payitems` and
+  `POST /payment/checkout/*`. The server (`server/src/http/idempotency.ts`) writes the key in the same transaction as
+  the operation, with its answer (`idempotency_keys`, unique per venue): a retry gets the stored answer with
+  `Idempotent-Replayed: true`, a concurrent duplicate waits for the first and gets its answer, a failed operation frees
+  the key. Socket and push notifications go out only for the real execution (`ctx.afterCommit`). The same key with
+  another body, path or user is refused (422) without showing the stored answer; the same key in another venue is
+  another key. Keys are forgotten after 30 days. Without the header the routes work as before.
+- The client (`api.idempotent` in `client/src/services/client.ts`) retries these requests by itself, with the same key,
+  after a network error or a 502/503/504 (3 times, up to ~5 s), and shows an error only after the last attempt.
+
+Client tests (`client/test`, vitest with jsdom): `cd client && npm test`.
+
 ## Database migrations
 
 The schema lives in `server/migrations/NNN_name.sql`. At startup, before accepting requests, the server applies the

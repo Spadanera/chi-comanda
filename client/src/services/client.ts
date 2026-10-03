@@ -30,6 +30,47 @@ export class ApiError extends Error {
 
 const BASE_URL = '/api'
 
+/**
+ * Statuses after which an idempotent request is sent again with the same key: the network or the proxy failed, the
+ * server may or may not have done it, and the key makes a second execution impossible.
+ */
+const RETRYABLE_STATUSES = [0, 502, 503, 504]
+/** Waits before the automatic retries of an idempotent request. */
+const RETRY_DELAYS_MS = [500, 1500, 3000]
+/** Beyond this an idempotent request is given up as a network error (and retried, or queued). */
+const IDEMPOTENT_TIMEOUT_MS = 20000
+
+export const isRetryable = (error: unknown): boolean => error instanceof ApiError && RETRYABLE_STATUSES.includes(error.status)
+
+/** A new `Idempotency-Key`: one per action of the user, kept across the retries of that action. */
+export function newIdempotencyKey(): string {
+    if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+    // randomUUID needs a secure context: same format from getRandomValues
+    const b = crypto.getRandomValues(new Uint8Array(16))
+    b[6] = (b[6] & 0x0f) | 0x40
+    b[8] = (b[8] & 0x3f) | 0x80
+    const hex = [...b].map(x => x.toString(16).padStart(2, '0')).join('')
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+}
+
+export interface IdempotentOptions {
+    /** Defaults to a new key. */
+    key?: string
+    /** Automatic retries on a network error (default 3). */
+    retries?: number
+    /** false: the caller handles the error (no message to the user). */
+    report?: boolean
+}
+
+interface RequestOptions {
+    idempotencyKey?: string
+    timeoutMs?: number
+    /** false: the error is thrown without being shown. */
+    report?: boolean
+}
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
 /** Answer of the venue api when the session has no venue (see requireVenue on the server). */
 const NO_VENUE = 'Nessun locale selezionato'
 
@@ -60,15 +101,20 @@ async function parseBody(response: Response): Promise<unknown> {
  * (`api`) is exported; stores are resolved lazily because they import this module too.
  */
 class ApiClient {
-    private async request<T>(method: Method, path: string, body?: unknown, params?: Record<string, unknown>): Promise<T> {
+    private async request<T>(method: Method, path: string, body?: unknown, params?: Record<string, unknown>,
+        options: RequestOptions = {}): Promise<T> {
         const silent = SILENT_PATHS.includes(path)
-        const init: RequestInit = { method, credentials: 'same-origin' }
+        const report = (error: ApiError) => options.report === false ? error : this.handleError(error)
+        const headers: Record<string, string> = {}
+        const init: RequestInit = { method, credentials: 'same-origin', headers }
         if (body instanceof FormData) {
             init.body = body
         } else if (body !== undefined) {
             init.body = JSON.stringify(body)
-            init.headers = { 'Content-Type': 'application/json' }
+            headers['Content-Type'] = 'application/json'
         }
+        if (options.idempotencyKey) headers['Idempotency-Key'] = options.idempotencyKey
+        if (options.timeoutMs) init.signal = AbortSignal.timeout(options.timeoutMs)
 
         if (!silent) this.trackRequest(+1)
         try {
@@ -76,12 +122,12 @@ class ApiClient {
             try {
                 response = await fetch(buildUrl(path, params), init)
             } catch {
-                throw this.handleError(new ApiError(0, 'Errore di connessione', path))
+                throw report(new ApiError(0, 'Errore di connessione', path))
             }
             const data = await parseBody(response)
             if (!response.ok) {
                 const message = (data as { message?: string } | undefined)?.message || response.statusText
-                throw this.handleError(new ApiError(response.status, message, path))
+                throw report(new ApiError(response.status, message, path))
             }
             return data as T
         } finally {
@@ -123,6 +169,27 @@ class ApiClient {
             snackbar.show('Si è verificato un errore', 3000, 'top', 'error')
         }
         return error
+    }
+
+    /**
+     * An operation the server runs once per `Idempotency-Key` (orders, table closing, payments): on a network error
+     * it is sent again with the same key, so it never happens twice.
+     */
+    private async idempotent<T>(method: Method, path: string, body: unknown, options: IdempotentOptions = {}): Promise<T> {
+        const key = options.key || newIdempotencyKey()
+        const retries = options.retries ?? RETRY_DELAYS_MS.length
+        for (let attempt = 0; ; attempt++) {
+            try {
+                return await this.request<T>(method, path, body, undefined,
+                    { idempotencyKey: key, timeoutMs: IDEMPOTENT_TIMEOUT_MS, report: false })
+            } catch (error) {
+                if (isRetryable(error) && attempt < retries) {
+                    await sleep(RETRY_DELAYS_MS[Math.min(attempt, RETRY_DELAYS_MS.length - 1)])
+                    continue
+                }
+                throw options.report === false ? error : this.handleError(error as ApiError)
+            }
+        }
     }
 
     private get<T>(path: string, params?: Record<string, unknown>): Promise<T> {
@@ -279,11 +346,11 @@ class ApiClient {
     }
 
     CompleteTable(table_id: number): Promise<number> {
-        return this.put(`/tables/${table_id}/complete`)
+        return this.idempotent('PUT', `/tables/${table_id}/complete`, undefined)
     }
 
     PaySelectedItem(table_id: number, item_ids: number[]): Promise<number> {
-        return this.put(`/tables/${table_id}/payitems`, item_ids)
+        return this.idempotent('PUT', `/tables/${table_id}/payitems`, item_ids)
     }
 
     /** A table of the ongoing event layout, or `0` when it doesn't exist. */
@@ -305,8 +372,9 @@ class ApiClient {
         return this.get(`/orders/${event_id}/[${destinations_ids}]`)
     }
 
-    CreateOrder(order: Order): Promise<number> {
-        return this.post('/orders', order)
+    /** Returns the id of the order's table. The offline queue passes the key of the order it holds. */
+    CreateOrder(order: Order, options?: IdempotentOptions): Promise<number> {
+        return this.idempotent('POST', '/orders', order, options)
     }
 
     CompleteOrder(order_id: number, input: CompleteOrderInput): Promise<number> {
@@ -529,17 +597,17 @@ class ApiClient {
 
     /** sumup_checkout: payment link / QR code */
     CreateSumupCheckoutLink(payload: PaymentPayload): Promise<PaymentTransaction> {
-        return this.post('/payment/checkout/sumup-checkout', payload)
+        return this.idempotent('POST', '/payment/checkout/sumup-checkout', payload)
     }
 
     /** sumup_pos: returns the `url_scheme` that opens the SumUp app */
     CreateSumupPosSession(payload: PaymentPayload): Promise<PaymentTransaction & { url_scheme: string }> {
-        return this.post('/payment/checkout/sumup-pos', payload)
+        return this.idempotent('POST', '/payment/checkout/sumup-pos', payload)
     }
 
     /** sumup_solo: sends the payment to the Solo terminal */
     CreateSumupSoloPayment(payload: PaymentPayload): Promise<PaymentTransaction> {
-        return this.post('/payment/checkout/sumup-solo', payload)
+        return this.idempotent('POST', '/payment/checkout/sumup-solo', payload)
     }
 
     /** Polled by sumup_checkout and sumup_solo */

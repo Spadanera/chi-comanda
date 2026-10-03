@@ -18,10 +18,38 @@ export interface VenueContext {
     readonly features: ReadonlySet<Feature>
     /** The only way domain services reach the database. */
     readonly db: VenueDb
+    /**
+     * Side effects of an operation (socket notifications, push): run at once, or after the commit when the operation
+     * runs inside an outer transaction (`inTransaction`, used by idempotent requests). `fn` gets a context on the pool.
+     */
+    afterCommit(fn: (ctx: VenueContext) => unknown): void
 }
 
 export function venueContext(venueId: number, userId: number | null, roles: readonly string[], features: Iterable<Feature>): VenueContext {
-    return Object.freeze({ venueId, userId, roles: Object.freeze([...roles]), features: new Set(features), db: new VenueDb(venueId) })
+    const ctx: VenueContext = Object.freeze({
+        venueId, userId, roles: Object.freeze([...roles]), features: new Set(features), db: new VenueDb(venueId),
+        afterCommit: (fn: (ctx: VenueContext) => unknown) => { fn(ctx) },
+    })
+    return ctx
+}
+
+/**
+ * Runs `work` in one transaction with a context whose queries all join it (services' own `ctx.db.transaction` just
+ * run inside); the side effects registered with `afterCommit` run only once it has committed.
+ */
+export async function inTransaction<T>(ctx: VenueContext, work: (tx: VenueContext) => Promise<T>): Promise<T> {
+    const pending: ((ctx: VenueContext) => unknown)[] = []
+    const result = await ctx.db.transaction(db => work(Object.freeze({
+        ...ctx, db, afterCommit: (fn: (ctx: VenueContext) => unknown) => { pending.push(fn) },
+    })))
+    for (const fn of pending) {
+        try {
+            fn(ctx)
+        } catch (error) {
+            console.error('After commit:', error)
+        }
+    }
+    return result
 }
 
 declare global {
