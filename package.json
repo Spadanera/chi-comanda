@@ -3,6 +3,9 @@
   "version": "1.19.3",
   "description": "",
   "main": "index.js",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "start": "docker-compose up -d",
     "recreate": "docker-compose up -d --force-recreate",

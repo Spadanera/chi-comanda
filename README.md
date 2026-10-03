@@ -103,7 +103,7 @@ Google login and e-mails are optional: without `GOOGLE_CLIENT_*` / `MAIL_*` the 
 
 There are 4 services defined in docker compose:
 
-1. client: node18 image that hosts the client of the application based on VUE.js
-2. server: node:18 image that hosts the API 
+1. client: node:22 image that hosts the client of the application based on VUE.js
+2. server: node:22 image that hosts the API 
 3. server-database: MySql image
 4. proxy: nginx image that works as proxy between client and server

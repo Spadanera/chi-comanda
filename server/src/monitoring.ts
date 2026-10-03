@@ -11,8 +11,17 @@ export function initMonitoring() {
         dsn: config.sentry.dsn,
         release: config.app.version,
         environment: config.app.environment,
-        // Errors only: no performance tracing, no request bodies or cookies
-        sendDefaultPii: false,
+        // Errors only: no performance tracing. Sentry 11 collects everything by default
+        // (users, cookies, headers, bodies, local variables): opt out explicitly.
+        dataCollection: {
+            userInfo: false,
+            cookies: false,
+            httpHeaders: false,
+            httpBodies: [],
+            urlQueryParams: false,
+            databaseQueryData: false,
+            stackFrameVariables: false,
+        },
         initialScope: { tags: { client: config.client.slug || config.client.name || 'unknown' } },
     })
 }
