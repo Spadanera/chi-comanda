@@ -12,7 +12,7 @@ import fileAudio1 from '@/assets/nuovo-ordine-1.ogg'
 import fileAudio2 from '@/assets/nuovo-ordine-2.ogg'
 import fileAudio3 from '@/assets/nuovo-ordine-3.ogg'
 import fileAudio4 from '@/assets/nuovo-ordine-4.mp3'
-import { useSocket, joinRoom, leaveRoom } from '@/composables/useSocket'
+import { useSocket, joinRoom, leaveRoom, onResync } from '@/composables/useSocket'
 
 const socket = useSocket()
 let interval: number
@@ -186,29 +186,29 @@ function itemRemovedHandler(data: number) {
   }
 }
 
-async function handleReconnection() {
-  await getOrders()
-}
-
+/** Whole state of the screen: on entering, on a new event and whenever the connection comes back. */
 async function init() {
-  if (props.event && props.event.id) {
-    loading.value = true
+  if (!props.event?.id) return
+  if (!types.value.length) loading.value = true
+  try {
     types.value = await api.GetSubTypes()
     await getOrders()
-    joinRoom('bartender')
-    socket.on('new-order', newOrderHandler)
-    socket.on('order-completed', orderCompletedHandler)
-    socket.on('item-updated', itemUpdatedHandler)
-    socket.on('reload-table', reloadTableHandler)
-    socket.on('item-removed', itemRemovedHandler)
-    socket.on('connect', handleReconnection)
-    window.clearInterval(interval)
-    interval = window.setInterval(calculateMinPassed, 1000 * 60)
+  } finally {
     loading.value = false
   }
 }
 
+let stopResync: () => void
 onMounted(() => {
+  joinRoom('bartender')
+  socket.on('new-order', newOrderHandler)
+  socket.on('order-completed', orderCompletedHandler)
+  socket.on('item-updated', itemUpdatedHandler)
+  socket.on('reload-table', reloadTableHandler)
+  socket.on('item-removed', itemRemovedHandler)
+  stopResync = onResync(init)
+  interval = window.setInterval(calculateMinPassed, 1000 * 60)
+
   readonly.value = !user.value?.roles?.includes(Roles.bartender) && !user.value?.roles?.includes(Roles.superuser)
   audio.value = [
     new Audio(fileAudio),
@@ -230,7 +230,7 @@ onUnmounted(() => {
   socket.off('item-updated', itemUpdatedHandler)
   socket.off('reload-table', reloadTableHandler)
   socket.off('item-removed', itemRemovedHandler)
-  socket.off('connect', handleReconnection)
+  stopResync()
 })
 </script>
 

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { type Table, type Item, type SubType, type CompleteOrderInput, type User } from "../../../models/src"
-import { ref, computed, onUnmounted, watch } from "vue"
+import { ref, computed, onMounted, onUnmounted, watch } from "vue"
 import api from '@/services/client'
 import { SnackbarStore } from '@/stores'
 import { copy, sortTables } from "@/services/utils"
 import { RouterLink } from 'vue-router'
 import CheckoutOrder from "@/components/CheckoutOrder.vue"
 import CheckoutTableSelection from "@/components/CheckoutTableSelection.vue"
-import { useSocket, joinRoom, leaveRoom } from '@/composables/useSocket'
+import { useSocket, joinRoom, leaveRoom, onResync } from '@/composables/useSocket'
 
 const props = defineProps(['event'])
 
@@ -85,23 +85,26 @@ function orderCompletedHandler(data: CompleteOrderInput) {
   }
 }
 
-async function handleReconnection() {
-  await getTables()
-}
-
+/** Whole state of the screen: on entering, on a new event and whenever the connection comes back. */
 async function init() {
-  if (props.event && props.event.id) {
-    loading.value = true
+  if (!props.event?.id) return
+  if (!types.value.length) loading.value = true
+  try {
     types.value = await api.GetSubTypes()
     await getTables()
-    joinRoom('checkout')
-    socket.on('new-order', newOrderHandler)
-    socket.on('item-removed', itemRemovedHandler)
-    socket.on('order-completed', orderCompletedHandler)
-    socket.on('connect', handleReconnection)
+  } finally {
     loading.value = false
   }
 }
+
+let stopResync: () => void
+onMounted(() => {
+  joinRoom('checkout')
+  socket.on('new-order', newOrderHandler)
+  socket.on('item-removed', itemRemovedHandler)
+  socket.on('order-completed', orderCompletedHandler)
+  stopResync = onResync(init)
+})
 
 watch(() => props.event, init, { immediate: true })
 
@@ -110,7 +113,7 @@ onUnmounted(() => {
   socket.off('new-order', newOrderHandler)
   socket.off('item-removed', itemRemovedHandler)
   socket.off('order-completed', orderCompletedHandler)
-  socket.off('connect', handleReconnection)
+  stopResync()
 })
 </script>
 

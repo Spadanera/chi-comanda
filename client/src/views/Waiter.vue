@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RestaurantLayout, AvailableTable, Room } from "../../../models/src"
-import { ref, computed, onUnmounted, watch } from "vue"
+import { ref, computed, onMounted, onUnmounted, watch } from "vue"
 import api from '@/services/client'
 import { useRoute } from 'vue-router'
 import RoomTabs from '@/components/RoomTabs.vue'
@@ -9,7 +9,7 @@ import { useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { SnackbarStore, ZoomStore } from '@/stores'
 import { storeToRefs } from 'pinia'
-import { useSocket, joinRoom, leaveRoom } from '@/composables/useSocket'
+import { useSocket, joinRoom, leaveRoom, onResync } from '@/composables/useSocket'
 import { outboxDialog, venueQueue } from '@/services/outbox'
 
 const { smAndUp } = useDisplay()
@@ -70,23 +70,27 @@ async function getTables() {
   }
 }
 
-async function handleReconnection() {
-  await getTables()
-}
-
+/** Whole state of the screen: on entering, on a new event and whenever the connection comes back. */
 async function init() {
-  if (props.event && props.event.id) {
-    loading.value = true
+  if (!props.event?.id) return
+  // Only the first time: a reload keeps the screen on while it runs
+  if (!rooms.value.length) loading.value = true
+  try {
     await getTables()
-    if (rooms.value.length) {
-      activeRoomId.value = rooms.value[0].id
+    if (!rooms.value.some(r => r.id === activeRoomId.value)) {
+      activeRoomId.value = rooms.value[0]?.id
     }
-    joinRoom('waiter')
-    socket.on('reload-table', reloadTableHandler)
-    socket.on('connect', handleReconnection)
+  } finally {
     loading.value = false
   }
 }
+
+let stopResync: () => void
+onMounted(() => {
+  joinRoom('waiter')
+  socket.on('reload-table', reloadTableHandler)
+  stopResync = onResync(init)
+})
 
 watch(() => props.event, init, { immediate: true })
 
@@ -94,7 +98,7 @@ onUnmounted(() => {
   clearTimeout(reloadTimeout)
   leaveRoom('waiter')
   socket.off('reload-table', reloadTableHandler)
-  socket.off('connect', handleReconnection)
+  stopResync()
 })
 </script>
 

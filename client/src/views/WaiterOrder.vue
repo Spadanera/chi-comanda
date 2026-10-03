@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Order, type MasterItem, type Item, type SubType, type Type, type Destination, type User } from "../../../models/src"
-import { ref, onMounted, computed, nextTick } from "vue"
+import { ref, onMounted, onUnmounted, computed, nextTick } from "vue"
 import router from '@/router'
 import api from '@/services/client'
 import { sendOrder as submitOrder } from '@/services/outbox'
@@ -10,6 +10,7 @@ import { useRoute } from 'vue-router'
 import { requiredRule } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
 import { useFeature } from "@/composables/useConfig"
+import { onResync } from '@/composables/useSocket'
 
 const route = useRoute()
 const origin = route.query.origin ? `${route.query.origin}` : '/waiter'
@@ -190,10 +191,23 @@ const removeName = (index: number) => {
   names.value.splice(index, 1)
 }
 
-onMounted(async () => {
+/** Menu, availability and destinations: on entering and when the connection comes back (products sold out meanwhile). */
+async function loadMenu() {
   destinations.value = await api.GetDestinations()
   types.value = await api.GetSubTypes()
   master_items.value = await api.GetAvailableMasterItems(props.menu_id)
+}
+
+let stopResync: () => void
+onUnmounted(() => stopResync?.())
+
+onMounted(async () => {
+  // A reload also completes a first load that failed offline
+  stopResync = onResync(async () => {
+    await loadMenu()
+    loading.value = false
+  })
+  await loadMenu()
   if (parseInt(props.table_id)) {
     table_name.value = (await api.GetTable(props.table_id)).name
   }

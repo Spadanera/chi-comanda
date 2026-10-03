@@ -14,7 +14,7 @@ import { flush, myQueue, outboxDialog, startOutbox, venueQueue } from './service
 import logoLight from '@/assets/logo/maitre-light.svg'
 import logoDark from '@/assets/logo/maitre-dark.svg'
 import { requireRuleArray, requiredRule } from './services/utils'
-import { socketConnected, socketOnline, destroySocket, onSocketCreated, joinRoom } from './composables/useSocket'
+import { socketConnected, socketOnline, destroySocket, onSocketCreated, joinRoom, onResync } from './composables/useSocket'
 import { useBroadcast } from './composables/useBroadcast'
 import { appConfig, useFeature, venueName } from './composables/useConfig'
 
@@ -95,6 +95,30 @@ async function getOnGoingEvent() {
   initReceivers()
 }
 
+/**
+ * When the connection comes back: the session (it may have expired, the venue may have been disabled or the roles
+ * changed meanwhile) and the ongoing event (started or closed meanwhile). The screens reload their own state.
+ */
+async function resyncSession() {
+  if (!userStore.isLoggedIn) return
+  const venueBefore = userStore.venueId
+  const current = await userStore.checkAuthentication()
+  user.value = current
+  if (!current.isLoggedIn) {
+    router.push('/login')
+  } else if (!current.venueId) {
+    router.push({ name: 'Locale' })
+  } else if (current.venueId === venueBefore) {
+    // Another venue is handled by the watcher below
+    const ongoing = await api.GetOnGoingEvent()
+    // A new object would make every screen start over: only when the event changed
+    if (JSON.stringify(ongoing ?? null) !== JSON.stringify(event.value ?? null)) {
+      event.value = ongoing
+      initReceivers()
+    }
+  }
+}
+
 // Another venue: its ongoing event, not the previous venue's
 watch(() => userStore.venueId, venueId => {
   user.value = userStore.user
@@ -104,6 +128,7 @@ watch(() => userStore.venueId, venueId => {
 
 let unregisterSocketSetup: (() => void) | undefined
 let stopOutbox: (() => void) | undefined
+let stopResync: (() => void) | undefined
 
 // Brief drops (screen off, phone in the pocket) are restored silently: tell the user only when
 // the real-time connection stays down, and offer a reload only after a long outage.
@@ -148,6 +173,7 @@ onBeforeMount(() => {
 
   registerSocketHandler()
   stopOutbox = startOutbox()
+  stopResync = onResync(resyncSession)
 })
 
 onMounted(async () => {
@@ -164,6 +190,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('resume', onVisibilityChange)
   unregisterSocketSetup?.()
   stopOutbox?.()
+  stopResync?.()
   unregisterSocketHandler()
   destroySocket()
 })

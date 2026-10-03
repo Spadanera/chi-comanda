@@ -178,7 +178,9 @@ onMounted(async () => {
 })
 
 defineExpose({
-    getLayout
+    getLayout,
+    /** Unsaved changes on screen: a reload would throw them away. */
+    isEditing: () => editing.value,
 });
 </script>
 

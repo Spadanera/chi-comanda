@@ -132,6 +132,14 @@ client cannot tell. The operations that must never happen twice are idempotent.
   - Without IndexedDB (some private modes) the queue lives in memory and the waiter is told not to close the page.
   - A new table opened by a queued order appears on the layout only once the order arrives.
 
+- **Whole state on reconnection**: events sent while a phone was disconnected (or frozen with the screen off) are
+  lost, so every screen registers a full reload with `onResync` (`client/src/composables/useSocket.ts`). It runs after
+  a reconnection of the socket and when the page becomes visible again or the browser goes online (debounced, at most
+  every 5 s for visibility), never at the first connection. App reloads the session (expired session → login,
+  disabled venue → venue choice) and the ongoing event; Waiter, BarTender, Checkout and Tables their whole data (Tables
+  not while the layout is being edited); WaiterOrder the menu and its availability; CheckoutOrder asks the outcome of
+  a pending electronic payment. A screen whose first load failed offline completes it there.
+
 Client tests (`client/test`, vitest with jsdom and fake-indexeddb): `cd client && npm test`.
 
 ## Database migrations
