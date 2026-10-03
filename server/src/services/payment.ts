@@ -1,9 +1,12 @@
 import crypto from 'crypto'
-import db, { placeholders, Queryable } from '../db'
+import { placeholders } from '../db'
 import config from '../config'
 import { PaymentSetting, PaymentTransaction } from '../../../models/src'
 import { notify } from '../socket'
 import tableService from './table'
+import venueService from './venue'
+import { VenueContext, venueContext } from '../venue/context'
+import { VenueDb } from '../venue/db'
 import { BadRequestError, ForbiddenError, HttpError, NotFoundError } from '../http/errors'
 
 const SUMUP_API = 'https://api.sumup.com/v0.1'
@@ -45,12 +48,14 @@ const round2 = (n: number) => Math.round(n * 100) / 100
  * items (unpaid, of this table), full payments every item unpaid right now. The amount may be
  * lower than the total (a discount) but not higher.
  */
-async function preparePayment(req: PaymentRequest): Promise<PreparedPayment> {
-    const table = await db.queryOne<{ status: string }>('SELECT status FROM tables WHERE id = ? AND event_id = ?', [req.table_id, req.event_id])
+async function preparePayment(ctx: VenueContext, req: PaymentRequest): Promise<PreparedPayment> {
+    await ctx.db.find('tables', req.table_id, 'id')
+    const table = await ctx.db.queryOne<{ status: string }>('SELECT status FROM tables WHERE venue_id = :venue AND id = ? AND event_id = ?',
+        [req.table_id, req.event_id])
     if (!table || table.status !== 'ACTIVE') {
         throw new BadRequestError('Tavolo non trovato o già chiuso')
     }
-    const unpaid = await tableService.unpaidItems(req.table_id)
+    const unpaid = await tableService.unpaidItems(ctx.db, req.table_id)
     const mode: PaymentMode = req.item_ids.length ? 'partial' : 'full'
     const covered = mode === 'partial' ? unpaid.filter(i => req.item_ids.includes(i.id)) : unpaid
     if (mode === 'partial' && covered.length !== new Set(req.item_ids).size) {
@@ -71,20 +76,20 @@ async function preparePayment(req: PaymentRequest): Promise<PreparedPayment> {
  * unpaid, records the difference with the amount as a discount, and closes the table for a
  * full payment when nothing else is left to pay (items ordered meanwhile stay to be paid).
  */
-async function settle(q: Queryable, tx: TransactionRow): Promise<void> {
+async function settle(q: VenueDb, tx: TransactionRow): Promise<void> {
     const itemIds: number[] = (typeof tx.item_ids === 'string' ? JSON.parse(tx.item_ids) : tx.item_ids) || []
     const items = itemIds.length
         ? await q.query<{ id: number, price: number }>(
-            `SELECT id, price FROM items WHERE table_id = ? AND id IN (${placeholders(itemIds)}) AND IFNULL(paid, FALSE) = FALSE`,
+            `SELECT id, price FROM items WHERE venue_id = :venue AND table_id = ? AND id IN (${placeholders(itemIds)}) AND IFNULL(paid, FALSE) = FALSE`,
             [tx.table_id, ...itemIds])
         : []
     const due = round2(items.reduce((sum, i) => sum + Number(i.price), 0))
     const discount = round2(due - Number(tx.amount))
     if (items.length && discount > 0) {
-        await tableService.insertDiscount(tx.event_id, tx.table_id, discount, q)
+        await tableService.insertDiscount(q, tx.event_id, tx.table_id, discount)
     }
-    await tableService.paySelectedItems(tx.table_id, items.map(i => i.id), q)
-    if (tx.mode === 'full' && !(await tableService.unpaidItems(tx.table_id, q)).length) {
+    await tableService.paySelectedItems(q, tx.table_id, items.map(i => i.id))
+    if (tx.mode === 'full' && !(await tableService.unpaidItems(q, tx.table_id)).length) {
         await tableService.closeWith(q, tx.table_id)
     }
 }
@@ -101,21 +106,21 @@ async function sumupRequest(path: string, apiKey: string, method: 'GET' | 'POST'
     return { status: res.status, ok: res.ok, data }
 }
 
-async function getProviderConfig(provider: string): Promise<Record<string, string>> {
-    const row = await db.queryOne<{ enabled: number, config: unknown }>(
-        'SELECT enabled, config FROM payment_settings WHERE provider = ?', [provider])
+async function getProviderConfig(ctx: VenueContext, provider: string): Promise<Record<string, string>> {
+    const row = await ctx.db.queryOne<{ enabled: number, config: unknown }>(
+        'SELECT enabled, config FROM payment_settings WHERE venue_id = :venue AND provider = ?', [provider])
     if (!row || !row.enabled) {
         throw new BadRequestError(`Provider "${provider}" non configurato o non abilitato`)
     }
     return (typeof row.config === 'string' ? JSON.parse(row.config) : row.config) as Record<string, string>
 }
 
-function insertTransaction(provider: PaymentProvider, req: PaymentRequest, prepared: PreparedPayment, currency: string,
-    externalId: string | null, checkoutReference: string): Promise<number> {
-    return db.insert(`
+function insertTransaction(ctx: VenueContext, provider: PaymentProvider, req: PaymentRequest, prepared: PreparedPayment,
+    currency: string, externalId: string | null, checkoutReference: string): Promise<number> {
+    return ctx.db.insert(`
         INSERT INTO payment_transactions
-            (table_id, event_id, provider, external_id, checkout_reference, amount, currency, status, item_ids, mode)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?)`,
+            (venue_id, table_id, event_id, provider, external_id, checkout_reference, amount, currency, status, item_ids, mode)
+        VALUES (:venue, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?)`,
         [req.table_id, req.event_id, provider, externalId, checkoutReference, req.amount, currency,
             JSON.stringify(prepared.itemIds), prepared.mode])
 }
@@ -135,33 +140,33 @@ class PaymentService {
     // ── Settings ─────────────────────────────────────────────────────────────
 
     /** Provider settings for the admin page. Secrets in `config` are never returned. */
-    async getSettings(): Promise<PaymentSetting[]> {
-        const rows = await db.query(`
+    async getSettings(ctx: VenueContext): Promise<PaymentSetting[]> {
+        const rows = await ctx.db.query(`
             SELECT id, provider, enabled, (config IS NOT NULL AND JSON_LENGTH(config) > 0) AS configured
-            FROM payment_settings`)
+            FROM payment_settings WHERE venue_id = :venue`)
         return rows.map(r => ({ id: r.id, provider: r.provider, enabled: !!r.enabled, configured: !!r.configured })) as PaymentSetting[]
     }
 
-    async getAvailableProviders(): Promise<PaymentSetting[]> {
-        const rows = await db.query('SELECT provider FROM payment_settings WHERE enabled = 1')
+    async getAvailableProviders(ctx: VenueContext): Promise<PaymentSetting[]> {
+        const rows = await ctx.db.query('SELECT provider FROM payment_settings WHERE venue_id = :venue AND enabled = 1')
         return rows.map(r => ({ provider: r.provider, enabled: true })) as PaymentSetting[]
     }
 
-    async saveSettings(setting: PaymentSetting): Promise<number> {
+    async saveSettings(ctx: VenueContext, setting: PaymentSetting): Promise<number> {
         if (!PAYMENT_PROVIDERS.includes(setting.provider as PaymentProvider)) {
             throw new BadRequestError('Provider sconosciuto')
         }
-        return db.execute(`
-            INSERT INTO payment_settings (provider, enabled, config) VALUES (?, ?, ?)
+        return ctx.db.execute(`
+            INSERT INTO payment_settings (venue_id, provider, enabled, config) VALUES (:venue, ?, ?, ?)
             ON DUPLICATE KEY UPDATE enabled = VALUES(enabled), config = VALUES(config)`,
             [setting.provider, setting.enabled ? 1 : 0, JSON.stringify(setting.config || {})])
     }
 
     // ── sumup_checkout: payment link / QR code ───────────────────────────────
 
-    async createCheckoutLink(req: PaymentRequest): Promise<PaymentTransaction> {
-        const prepared = await preparePayment(req)
-        const providerConfig = await getProviderConfig('sumup_checkout')
+    async createCheckoutLink(ctx: VenueContext, req: PaymentRequest): Promise<PaymentTransaction> {
+        const prepared = await preparePayment(ctx, req)
+        const providerConfig = await getProviderConfig(ctx, 'sumup_checkout')
         if (!providerConfig.api_key) throw new BadRequestError('API key SumUp mancante')
 
         const checkoutReference = `chicomanda-${req.table_id}-${Date.now()}`
@@ -173,7 +178,7 @@ class PaymentService {
             throw new HttpError(502, `SumUp Checkout error: ${JSON.stringify(res.data)}`)
         }
 
-        const id = await insertTransaction('sumup_checkout', req, prepared, currency, res.data.id, checkoutReference)
+        const id = await insertTransaction(ctx, 'sumup_checkout', req, prepared, currency, res.data.id, checkoutReference)
         return {
             id, table_id: req.table_id, event_id: req.event_id, provider: 'sumup_checkout',
             external_id: res.data.id, checkout_reference: checkoutReference, amount: req.amount, currency,
@@ -184,15 +189,15 @@ class PaymentService {
 
     // ── sumup_pos: URL scheme opening the SumUp app on the tablet ────────────
 
-    async createPosSession(req: PaymentRequest): Promise<PaymentTransaction & { url_scheme: string }> {
-        const prepared = await preparePayment(req)
-        const providerConfig = await getProviderConfig('sumup_pos')
+    async createPosSession(ctx: VenueContext, req: PaymentRequest): Promise<PaymentTransaction & { url_scheme: string }> {
+        const prepared = await preparePayment(ctx, req)
+        const providerConfig = await getProviderConfig(ctx, 'sumup_pos')
         if (!providerConfig.affiliate_key) throw new BadRequestError('Affiliate key SumUp POS mancante')
         if (!providerConfig.server_url) throw new BadRequestError('URL server non configurato per SumUp POS')
 
         const checkoutReference = `chicomanda-pos-${req.table_id}-${Date.now()}`
         const currency = providerConfig.currency || 'EUR'
-        const id = await insertTransaction('sumup_pos', req, prepared, currency, null, checkoutReference)
+        const id = await insertTransaction(ctx, 'sumup_pos', req, prepared, currency, null, checkoutReference)
 
         // SumUp calls this back (appending smp-status / smp-tx-code) once the payment ends
         const callback = new URL(`${providerConfig.server_url.replace(/\/$/, '')}/api/public/payment/sumup/pos-callback`)
@@ -218,15 +223,21 @@ class PaymentService {
         } as PaymentTransaction & { url_scheme: string }
     }
 
-    /** Public callback invoked by the SumUp app. Only signed, still pending transactions are updated. */
+    /**
+     * Public callback invoked by the SumUp app. Only signed, still pending transactions are updated, in the venue of
+     * the stored transaction.
+     */
     async handlePosCallback(transactionId: number, signature: string, smpStatus: string, smpTxCode?: string): Promise<void> {
         if (!isValidSignature(transactionId, signature)) {
             throw new ForbiddenError('Firma non valida')
         }
+        const venueId = await venueService.venueOfPaymentTransaction(transactionId)
+        if (!venueId) throw new NotFoundError('Transazione non trovata')
+        const ctx = venueContext(venueId)
         if (smpStatus === 'success') {
-            await this.markPaid(transactionId, smpTxCode)
+            await this.markPaid(ctx, transactionId, smpTxCode)
         } else {
-            await this.markFailed(transactionId)
+            await this.markFailed(ctx, transactionId)
         }
     }
 
@@ -235,13 +246,13 @@ class PaymentService {
      * the lock: when the callback and the polling (or two callbacks) arrive together, only the
      * first one settles. Returns false when the transaction was not pending any more.
      */
-    private async markPaid(transactionId: number, externalId?: string): Promise<boolean> {
-        const row = await db.transaction(async q => {
+    private async markPaid(ctx: VenueContext, transactionId: number, externalId?: string): Promise<boolean> {
+        const row = await ctx.db.transaction(async q => {
             const updated = await q.execute(`
                 UPDATE payment_transactions SET status = 'PAID', external_id = COALESCE(?, external_id)
-                WHERE id = ? AND status = 'PENDING'`, [externalId || null, transactionId])
+                WHERE venue_id = :venue AND id = ? AND status = 'PENDING'`, [externalId || null, transactionId])
             if (!updated) return undefined
-            const tx = await q.queryOne<TransactionRow>('SELECT * FROM payment_transactions WHERE id = ?', [transactionId])
+            const tx = await q.queryOne<TransactionRow>('SELECT * FROM payment_transactions WHERE venue_id = :venue AND id = ?', [transactionId])
             await settle(q, tx!)
             return tx
         })
@@ -251,19 +262,21 @@ class PaymentService {
         return true
     }
 
-    private async markFailed(transactionId: number): Promise<void> {
-        const updated = await db.execute(`UPDATE payment_transactions SET status = 'FAILED' WHERE id = ? AND status = 'PENDING'`, [transactionId])
+    private async markFailed(ctx: VenueContext, transactionId: number): Promise<void> {
+        const updated = await ctx.db.execute(`
+            UPDATE payment_transactions SET status = 'FAILED' WHERE venue_id = :venue AND id = ? AND status = 'PENDING'`, [transactionId])
         if (!updated) return
-        const tx = await db.queryOne<{ table_id: number }>('SELECT table_id FROM payment_transactions WHERE id = ?', [transactionId])
+        const tx = await ctx.db.queryOne<{ table_id: number }>('SELECT table_id FROM payment_transactions WHERE venue_id = :venue AND id = ?',
+            [transactionId])
         notify.paymentCompleted({ transaction_id: transactionId, table_id: tx?.table_id, status: 'FAILED' })
     }
 
     // ── sumup_solo: standalone card terminal (requires SumUp partner access) ──
     // https://developer.sumup.com/docs/terminal-payments
 
-    async createSoloPayment(req: PaymentRequest): Promise<PaymentTransaction> {
-        const prepared = await preparePayment(req)
-        const providerConfig = await getProviderConfig('sumup_solo')
+    async createSoloPayment(ctx: VenueContext, req: PaymentRequest): Promise<PaymentTransaction> {
+        const prepared = await preparePayment(ctx, req)
+        const providerConfig = await getProviderConfig(ctx, 'sumup_solo')
         if (!providerConfig.api_key) throw new BadRequestError('API key SumUp Solo mancante')
         if (!providerConfig.reader_code) throw new BadRequestError('Codice reader SumUp Solo mancante')
 
@@ -285,7 +298,7 @@ class PaymentService {
             console.warn(`SumUp Solo send-to-reader warning (${sent.status}):`, sent.data)
         }
 
-        const id = await insertTransaction('sumup_solo', req, prepared, currency, checkoutId, checkoutReference)
+        const id = await insertTransaction(ctx, 'sumup_solo', req, prepared, currency, checkoutId, checkoutReference)
         return {
             id, table_id: req.table_id, event_id: req.event_id, provider: 'sumup_solo',
             external_id: checkoutId, checkout_reference: checkoutReference, amount: req.amount, currency,
@@ -295,22 +308,21 @@ class PaymentService {
 
     // ── Status polling (checkout link and Solo; POS is notified via socket) ──
 
-    async checkTransactionStatus(transactionId: number): Promise<{ status: string }> {
-        const tx = await db.queryOne('SELECT * FROM payment_transactions WHERE id = ?', [transactionId])
-        if (!tx) throw new NotFoundError('Transazione non trovata')
+    async checkTransactionStatus(ctx: VenueContext, transactionId: number): Promise<{ status: string }> {
+        const tx = await ctx.db.find('payment_transactions', transactionId)
         if (tx.status !== 'PENDING' || !tx.external_id) return { status: tx.status }
 
-        const providerConfig = await getProviderConfig(tx.provider)
+        const providerConfig = await getProviderConfig(ctx, tx.provider)
         const res = await sumupRequest(`/checkouts/${encodeURIComponent(tx.external_id)}`, providerConfig.api_key, 'GET')
         if (!res.ok) throw new HttpError(502, 'Errore nel controllo stato SumUp')
 
         const sumupStatus: string = res.data.status
         if (sumupStatus === 'PAID') {
-            await this.markPaid(transactionId)
+            await this.markPaid(ctx, transactionId)
             return { status: 'PAID' }
         }
         if (['FAILED', 'EXPIRED', 'CANCELLED'].includes(sumupStatus)) {
-            await this.markFailed(transactionId)
+            await this.markFailed(ctx, transactionId)
             return { status: 'FAILED' }
         }
         return { status: 'PENDING' }
