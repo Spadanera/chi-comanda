@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express'
 import { User } from '../../../models/src'
 import auditService from '../services/audit'
 import { isFeatureEnabled } from '../config'
+import { captureError } from '../monitoring'
 import { Feature } from '../features'
 import { ForbiddenError, HttpError, NotFoundError, UnauthorizedError } from './errors'
 
@@ -78,9 +79,13 @@ export const auditMiddleware = (req: Request, _res: Response, next: NextFunction
 
 export const errorMiddleware = (error: Error, _req: Request, res: Response, _next: NextFunction) => {
     if (error instanceof HttpError) {
-        if (error.status >= 500) console.error(error)
+        if (error.status >= 500) {
+            console.error(error)
+            captureError(error)
+        }
         return res.status(error.status).json({ message: error.message })
     }
     console.error(error)
+    captureError(error)
     res.status(500).json({ message: 'Internal server error' })
 }

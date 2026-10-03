@@ -55,6 +55,14 @@ async function bootstrap() {
     app.component("Confirm", Confirm)
     app.component("NoEvent", NoEvent)
 
+    const { sentry, slug, name } = appConfig.value
+    if (sentry) {
+        // Loaded only where error reporting is configured
+        const Sentry = await import('@sentry/vue')
+        Sentry.init({ app, dsn: sentry.dsn, environment: sentry.environment, release: sentry.release, sendDefaultPii: false })
+        Sentry.setTag('client', slug || name || 'unknown')
+    }
+
     app.mount('#app')
 }
 

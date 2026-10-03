@@ -1,7 +1,9 @@
 import config from './config'
 import { DEMO_SEED_FILE, migrate } from './db/migrate'
+import { captureError, flushMonitoring, initMonitoring } from './monitoring'
 
 async function main() {
+    initMonitoring()
     // Before loading the app: the session store and every query need the migrated schema
     await migrate({ db: config.db, demoSeedFile: config.demoSeed ? DEMO_SEED_FILE : undefined })
 
@@ -26,7 +28,9 @@ async function main() {
     })
 }
 
-main().catch(error => {
+main().catch(async error => {
     console.error('Startup failed:', error)
+    captureError(error)
+    await flushMonitoring()
     process.exit(1)
 })

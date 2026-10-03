@@ -40,7 +40,7 @@ describe('public configuration', () => {
     it('with the default configuration has every function and no branding', async () => {
         const res = await request(app).get('/api/public/config').expect(200)
         expect(res.body).toEqual({
-            name: null, slug: null, features: [...FEATURES], logo: null, colors: { primary: null, secondary: null },
+            name: null, slug: null, features: [...FEATURES], logo: null, colors: { primary: null, secondary: null }, sentry: null,
         })
     })
 
