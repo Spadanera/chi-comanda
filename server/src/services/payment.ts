@@ -10,6 +10,7 @@ import { VenueDb } from '../venue/db'
 import { BadRequestError, ForbiddenError, HttpError, NotFoundError } from '../http/errors'
 
 const SUMUP_API = 'https://api.sumup.com/v0.1'
+const SUMUP_TIMEOUT_MS = 15000
 
 export type PaymentProvider = 'sumup_checkout' | 'sumup_pos' | 'sumup_solo'
 export const PAYMENT_PROVIDERS: PaymentProvider[] = ['sumup_checkout', 'sumup_pos', 'sumup_solo']
@@ -99,6 +100,10 @@ async function sumupRequest(path: string, apiKey: string, method: 'GET' | 'POST'
         method,
         headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
         body: body === undefined ? undefined : JSON.stringify(body),
+        // Idempotent requests hold their key's transaction open meanwhile
+        signal: AbortSignal.timeout(SUMUP_TIMEOUT_MS),
+    }).catch(error => {
+        throw error?.name === 'TimeoutError' ? new HttpError(504, 'SumUp non risponde, riprova') : error
     })
     const text = await res.text()
     let data: any = text

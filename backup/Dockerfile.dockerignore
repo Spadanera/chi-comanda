@@ -1,0 +1,5 @@
+# Build context of backup/Dockerfile (the repository root): only the backup scripts
+*
+!scripts/backup-cron.mjs
+!scripts/backup-client.mjs
+!scripts/lib/**

@@ -41,7 +41,7 @@ the first superuser** (valid 24 hours) and the remaining manual steps:
 - app variables not copied by the script: `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`, `MAIL_API_KEY`/`MAIL_API_SECRET`/
   `MAIL_FROM`/`MAIL_FROM_NAME`, optionally `SENTRY_DSN`/`SENTRY_CLIENT_DSN`;
 - the superuser sets name, logo and colours in *Amministrazione → Impostazioni*, and the payment providers;
-- a first backup.
+- a first backup, and the automatic daily backups (*Automatic daily backups* below).
 
 Options: `--features payments,push,...` (omit for every function), `--proxied` (subdomain behind the Cloudflare proxy;
 needs SSL/TLS "Full", already active), `--workspace` (Railway workspace of a new project).
@@ -122,6 +122,61 @@ Two files in `~/backups/chi-comanda/` (mode 600, never inside the repository): `
 (complete, "Dump completed" trailer, main tables present) and the last migration is printed. Only reads the database.
 Backups contain personal data (staff e-mails, password hashes): keep the folder private and encrypted at rest.
 
+### Automatic daily backups
+
+Every installation backs itself up every night, besides the manual backups above.
+
+- **Where it runs**: a cron service named `backup` in the installation's Railway project, built from this repository
+  with `backup/Dockerfile` (`backup/railway.json`: every day at **03:30 UTC**, no restart). It runs
+  `scripts/backup-cron.mjs`: `mysqldump --single-transaction` over the project's **private network** (the database
+  credentials never leave Railway), the same validation as `backup-client`, then gzip, encryption, upload, and a check
+  that the bucket holds the whole file. Read-only on the database. A failed run exits with an error (Railway shows it
+  as failed) and, with `SENTRY_DSN`, sends an alert to Sentry.
+- **Where backups are kept**: a **Cloudflare R2** bucket per installation (`chi-comanda-backup-<slug>`), outside
+  Railway, as `<prefix>/<prefix>-YYYY-MM-DD-HHMM-full.sql.gz.enc` (UTC). A lifecycle rule deletes them after **30
+  days**.
+- **Encryption**: each backup is encrypted with a random AES-256-GCM key, itself encrypted with the **backup public
+  key** (RSA). The service only has the public key: whoever reads the bucket or the service's variables can't read a
+  backup. The **private key stays offline** with the owner (password manager and an encrypted disk), never on
+  Railway, never in the repository. Losing it means losing every automatic backup: keep two copies.
+
+#### Turning them on (once per installation)
+
+1. **Key pair** (once for all installations; skip if you already have it). Outside the repository:
+
+   ```bash
+   openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -aes-256-cbc -out ~/.chi-comanda/backup-private.pem
+   openssl pkey -in ~/.chi-comanda/backup-private.pem -pubout -out ~/.chi-comanda/backup-public.pem
+   ```
+
+   The first command asks for a passphrase: keep it with the key. `backup-public.pem` is the only file that goes to
+   Railway.
+2. **Bucket** on Cloudflare → R2: create `chi-comanda-backup-<slug>`; *Settings → Object lifecycle rules*: delete
+   objects after 30 days; optionally *Bucket lock rules*: retention 30 days (then not even a leaked token can delete a
+   backup before it expires). *R2 → Manage API tokens → Create API token*: permission **Object Read & Write**,
+   applied to **that bucket only**. Note the access key id, the secret and the S3 endpoint
+   (`https://<account id>.r2.cloudflarestorage.com`): they go only into Railway's variables below.
+3. **Service** on Railway, in the installation's project and environment: *New → GitHub Repo* → this repository,
+   named `backup`. *Settings*: branch `production` (`stage` for the staging environment), *Config-as-code* path
+   `/backup/railway.json`, no public domain. *Variables*:
+
+   | Variable | Value |
+   |---|---|
+   | `MYSQL_URL` | `${{MySQL.MYSQL_URL}}` (reference to the MySQL service: private network) |
+   | `BACKUP_PUBLIC_KEY` | content of `backup-public.pem` (multi-line value, or one line with `\n`) |
+   | `BACKUP_S3_ENDPOINT` | `https://<account id>.r2.cloudflarestorage.com` |
+   | `BACKUP_S3_BUCKET` | `chi-comanda-backup-<slug>` |
+   | `BACKUP_S3_ACCESS_KEY_ID`, `BACKUP_S3_SECRET_ACCESS_KEY` | the R2 token |
+   | `BACKUP_PREFIX` | `<slug>`, e.g. `libra`; `libra-staging` on staging |
+   | `SENTRY_DSN` | optional: alerts when a backup fails (same DSN as the app) |
+
+4. **First run**: deploy the service, then *Deployments → ⋯ → Run now* (or wait for 03:30 UTC). The log ends with
+   `✓ uploaded <prefix>/...`. If the dump can't reach `mysql.railway.internal`, use `${{MySQL.MYSQL_PUBLIC_URL}}`.
+5. **Restore test** (below, *From an automatic backup*), then once a month.
+
+Check now and then that backups keep arriving (`restore-backup.mjs list`): a cron service that is never deployed
+again doesn't run.
+
 ### Restoring
 
 Restoring **replaces** the target database. Take a backup of the target first, and never restore into a client's
@@ -142,7 +197,25 @@ unset MYSQL_PWD
 ```
 
 Then redeploy the app (`railway service redeploy --service <app> --yes`): it applies the migrations the backup is
-missing. Dumps taken before `backup-client` existed (e.g. `libra-2026-10-03-full.sql`) carry a `GTID_PURGED` line:
+missing.
+
+#### From an automatic backup
+
+Download and decrypt it on your machine (it lands in `~/backups/chi-comanda/`, mode 600, validated), then restore the
+`.sql` file as above. The R2 token is read from the shell, never saved:
+
+```bash
+export BACKUP_S3_ENDPOINT=https://<account id>.r2.cloudflarestorage.com BACKUP_S3_BUCKET=chi-comanda-backup-<slug>
+export BACKUP_S3_ACCESS_KEY_ID=... BACKUP_S3_SECRET_ACCESS_KEY=...      # a read token is enough
+read -rs BACKUP_KEY_PASSPHRASE && export BACKUP_KEY_PASSPHRASE          # passphrase of the private key
+node scripts/restore-backup.mjs list <prefix>
+node scripts/restore-backup.mjs fetch <prefix> --key ~/.chi-comanda/backup-private.pem   # the latest
+node scripts/restore-backup.mjs fetch <prefix>/<file>.sql.gz.enc --key ~/.chi-comanda/backup-private.pem
+unset BACKUP_S3_SECRET_ACCESS_KEY BACKUP_KEY_PASSPHRASE
+```
+
+A file downloaded from the Cloudflare dashboard is decrypted with
+`node scripts/restore-backup.mjs decrypt <file>.sql.gz.enc --key <private.pem>`. Dumps taken before `backup-client` existed (e.g. `libra-2026-10-03-full.sql`) carry a `GTID_PURGED` line:
 restore them with `grep -v GTID_PURGED <file> | M "$D"`.
 
 To check a backup without touching any server, restore it into a throw-away local container:

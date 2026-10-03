@@ -2,6 +2,7 @@ import { Request, Router } from 'express'
 import paymentService, { PaymentRequest } from '../services/payment'
 import { jsonHandler, requireRole, Roles } from '../http/middleware'
 import { ctx } from '../venue/context'
+import { idempotentHandler } from '../http/idempotency'
 import { toId, toIdList, toPositiveAmount } from '../http/validate'
 
 function toPaymentRequest(req: Request): PaymentRequest {
@@ -24,9 +25,9 @@ router.post('/settings', admin, jsonHandler(req => paymentService.saveSettings(c
 
 router.get('/available', checkout, jsonHandler(req => paymentService.getAvailableProviders(ctx(req))))
 
-router.post('/checkout/sumup-checkout', checkout, jsonHandler(req => paymentService.createCheckoutLink(ctx(req), toPaymentRequest(req))))
-router.post('/checkout/sumup-pos', checkout, jsonHandler(req => paymentService.createPosSession(ctx(req), toPaymentRequest(req))))
-router.post('/checkout/sumup-solo', checkout, jsonHandler(req => paymentService.createSoloPayment(ctx(req), toPaymentRequest(req))))
+router.post('/checkout/sumup-checkout', checkout, idempotentHandler((req, c) => paymentService.createCheckoutLink(c, toPaymentRequest(req))))
+router.post('/checkout/sumup-pos', checkout, idempotentHandler((req, c) => paymentService.createPosSession(c, toPaymentRequest(req))))
+router.post('/checkout/sumup-solo', checkout, idempotentHandler((req, c) => paymentService.createSoloPayment(c, toPaymentRequest(req))))
 
 router.get('/checkout/:id/status', checkout, jsonHandler(req => paymentService.checkTransactionStatus(ctx(req), toId(req.params.id))))
 

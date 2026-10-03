@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RestaurantLayout, AvailableTable, Room } from "../../../models/src"
-import { ref, computed, onUnmounted, watch } from "vue"
+import { ref, computed, onMounted, onUnmounted, watch } from "vue"
 import api from '@/services/client'
 import { useRoute } from 'vue-router'
 import RoomTabs from '@/components/RoomTabs.vue'
@@ -9,7 +9,8 @@ import { useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { SnackbarStore, ZoomStore } from '@/stores'
 import { storeToRefs } from 'pinia'
-import { useSocket, joinRoom, leaveRoom } from '@/composables/useSocket'
+import { useSocket, joinRoom, leaveRoom, onResync } from '@/composables/useSocket'
+import { outboxDialog, venueQueue } from '@/services/outbox'
 
 const { smAndUp } = useDisplay()
 
@@ -69,23 +70,27 @@ async function getTables() {
   }
 }
 
-async function handleReconnection() {
-  await getTables()
-}
-
+/** Whole state of the screen: on entering, on a new event and whenever the connection comes back. */
 async function init() {
-  if (props.event && props.event.id) {
-    loading.value = true
+  if (!props.event?.id) return
+  // Only the first time: a reload keeps the screen on while it runs
+  if (!rooms.value.length) loading.value = true
+  try {
     await getTables()
-    if (rooms.value.length) {
-      activeRoomId.value = rooms.value[0].id
+    if (!rooms.value.some(r => r.id === activeRoomId.value)) {
+      activeRoomId.value = rooms.value[0]?.id
     }
-    joinRoom('waiter')
-    socket.on('reload-table', reloadTableHandler)
-    socket.on('connect', handleReconnection)
+  } finally {
     loading.value = false
   }
 }
+
+let stopResync: () => void
+onMounted(() => {
+  joinRoom('waiter')
+  socket.on('reload-table', reloadTableHandler)
+  stopResync = onResync(init)
+})
 
 watch(() => props.event, init, { immediate: true })
 
@@ -93,7 +98,7 @@ onUnmounted(() => {
   clearTimeout(reloadTimeout)
   leaveRoom('waiter')
   socket.off('reload-table', reloadTableHandler)
-  socket.off('connect', handleReconnection)
+  stopResync()
 })
 </script>
 
@@ -104,6 +109,12 @@ onUnmounted(() => {
       <NoEvent></NoEvent>
     </v-container>
     <v-container v-else style="margin: 0; padding: 0; min-width: 100%; max-height: calc(100vh - 64px);">
+      <v-alert v-if="venueQueue.length" :type="venueQueue.some(e => e.status === 'failed') ? 'error' : 'warning'"
+        variant="tonal" density="compact" class="ma-2" icon="mdi-cloud-upload-outline" @click="outboxDialog = true"
+        style="cursor: pointer;">
+        {{ venueQueue.length === 1 ? 'Un ordine in attesa di invio' : `${venueQueue.length} ordini in attesa di invio` }}
+        (i tavoli nuovi compariranno quando arrivano) · tocca per vedere
+      </v-alert>
       <div v-if="roomSelected" class="d-flex align-center" style="width: 200px; padding-left: 10px;">
         <v-icon icon="mdi-magnify-minus-outline" size="small" class="mr-2" @click="zoomOut"></v-icon>
         <v-slider v-model="zoomLevel" :min="0.3" :max="2.0" :step="0.05" hide-details density="compact"

@@ -39,4 +39,13 @@ describe('GET /api/health', () => {
         const res = await request(app).get('/api/health').expect(503)
         expect(res.body).toMatchObject({ status: 'error', db: 'unreachable', migration: null })
     })
+
+    it('answers 503 within seconds when the database hangs (e.g. a sleeping MySQL)', async () => {
+        const { default: db } = await import('../src/db')
+        vi.spyOn(db, 'queryOne').mockReturnValueOnce(new Promise(() => undefined))
+        const started = Date.now()
+        const res = await request(app).get('/api/health').expect(503)
+        expect(res.body).toMatchObject({ status: 'error', db: 'unreachable' })
+        expect(Date.now() - started).toBeLessThan(5000)
+    })
 })

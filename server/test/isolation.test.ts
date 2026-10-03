@@ -18,6 +18,7 @@ let app: any
 let attacker: any
 /** Ids of venue B's rows, and of a few rows of venue A to mix with them. */
 const B: Record<string, number> = {}
+const B_KEY = '0b0b0b0b-0000-4000-8000-00000000000b'
 const A: Record<string, number> = {}
 
 async function sql(query: string, params: unknown[] = []): Promise<any> {
@@ -69,6 +70,9 @@ async function createVenueB() {
     B.transaction = await insert(`
         INSERT INTO payment_transactions (venue_id, table_id, event_id, provider, external_id, checkout_reference, amount, status)
         VALUES (2, ?, ?, 'sumup_checkout', 'ext', 'ref', 5, 'PENDING')`, [B.table, B.event])
+    // An answer stored under an idempotency key: the same key in venue A must neither replay nor collide with it
+    await sql(`INSERT INTO idempotency_keys (venue_id, idem_key, scope, request_hash, response_status, response_body)
+        VALUES (2, ?, 'POST /orders', 'x', 200, JSON_OBJECT('table', '${SECRET} table'))`, [B_KEY])
     B.user = await insert(`INSERT INTO users (email, username, status) VALUES ('staff-b@test.local', '${SECRET} staff', 'ACTIVE')`)
     await sql(`INSERT INTO user_role (user_id, role_id, venue_id) SELECT ?, id, 2 FROM roles WHERE name = 'waiter'`, [B.user])
     await sql('INSERT INTO user_event (venue_id, user_id, event_id) VALUES (2, ?, ?)', [B.user, B.event])
@@ -319,6 +323,16 @@ describe('isolation between venues', () => {
             const res = await attacker[method.toLowerCase()](`/api${path.replace(':id', String(B.user))}`).send({})
             expect(res.status, route).toBe(403)
         }
+    })
+
+    it('ignores an idempotency key of B: the request runs in A', async () => {
+        const [{ id: product }] = await sql('SELECT id FROM master_items WHERE venue_id = 1 AND menu_id = 1 ORDER BY id LIMIT 1')
+        const res = await attacker.post('/api/orders').set('Idempotency-Key', B_KEY)
+            .send({ event_id: A.event, table_name: 'Tavolo chiave', items: [{ master_item_id: product, done: false, paid: false }] })
+        expect(res.status).toBe(200)
+        expect(res.headers['idempotent-replayed']).toBeUndefined()
+        expect(res.text).not.toContain(SECRET)
+        expect((await sql('SELECT venue_id FROM tables WHERE id = ?', [res.body]))[0].venue_id).toBe(1)
     })
 
     it('leaves every row of B as it was', async () => {

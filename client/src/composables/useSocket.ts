@@ -14,12 +14,43 @@ const joinedRooms = new Set<string>()
 /** Long-lived handlers (App level), registered again on every new socket. */
 const setups = new Set<SocketSetup>()
 
+type ResyncHandler = () => unknown
+/** Screens reloading their whole state when the connection may have missed events (see `onResync`). */
+const resyncHandlers = new Set<ResyncHandler>()
+/** Several triggers close together (wake-up: visible, then reconnected) make a single reload. */
+const RESYNC_DEBOUNCE_MS = 300
+/** Visibility changes more often than this don't reload again (switching apps back and forth). */
+const RESYNC_MIN_INTERVAL_MS = 5000
+let resyncTimer: ReturnType<typeof setTimeout> | undefined
+let lastResyncAt = 0
+/** True once some socket has connected: later connections are reconnections, after which events may be missing. */
+let everConnected = false
+
+function runResync() {
+  resyncTimer = undefined
+  lastResyncAt = Date.now()
+  resyncHandlers.forEach(handler => {
+    // A failed reload (still offline) is retried at the next trigger
+    Promise.resolve().then(handler).catch(error => console.warn('Resync failed', error))
+  })
+}
+
+/** `force`: after a reconnection, always; on visibility, at most every RESYNC_MIN_INTERVAL_MS. */
+function scheduleResync(force: boolean) {
+  if (!force && Date.now() - lastResyncAt < RESYNC_MIN_INTERVAL_MS) return
+  clearTimeout(resyncTimer)
+  resyncTimer = setTimeout(runResync, RESYNC_DEBOUNCE_MS)
+}
+
 function createSocket(): Socket {
   const socket = io(window.location.origin, { path: '/socket/socket.io' })
   socket.on('connect', () => {
     socketConnected.value = true
     socketOnline.value = true
     joinedRooms.forEach(room => socket.emit('join', room))
+    // Events sent while disconnected are lost: the screens reload their whole state
+    if (everConnected) scheduleResync(true)
+    everConnected = true
   })
   socket.on('disconnect', reason => {
     socketOnline.value = false
@@ -56,7 +87,10 @@ function reconnectNow() {
  * ask the server whether it's there and, without an answer, drop the connection so it reopens.
  */
 async function checkOnWake() {
-  if (!_socket || document.visibilityState !== 'visible') return
+  if (document.visibilityState !== 'visible') return
+  // The page may have been frozen with the socket still "connected": events can be missing anyway
+  if (everConnected) scheduleResync(false)
+  if (!_socket) return
   if (!_socket.connected) return reconnectNow()
   try {
     await _socket.timeout(3000).emitWithAck('alive')
@@ -114,6 +148,19 @@ export function onSocketCreated(setup: SocketSetup): () => void {
 export function recreateSocket(): Socket {
   closeSocket()
   return useSocket()
+}
+
+/**
+ * Registers a reload of the screen's **whole** state (not just the events that follow) run when the connection comes
+ * back: after a reconnection of the socket, and when the page becomes visible again or the browser goes online (at
+ * most every few seconds). Not run at the first connection: the screen loads its state itself. Returns a function that
+ * unregisters it (call it on unmount).
+ */
+export function onResync(handler: ResyncHandler): () => void {
+  resyncHandlers.add(handler)
+  return () => {
+    resyncHandlers.delete(handler)
+  }
 }
 
 export function destroySocket() {

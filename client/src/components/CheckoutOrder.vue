@@ -7,7 +7,7 @@ import { SnackbarStore } from '@/stores'
 import { copy, sortItem } from "@/services/utils"
 import Confirm from "@/components/Confirm.vue"
 import ItemList from "@/components/ItemList.vue"
-import { useSocket } from "@/composables/useSocket"
+import { useSocket, onResync } from "@/composables/useSocket"
 import { isFeatureEnabled } from "@/composables/useConfig"
 
 const props = defineProps(['event', 'navigation', 'roomid'])
@@ -289,8 +289,18 @@ function handlePaymentCompleted(data: { transaction_id: number; table_id: number
     }
 }
 
+/**
+ * When the connection comes back: the payment's outcome may have been announced while disconnected, so it is asked
+ * (the table list is reloaded by Checkout).
+ */
+function resync() {
+    if (activeTransaction.value?.id && paymentStatus.value === 'pending') void pollStatus()
+}
+
+let stopResync: () => void
 onMounted(async () => {
     socket.on('payment-completed', handlePaymentCompleted)
+    stopResync = onResync(resync)
     // Without electronic payments only cash is offered
     if (!isFeatureEnabled('payments')) return
     try {
@@ -302,6 +312,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
     socket.off('payment-completed', handlePaymentCompleted)
+    stopResync()
     stopPolling()
 })
 </script>

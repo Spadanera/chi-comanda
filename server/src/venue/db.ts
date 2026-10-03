@@ -3,7 +3,7 @@ import { NotFoundError } from '../http/errors'
 
 /** Tables whose rows belong to a venue (`venue_id`). The migration tests check the list against the schema. */
 export const VENUE_TABLES = [
-    'audit', 'destinations', 'events', 'items', 'items_history', 'master_items', 'master_tables', 'master_tables_event',
+    'audit', 'destinations', 'events', 'idempotency_keys', 'items', 'items_history', 'master_items', 'master_tables', 'master_tables_event',
     'menu', 'orders', 'orders_history', 'payment_settings', 'payment_transactions', 'rooms', 'sub_types',
     'table_master_table', 'tables', 'tables_history', 'types', 'user_event', 'user_role',
 ] as const

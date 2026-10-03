@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Layout from '@/components/Layout.vue'
 import { ref, onUnmounted, onMounted } from "vue"
-import { useSocket, joinRoom, leaveRoom } from '@/composables/useSocket'
+import { useSocket, joinRoom, leaveRoom, onResync } from '@/composables/useSocket'
 
 const props = defineProps(['event'])
 
@@ -18,21 +18,23 @@ const reloadTable = () => {
   }, 300)
 }
 
-const handleReconnection = () => {
-  reloadTable()
+/** When the connection comes back: the whole layout, unless the user is changing it. */
+const resync = () => {
+  if (!layout.value?.isEditing()) reloadTable()
 }
 
+let stopResync: () => void
 onMounted(() => {
   joinRoom('table')
   socket.on('reload-table', reloadTable)
-  socket.on('connect', handleReconnection)
+  stopResync = onResync(resync)
 })
 
 onUnmounted(() => {
   clearTimeout(reloadTimeout)
   leaveRoom('table')
   socket.off('reload-table', reloadTable)
-  socket.off('connect', handleReconnection)
+  stopResync()
 })
 </script>
 

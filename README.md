@@ -58,7 +58,7 @@ branch: differences between clients are configuration only, never code that chec
 | `FEATURES` | Comma separated list of the functions the installation offers: `payments`, `push`, `google-login`, `broadcast`, `minimum-consumption`, `premium`. **Unset = all on**; empty = all off; an unknown name stops the startup. Each venue can switch some off (below) |
 
 | `SENTRY_DSN` | Optional: server errors (5xx, failed startup) go to Sentry, tagged with the client |
-| `SENTRY_CLIENT_DSN` | Optional: browser errors, sent to the client through `/api/public/config` (one build for every client) |
+| `SENTRY_CLIENT_DSN` | Optional: browser errors, sent to the client through `/api/public/config` (one build for every client). Network errors and 4xx answers are not sent (`client/src/services/monitoring.ts`) |
 | `SENTRY_ENVIRONMENT` | Optional, defaults to Railway's environment name |
 
 A switched-off function disappears from the interface and its API routes answer 404. A customisation wanted by one
@@ -100,8 +100,47 @@ http. Locally the cookie is not `Secure`, so the app works on `http://localhost`
 ## Health check
 
 `GET /api/health` answers 200 with the version, the commit, the client and the last migration applied, or 503 when the
-database is unreachable. It is the healthcheck path in `railway.json`: Railway moves traffic to a new deploy only once
+database is unreachable or doesn't answer within 3 seconds (a sleeping MySQL hangs rather than refusing). It is the healthcheck path in `railway.json`: Railway moves traffic to a new deploy only once
 it answers 200, so a release whose migrations fail never replaces the running one.
+
+## Unstable networks
+
+Waiters work on phones with a weak connection: a request may reach the server while its answer is lost, and the
+client cannot tell. The operations that must never happen twice are idempotent.
+
+- **Idempotency keys**: the client sends `Idempotency-Key: <uuid>` (a new one per action of the user, kept across its
+  retries) with `POST /orders`, `PUT /tables/:id/complete`, `PUT /tables/:id/payitems` and
+  `POST /payment/checkout/*`. The server (`server/src/http/idempotency.ts`) writes the key in the same transaction as
+  the operation, with its answer (`idempotency_keys`, unique per venue): a retry gets the stored answer with
+  `Idempotent-Replayed: true`, a concurrent duplicate waits for the first and gets its answer, a failed operation frees
+  the key. Socket and push notifications go out only for the real execution (`ctx.afterCommit`). The same key with
+  another body, path or user is refused (422) without showing the stored answer; the same key in another venue is
+  another key. Keys are forgotten after 30 days. Without the header the routes work as before.
+- The client (`api.idempotent` in `client/src/services/client.ts`) retries these requests by itself, with the same key,
+  after a network error or a 502/503/504 (3 times, up to ~5 s), and shows an error only after the last attempt.
+
+- **Offline queue of orders** (`client/src/services/outbox.ts`): an order is written to IndexedDB with its key
+  *before* it is sent, and deleted only once the server confirms it. On a network error the waiter reads "in attesa di
+  invio" and goes on working; the app bar and the waiter's screen show the orders waiting (`OutboxDialog.vue`). They
+  are sent again, oldest first and with the same key, on the socket's reconnection, when the browser goes online or
+  the page becomes visible, and every 15 s while something waits (one tab at a time, Web Locks). An order the server
+  refuses meanwhile (closed event, product removed) stays as *non accettato* until the waiter retries or discards it;
+  nothing is dropped silently. An expired session keeps the queue until the next login.
+  - An entry belongs to its user and venue: it is sent only while that user works in that venue. Switching venue or
+    logging out with orders waiting asks for confirmation and keeps them on the device; another user of the device
+    neither sees nor sends them.
+  - Without IndexedDB (some private modes) the queue lives in memory and the waiter is told not to close the page.
+  - A new table opened by a queued order appears on the layout only once the order arrives.
+
+- **Whole state on reconnection**: events sent while a phone was disconnected (or frozen with the screen off) are
+  lost, so every screen registers a full reload with `onResync` (`client/src/composables/useSocket.ts`). It runs after
+  a reconnection of the socket and when the page becomes visible again or the browser goes online (debounced, at most
+  every 5 s for visibility), never at the first connection. App reloads the session (expired session → login,
+  disabled venue → venue choice) and the ongoing event; Waiter, BarTender, Checkout and Tables their whole data (Tables
+  not while the layout is being edited); WaiterOrder the menu and its availability; CheckoutOrder asks the outcome of
+  a pending electronic payment. A screen whose first load failed offline completes it there.
+
+Client tests (`client/test`, vitest with jsdom and fake-indexeddb): `cd client && npm test`.
 
 ## Database migrations
 

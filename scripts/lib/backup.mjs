@@ -5,13 +5,14 @@ import { chmodSync, closeSync, openSync, readFileSync, statSync } from 'node:fs'
 export const MAIN_TABLES = ['users', 'roles', 'events', 'orders', 'items', 'items_history', 'menu', 'master_items', 'schema_migrations']
 
 /**
- * Runs `docker run mysql:<major> mysqldump ...` writing stdout straight to `file` (created with mode 600).
- * The password goes in MYSQL_PWD, inherited by the container, never on the command line.
+ * Runs `docker run mysql:<major> mysqldump ...` writing stdout straight to `file` (created with mode 600); with
+ * `local`, the `mysqldump` of the machine (the backup image has it). The password goes in MYSQL_PWD, inherited by the
+ * container, never on the command line.
  */
-export function dumpToFile({ url, file, schemaOnly = false, image = 'mysql:9', spawnImpl = spawn }) {
+export function dumpToFile({ url, file, schemaOnly = false, image = 'mysql:9', local = false, spawnImpl = spawn }) {
     const { hostname, port, username, password, pathname } = new URL(url)
     const args = [
-        'run', '--rm', '-e', 'MYSQL_PWD', image, 'mysqldump',
+        ...(local ? [] : ['run', '--rm', '-e', 'MYSQL_PWD', image, 'mysqldump']),
         '-h', hostname, '-P', port || '3306', '-u', decodeURIComponent(username),
         '--single-transaction', '--routines', '--triggers',
         // Restorable on any server (staging, a local copy) without GTID conflicts
@@ -22,7 +23,7 @@ export function dumpToFile({ url, file, schemaOnly = false, image = 'mysql:9', s
     return new Promise((resolve, reject) => {
         const fd = openSync(file, 'w', 0o600)
         let stderr = ''
-        const child = spawnImpl('docker', args, {
+        const child = spawnImpl(local ? 'mysqldump' : 'docker', args, {
             env: { ...process.env, MYSQL_PWD: decodeURIComponent(password) },
             stdio: ['ignore', fd, 'pipe'],
         })
