@@ -199,6 +199,17 @@ export interface User extends Repository {
   features?: Feature[]
 }
 
+/** A venue as the platform's superuser manages it. */
+export interface VenueSummary {
+  id: number
+  name: string
+  status: 'ACTIVE' | 'DISABLED'
+  /** `null` = every function of the installation. */
+  features: Feature[] | null
+  /** People holding a role there. */
+  members: number
+}
+
 /** A venue as seen by a user who can enter it. */
 export interface UserVenue {
   id: number

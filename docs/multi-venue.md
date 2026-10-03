@@ -156,6 +156,18 @@ No production deploy and no production DB writes without an explicit request.
   context, the installation's otherwise. Minimum consumption, PREMIUM and push read `ctx.features`; the POS callback
   answers 404 when the transaction's venue is disabled or has no payments. `/api/public/config` lists the venue's
   functions once the venue is known; `google-login` stays the installation's (login comes before the venue).
+- **Point 7 done**. Client: the user store holds `superuser`, `venueId`, `venues`, `features`; `api.SwitchVenue`
+  (then `loadConfig()` and a new socket); login and logout reload the config (branding of the venue / platform).
+  `/locale` (`VenueChoice.vue`): choice of the venue, also reached from the menu ("CAMBIA LOCALE", with the active
+  venue's name); the router sends there any screen needing a venue while none is chosen (`Locale`, `Piattaforma`,
+  `Profilo` work without), with `?redirect=`. A `?venue=<id>` in any address switches to that venue when the user
+  works there (push notifications add it to their URL). A 409 "Nessun locale selezionato" from the api reloads the
+  session and goes to the choice. `/platform` (`Platform.vue`, superuser): venues (create with features and first
+  admin, rename, enable/disable) and every account (block, superuser). App reloads the ongoing event when the venue
+  changes. Checked in the browser on a local build (two venues, a user with roles in both, the superuser):
+  choice after login, branding per venue, switch from the menu, `?venue=` link, platform page, creation of a venue.
+  The docker-compose dev server was already down this morning (`@sentry/node` missing from its `node_modules`
+  volume): rebuild it with `docker compose build server`.
 - **Checked on real data (3 Oct)**: the production dump of 3 October restored locally into database `prodcopy` of the
   `libra-restore-check` container (plus the additive part of the old `release.sql`, as production has it). Orphans: none
   for the existing FKs, none for the new ones in `005`, 4 for `items.master_item_id` (items of deleted products: no FK

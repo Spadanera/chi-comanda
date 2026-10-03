@@ -58,7 +58,7 @@ const routeTitle = computed(() => {
 
 function login() {
   user.value = userStore.user
-  getOnGoingEvent()
+  if (userStore.venueId) getOnGoingEvent()
   router.push('/')
 }
 
@@ -79,6 +79,13 @@ async function getOnGoingEvent() {
   event.value = await api.GetOnGoingEvent()
   initReceivers()
 }
+
+// Another venue: its ongoing event, not the previous venue's
+watch(() => userStore.venueId, venueId => {
+  user.value = userStore.user
+  if (venueId) getOnGoingEvent()
+  else event.value = undefined
+})
 
 let unregisterSocketSetup: (() => void) | undefined
 
@@ -130,7 +137,7 @@ onMounted(async () => {
   themeStore.watchSystem()
   await userStore.checkAuthentication()
   user.value = userStore.user
-  if (user.value?.id) {
+  if (user.value?.id && userStore.venueId) {
     await getOnGoingEvent()
   }
 })
@@ -180,6 +187,31 @@ onBeforeUnmount(() => {
                     <v-icon>mdi-message-bulleted</v-icon>
                   </template>
                 </v-btn>
+              </v-list-item-title>
+            </v-list-item>
+            <v-list-item v-if="userStore.venues.length > 1 || (userStore.superuser && userStore.venues.length)">
+              <v-list-item-title>
+                <RouterLink to="/locale">
+                  <v-btn variant="text">
+                    CAMBIA LOCALE
+                    <template v-slot:prepend>
+                      <v-icon>mdi-swap-horizontal</v-icon>
+                    </template>
+                  </v-btn>
+                </RouterLink>
+              </v-list-item-title>
+              <v-list-item-subtitle v-if="userStore.venue" class="ml-4">{{ userStore.venue.name }}</v-list-item-subtitle>
+            </v-list-item>
+            <v-list-item v-if="userStore.superuser">
+              <v-list-item-title>
+                <RouterLink to="/platform">
+                  <v-btn variant="text">
+                    PIATTAFORMA
+                    <template v-slot:prepend>
+                      <v-icon>mdi-domain</v-icon>
+                    </template>
+                  </v-btn>
+                </RouterLink>
               </v-list-item-title>
             </v-list-item>
             <v-list-item>

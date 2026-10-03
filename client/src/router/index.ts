@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
 import { UserStore, SnackbarStore } from '@/stores'
 import { hasAnyRole, Roles } from '@/services/utils'
+import api from '@/services/client'
 import { isFeatureEnabled } from '@/composables/useConfig'
 import type { Feature } from '../../../models/src'
 
@@ -15,6 +16,9 @@ declare module 'vue-router' {
 }
 
 const publicRoutes = ['Login', 'Reset', 'Invitation', 'AskReset']
+
+/** Screens that work without a venue: everything else needs one chosen first. */
+const venueFreeRoutes = ['Locale', 'Piattaforma', 'Profilo']
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -188,6 +192,21 @@ const router = createRouter({
       }
     },
     {
+      path: '/locale',
+      name: 'Locale',
+      component: () => import('@/views/VenueChoice.vue'),
+      props: true
+    },
+    {
+      path: '/platform',
+      name: 'Piattaforma',
+      component: () => import('@/views/Platform.vue'),
+      props: true,
+      meta: {
+        allowedRole: Roles.superuser
+      }
+    },
+    {
       path: '/profile',
       name: 'Profilo',
       component: () => import('@/views/Profile.vue'),
@@ -217,6 +236,18 @@ router.beforeEach(async (to) => {
   if (!user.id && !isPublic) {
     snackbarStore.show('Sessione scaduta')
     return { name: 'Login' }
+  }
+  // A link to another venue (e.g. a push notification): switch to it when the user works there
+  const wanted = Number(to.query.venue)
+  if (user.id && wanted && !isPublic) {
+    const { venue: _, ...query } = to.query
+    if (wanted !== user.venueId && user.venues.some(v => v.id === wanted)) {
+      await api.SwitchVenue(wanted)
+    }
+    return { path: to.path, query, hash: to.hash }
+  }
+  if (user.id && !user.venueId && !isPublic && !venueFreeRoutes.includes(to.name?.toString() || '')) {
+    return { name: 'Locale', query: to.fullPath === '/' ? {} : { redirect: to.fullPath } }
   }
   if (to.meta.allowedRole && !hasAnyRole(user.roles, to.meta.allowedRole)) {
     snackbarStore.show('Non sei autorizzato a visualizzare questa sezione', 3000, 'top', 'error')

@@ -36,6 +36,8 @@ if (enabled) {
     console.warn('VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY not set: push notifications disabled')
 }
 
+const withVenue = (url: string, venueId: number) => `${url}${url.includes('?') ? '&' : '?'}venue=${venueId}`
+
 /** "2× Spritz, 1× Nachos" */
 function summarize(items: Item[]): string {
     const counts = new Map<string, number>()
@@ -113,7 +115,8 @@ class PushService {
                     title: `Nuovo ordine · ${tableName}`,
                     body: summarize(own),
                     tag: `order-${order.id}`,
-                    url: await this.bartenderUrl(ctx, own),
+                    // The app switches to the venue named in the link (see the client router)
+                    url: withVenue(await this.bartenderUrl(ctx, own), ctx.venueId),
                     venueId: ctx.venueId,
                 })
             }))

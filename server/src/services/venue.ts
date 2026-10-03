@@ -1,6 +1,7 @@
 import db from '../db'
 import config from '../config'
 import { Feature, parseFeatures, venueFeatures } from '../features'
+import type { VenueSummary } from '../../../models/src'
 import { BadRequestError, NotFoundError } from '../http/errors'
 
 /** Branding columns of a venue; NULL = the default. */
@@ -11,16 +12,6 @@ export interface VenueBrandingRow {
     secondary_color: string | null
     has_logo: number
     version: number
-}
-
-/** A venue as the platform's superuser manages it. */
-export interface VenueSummary {
-    id: number
-    name: string
-    status: 'ACTIVE' | 'DISABLED'
-    /** `null` = every feature of the installation. */
-    features: Feature[] | null
-    members: number
 }
 
 /** Catalogue every new venue starts with (the same as the baseline seed of the first one). */
