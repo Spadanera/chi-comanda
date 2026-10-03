@@ -53,9 +53,9 @@ branch: differences between clients are configuration only, never code that chec
 
 | Variable | Meaning |
 |---|---|
-| `CLIENT_NAME` | Name of the venue, shown until the admin sets one in *Amministrazione → Impostazioni* |
+| `CLIENT_NAME` | Name of the installation's first venue, shown until the admin sets one in *Amministrazione → Impostazioni* |
 | `CLIENT_SLUG` | Short id of the installation (e.g. `libra`, as in `libra.chicomanda.com`) |
-| `FEATURES` | Comma separated list of the active functions: `payments`, `push`, `google-login`, `broadcast`, `minimum-consumption`, `premium`. **Unset = all on**; empty = all off; an unknown name stops the startup |
+| `FEATURES` | Comma separated list of the functions the installation offers: `payments`, `push`, `google-login`, `broadcast`, `minimum-consumption`, `premium`. **Unset = all on**; empty = all off; an unknown name stops the startup. Each venue can switch some off (below) |
 
 | `SENTRY_DSN` | Optional: server errors (5xx, failed startup) go to Sentry, tagged with the client |
 | `SENTRY_CLIENT_DSN` | Optional: browser errors, sent to the client through `/api/public/config` (one build for every client) |
@@ -65,9 +65,29 @@ A switched-off function disappears from the interface and its API routes answer 
 client is added as a new function in `server/src/features.ts` (and `Feature` in `models/src`), switched on by
 `FEATURES`.
 
-Name, logo and theme colours are changed by the admin from *Amministrazione → Impostazioni* (`settings` table). The
-client reads everything at startup from `GET /api/public/config`; the web app manifest
+Name, logo and theme colours are changed by the admin from *Amministrazione → Impostazioni*, for the venue they work
+in (`venues` table). The client reads everything at startup from `GET /api/public/config`; the web app manifest
 (`/api/public/manifest.webmanifest`) carries the venue name and logo, so the installed app looks like the venue's.
+Before login (and on an installation with several venues) they are the platform's: "Chi Comanda".
+
+## Venues
+
+An installation serves one or more **completely separate venues** (design and decisions:
+[docs/multi-venue.md](docs/multi-venue.md)). Every domain row (events, rooms, layout, menus, catalogue, destinations,
+payments, audit…) has a `venue_id`; accounts are shared, and a user works in several venues with different roles
+(`user_role.venue_id`). The **superuser** is the platform: it creates and disables venues and manages every account
+from *Piattaforma*, and can enter any venue.
+
+- The session holds only the user id and the active venue; roles are reloaded on every request, so a role change
+  applies at once. A user with several venues chooses after login, and switches from the menu (*Cambia locale*).
+- Domain services take a `VenueContext` (`server/src/venue/context.ts`) as first argument and query only through
+  `ctx.db` (`VenueDb`, `server/src/venue/db.ts`): `:venue` in the SQL is the session's venue, and a query naming a venue
+  table without one is refused. `test/architecture.test.ts` keeps the raw database to the platform services.
+- Composite foreign keys `(venue_id, x_id)` make the database refuse a row pointing to another venue's.
+- Real-time rooms are `venue:<id>:<screen>`, joined by the server from the session.
+- A venue's functions are its own list within `FEATURES` (`venues.features`, `NULL` = all).
+- `test/isolation.test.ts` attacks every route with another venue's ids (404 expected, nothing changed) and fails on a
+  route it doesn't cover: add a case there with every new route.
 
 ## Session and required configuration
 

@@ -93,6 +93,8 @@ No production deploy and no production DB writes without an explicit request.
 
 ## State
 
+All points are on the branch `multi-venue` (not merged, not deployed).
+
 - **Point 1 done** (branch `multi-venue`): migration `005_venues.sql`. Venue 1 takes the branding of `settings`
   (`name` `NULL` → `CLIENT_NAME`, as before). Superuser role rows have `venue_id = NULL`; exact duplicate role rows are
   removed before the unique key. Tests in `migrations.test.ts`: production-shaped DB → everything in venue 1; schema
@@ -178,6 +180,19 @@ No production deploy and no production DB writes without an explicit request.
   caught. Behaviour changes found while writing it: a product or destination of another venue (or a missing one) in
   an order is now 404 instead of 400; paying items of another venue on one's own table is 404 instead of a silent 0.
   The one documented exception: `GET /api/master-tables/:id` answers `0` for a missing table, so for another venue's.
+- **Point 9 done** except the stage rehearsal: README (*Venues*), DEPLOY.md (another venue in an installation; the
+  multi-venue release: rollback needs `DELETE FROM sessions`, no second venue until the release is confirmed).
+  `new-client` now writes the first superuser's venue roles with `venue_id = 1` and `superuser` with `NULL`.
+  **Local rehearsal instead of stage** (3 Oct): the production copy restored into the test MySQL, the branch's
+  compiled server started on it with `CLIENT_NAME=Libra`: migrations `002`–`005` applied at startup, public config
+  "Libra" (single venue), a local test superuser enters venue 1; closed events (18 pages) with revenue, the report of
+  a closed event, menu with 122 products, layout (2 rooms, 22 tables), 19 staff, 2 destinations: all 200. The copy
+  was dropped afterwards.
+- **Open**:
+  - Stage rehearsal (restore the production dump into the staging DB, deploy the branch): not done, it needs the
+    user's go-ahead (the branch is not on `main`).
+  - Whether venue admins manage their own staff (point 4).
+  - Contract release, later: drop `DEFAULT 1` from the `venue_id` columns and the `settings` table.
 - **Checked on real data (3 Oct)**: the production dump of 3 October restored locally into database `prodcopy` of the
   `libra-restore-check` container (plus the additive part of the old `release.sql`, as production has it). Orphans: none
   for the existing FKs, none for the new ones in `005`, 4 for `items.master_item_id` (items of deleted products: no FK
