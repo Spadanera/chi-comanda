@@ -1,6 +1,6 @@
 import type {
     AvailableTable, Audit, Broadcast, CompleteOrderInput, Destination, Event, Invitation, Item, MasterItem, MasterTable,
-    Menu, Order, PaymentSetting, PaymentTransaction, RestaurantLayout, SubType, Table, Type, User
+    Menu, Order, PaymentSetting, PaymentTransaction, PublicConfig, RestaurantLayout, Settings, SubType, Table, Type, User
 } from '../../../models/src'
 import router from '@/router'
 import { UserStore, SnackbarStore, ProgressStore } from '@/stores'
@@ -432,6 +432,28 @@ class ApiClient {
 
     SavePushSubscription(subscription: PushSubscriptionJSON): Promise<void> {
         return this.post('/push/subscriptions', subscription)
+    }
+
+    // ── Installation settings (branding) ─────────────────────────────────────
+
+    GetPublicConfig(): Promise<PublicConfig> {
+        return this.get('/public/config')
+    }
+
+    GetSettings(): Promise<Settings> {
+        return this.get('/settings')
+    }
+
+    SaveSettings(settings: Settings): Promise<Settings> {
+        return this.put('/settings', settings)
+    }
+
+    UploadLogo(formData: FormData): Promise<Settings> {
+        return this.put('/settings/logo', formData)
+    }
+
+    DeleteLogo(): Promise<Settings> {
+        return this.delete('/settings/logo')
     }
 
     // ── Payments ─────────────────────────────────────────────────────────────

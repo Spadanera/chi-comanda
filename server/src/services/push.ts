@@ -1,6 +1,6 @@
 import webpush from 'web-push'
 import db from '../db'
-import config from '../config'
+import config, { isFeatureEnabled } from '../config'
 import { Item, Order } from '../../../models/src'
 
 export interface PushSubscriptionInput {
@@ -26,10 +26,10 @@ export interface PushPayload {
     url: string
 }
 
-const enabled = !!(config.push.publicKey && config.push.privateKey)
+const enabled = isFeatureEnabled('push') && !!(config.push.publicKey && config.push.privateKey)
 if (enabled) {
     webpush.setVapidDetails(config.push.subject, config.push.publicKey, config.push.privateKey)
-} else {
+} else if (isFeatureEnabled('push')) {
     console.warn('VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY not set: push notifications disabled')
 }
 

@@ -1,4 +1,5 @@
 import type { ThemeDefinition } from 'vuetify'
+import { darken, onColor } from '@/composables/useConfig'
 
 /**
  * Palette Art Déco, la stessa delle illustrazioni del logo: carta crema e inchiostro,
@@ -62,4 +63,26 @@ export const dark: ThemeDefinition = {
         'border-color': '#EFE5D2',
         'border-opacity': 0.14,
     },
+}
+
+const BRAND_COLORS = ['primary', 'secondary'] as const
+
+/**
+ * Applies the venue's colours (null = Art Déco default) to both themes, in place.
+ * Used at startup on the definitions and, after the admin saves, on Vuetify's live themes.
+ */
+export function applyBrandColors(
+    themes: Record<string, ThemeDefinition>,
+    colors: { primary: string | null, secondary: string | null },
+) {
+    for (const [name, base] of [['light', light], ['dark', dark]] as const) {
+        const target = themes[name].colors!
+        for (const key of BRAND_COLORS) {
+            const chosen = colors[key]
+            const baseColor = base.colors![key]!
+            target[key] = chosen || baseColor
+            target[`${key}-darken-1`] = chosen ? darken(chosen) : base.colors![`${key}-darken-1`]!
+            target[`on-${key}`] = chosen ? onColor(chosen) : base.colors![`on-${key}`] ?? onColor(baseColor)
+        }
+    }
 }

@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import api from '@/services/client'
+import { isFeatureEnabled } from '@/composables/useConfig'
 
 /**
  * Web push notifications of new orders, for bartenders.
@@ -54,6 +55,11 @@ function readDismissed(): boolean {
 
 /** Loads server configuration, user preference and the state of this device. */
 export async function loadPushState(): Promise<void> {
+    // Switched off on this installation: its routes don't exist, don't ask
+    if (!isFeatureEnabled('push')) {
+        serverEnabled.value = false
+        return
+    }
     const config = await api.GetPushConfig()
     serverEnabled.value = config.enabled
     publicKey = config.publicKey

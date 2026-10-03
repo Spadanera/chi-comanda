@@ -73,7 +73,7 @@ const steps = [
           </div>
         </v-col>
         <v-col cols="12" md="5" class="text-center d-none d-md-flex justify-center">
-          <Logo />
+          <Logo product />
         </v-col>
       </v-row>
     </v-container>

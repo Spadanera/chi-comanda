@@ -4,10 +4,16 @@ import { notify } from '../socket'
 import { BadRequestError, ConflictError, NotFoundError } from '../http/errors'
 import { ITEM_CATEGORY_JOINS, ITEM_SUB_TYPE, ITEM_TYPE } from '../db/sql'
 import { toSqlDate } from '../utils/date'
+import { isFeatureEnabled } from '../config'
 
 export type EventStatus = 'PLANNED' | 'ONGOING' | 'CLOSED'
 
 const PAGE_SIZE = 20
+
+/** Without the minimum-consumption function events have no minimum price. */
+function minimumPrice(event: Event) {
+    return isFeatureEnabled('minimum-consumption') ? event.minimumConsumptionPrice : null
+}
 
 /** Closed events have their tables and items archived in the *_history tables. */
 function sourceTables(status: string) {
@@ -208,7 +214,7 @@ class EventService {
         return db.transaction(async tx => {
             const eventId = await tx.insert(
                 `INSERT INTO events (name, date, status, menu_id, minimumConsumptionPrice) VALUES (?,?,'PLANNED',?,?)`,
-                [event.name, toSqlDate(event.date), event.menu_id, event.minimumConsumptionPrice])
+                [event.name, toSqlDate(event.date), event.menu_id, minimumPrice(event)])
             await this.replaceStaff(tx, eventId, event.users || [])
             return eventId
         })
@@ -222,7 +228,7 @@ class EventService {
         const result = await db.transaction(async tx => {
             const affected = await tx.execute(
                 'UPDATE events SET name = ?, date = ?, menu_id = ?, minimumConsumptionPrice = ? WHERE id = ?',
-                [event.name, toSqlDate(event.date), event.menu_id, event.minimumConsumptionPrice, event.id])
+                [event.name, toSqlDate(event.date), event.menu_id, minimumPrice(event), event.id])
             await this.replaceStaff(tx, event.id!, event.users!)
             return affected
         })

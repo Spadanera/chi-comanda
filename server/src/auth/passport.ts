@@ -1,12 +1,12 @@
 import passport from 'passport'
 import { Strategy as LocalStrategy } from 'passport-local'
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20'
-import config from '../config'
+import config, { isFeatureEnabled } from '../config'
 import { User } from '../../../models/src'
 import userService from '../services/user'
 import { UnauthorizedError } from '../http/errors'
 
-export const isGoogleEnabled = () => !!(config.google.clientId && config.google.clientSecret)
+export const isGoogleEnabled = () => isFeatureEnabled('google-login') && !!(config.google.clientId && config.google.clientSecret)
 
 export function configurePassport() {
     passport.use(new LocalStrategy({ usernameField: 'email', passwordField: 'password' }, async (email, password, done) => {
@@ -43,7 +43,7 @@ export function configurePassport() {
                 done(e, false)
             }
         }))
-    } else {
+    } else if (isFeatureEnabled('google-login')) {
         console.warn('GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET not set: Google login disabled')
     }
 

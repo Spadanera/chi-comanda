@@ -13,6 +13,7 @@ import logoDark from '@/assets/logo/maitre-dark.svg'
 import { requireRuleArray, requiredRule } from './services/utils'
 import { socketConnected, socketOnline, destroySocket, onSocketCreated, joinRoom } from './composables/useSocket'
 import { useBroadcast } from './composables/useBroadcast'
+import { appConfig, useFeature, venueName } from './composables/useConfig'
 
 const route = useRoute()
 const userStore = UserStore()
@@ -21,6 +22,8 @@ const progressStore = ProgressStore()
 const themeStore = ThemeStore()
 const user = ref<User>({} as User)
 const event = ref<Event>()
+const broadcastEnabled = useFeature('broadcast')
+const logo = computed(() => appConfig.value.logo || (themeStore.theme === 'dark' ? logoDark : logoLight))
 
 const {
   messageDialog,
@@ -147,21 +150,21 @@ onBeforeUnmount(() => {
       <v-app-bar>
         <template v-slot:prepend>
           <RouterLink to="/">
-            <img alt="Chi Comanda" :src="themeStore.theme === 'dark' ? logoDark : logoLight"
+            <img :alt="venueName" :src="logo"
               style="margin-left: 8px; margin-top: 7px;" width="40" height="40" />
           </RouterLink>
         </template>
         <v-app-bar-title>
           <RouterLink to="/" class="d-flex flex-column"
             style="text-decoration: none; color: inherit; line-height: 1.1;">
-            <span class="brand-title">CHI COMANDA</span>
+            <span class="brand-title">{{ venueName }}</span>
             <span v-if="routeTitle" class="text-caption font-weight-light"
               style="font-size: 0.75rem !important; opacity: 0.8; text-transform: uppercase;">
               {{ routeTitle }}
             </span>
           </RouterLink>
         </v-app-bar-title>
-        <v-btn @click="openMessageDialog()" v-if="event?.id && user?.id" size="x-large" icon="mdi-account-voice"></v-btn>
+        <v-btn @click="openMessageDialog()" v-if="broadcastEnabled && event?.id && user?.id" size="x-large" icon="mdi-account-voice"></v-btn>
         <v-menu v-if="userStore.isLoggedIn">
           <template v-slot:activator="{ props }">
             <v-btn icon v-bind="props">
@@ -169,7 +172,7 @@ onBeforeUnmount(() => {
             </v-btn>
           </template>
           <v-list>
-            <v-list-item v-if="event && event.id">
+            <v-list-item v-if="broadcastEnabled && event && event.id">
               <v-list-item-title>
                 <v-btn @click="broadcastListDialog = true" variant="text">
                   MESSAGGI
@@ -319,5 +322,6 @@ onBeforeUnmount(() => {
 .brand-title {
   font-family: 'Federo', 'Futura', 'Century Gothic', sans-serif;
   letter-spacing: .14em;
+  text-transform: uppercase;
 }
 </style>

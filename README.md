@@ -44,6 +44,25 @@ npm run test:db   # starts mysql:9 on port 3317 (wait ~20s on first start)
 npm test
 ```
 
+## Per-installation configuration
+
+Every client has its own installation (Railway project, app and MySQL), all deployed from the same code and the same
+branch: differences between clients are configuration only, never code that checks the client's name.
+
+| Variable | Meaning |
+|---|---|
+| `CLIENT_NAME` | Name of the venue, shown until the admin sets one in *Amministrazione → Impostazioni* |
+| `CLIENT_SLUG` | Short id of the installation (e.g. `libra`, as in `libra.chicomanda.com`) |
+| `FEATURES` | Comma separated list of the active functions: `payments`, `push`, `google-login`, `broadcast`, `minimum-consumption`, `premium`. **Unset = all on**; empty = all off; an unknown name stops the startup |
+
+A switched-off function disappears from the interface and its API routes answer 404. A customisation wanted by one
+client is added as a new function in `server/src/features.ts` (and `Feature` in `models/src`), switched on by
+`FEATURES`.
+
+Name, logo and theme colours are changed by the admin from *Amministrazione → Impostazioni* (`settings` table). The
+client reads everything at startup from `GET /api/public/config`; the web app manifest
+(`/api/public/manifest.webmanifest`) carries the venue name and logo, so the installed app looks like the venue's.
+
 ## Database migrations
 
 The schema lives in `server/migrations/NNN_name.sql`. At startup, before accepting requests, the server applies the
