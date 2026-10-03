@@ -35,7 +35,7 @@ apiRouter.use('/profile', auditMiddleware, profileRouter)
 
 // ── Everything else works on the venue chosen in the session ────────────────
 apiRouter.use(requireVenue, auditMiddleware)
-apiRouter.use('/users', requireRole(Roles.superuser), usersRouter)
+apiRouter.use('/users', requireRole(Roles.admin), usersRouter)
 apiRouter.use('/events', eventsRouter)
 apiRouter.use('/tables', tablesRouter)
 apiRouter.use('/orders', ordersRouter)

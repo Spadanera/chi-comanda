@@ -112,6 +112,28 @@ describe('staff of a venue', () => {
     })
 })
 
+describe('staff managed by the venue admin', () => {
+    it('lets an admin manage the staff of their venue, never the platform role', async () => {
+        const admin = await loginAs(app, 'admin')
+        await admin.put('/api/users/roles').send({ id: ids.waiter, roles: ['waiter', 'checkout', 'superuser'] }).expect(200)
+        expect(await rolesOf(ids.waiter)).toEqual(['1:checkout', '1:waiter'])
+        // The platform's superuser is not staff of the venue: out of the admin's reach
+        await admin.put('/api/users/roles').send({ id: ids.superuser, roles: ['waiter'] }).expect(404)
+        await admin.post('/api/users/invite').send({ email: 'nuovo-admin@test.local', roles: ['superuser'] }).expect(200)
+        const [invited] = await sql(`SELECT id FROM users WHERE email = 'nuovo-admin@test.local'`)
+        expect(await rolesOf(invited.id)).toEqual([])
+    })
+
+    it('lets an admin block only accounts working in their venue alone', async () => {
+        const admin = await loginAs(app, 'admin')
+        await admin.put('/api/users').send({ id: ids.waiter, status: 'BLOCKED' }).expect(200)
+        await sql(`INSERT INTO user_role (user_id, role_id, venue_id) SELECT ?, id, 2 FROM roles WHERE name = 'waiter'`, [ids.checkout])
+        const res = await admin.put('/api/users').send({ id: ids.checkout, status: 'BLOCKED' })
+        expect(res.status).toBe(409)
+        expect((await sql('SELECT status FROM users WHERE id = ?', [ids.checkout]))[0].status).toBe('ACTIVE')
+    })
+})
+
 describe('platform', () => {
     it('is reserved to the superuser', async () => {
         const admin = await loginAs(app, 'admin')

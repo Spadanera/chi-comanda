@@ -56,10 +56,9 @@ describe('authentication', () => {
 })
 
 describe('authorization', () => {
-    it('forbids non-superusers from user management', async () => {
-        const agent = await loginAs(app, 'admin')
-        const res = await agent.get('/api/users')
-        expect(res.status).toBe(403)
+    it('leaves user management to admins', async () => {
+        expect((await (await loginAs(app, 'waiter')).get('/api/users')).status).toBe(403)
+        expect((await (await loginAs(app, 'admin')).get('/api/users')).status).toBe(200)
     })
 
     it('lets superuser access everything', async () => {

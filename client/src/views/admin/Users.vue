@@ -4,6 +4,7 @@ import { type User } from '../../../../models/src'
 import api from '@/services/client'
 import { copy, requiredRule, emailRule, Roles } from '@/services/utils'
 import Avatar from '@/components/Avatar.vue'
+import { UserStore } from '@/stores'
 
 const props = defineProps(['event'])
 
@@ -15,7 +16,9 @@ const confirmDelete = ref<boolean>(null)
 const users = ref<User[]>([])
 const selectedUser = ref<User>(null)
 const form = ref(null)
-const roleOptions = Object.values(Roles).filter((r: Roles) => r !== Roles.client)
+// The superuser role is the platform's: only the superuser sees it among the options
+const roleOptions = Object.values(Roles).filter((r: Roles) => r !== Roles.client
+  && (r !== Roles.superuser || UserStore().user.roles.includes(Roles.superuser)))
 const fidelityClient = ref<boolean>(false)
 const selectedRoles = ref([])
 

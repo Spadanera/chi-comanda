@@ -3,7 +3,7 @@ import config from '../config'
 import sendEmail, { actionEmail } from '../utils/mail'
 import { User } from '../../../models/src'
 import { Roles } from '../http/middleware'
-import { BadRequestError, ForbiddenError, NotFoundError } from '../http/errors'
+import { BadRequestError, ConflictError, NotFoundError } from '../http/errors'
 import { VenueContext } from '../venue/context'
 import userService from './user'
 import { disconnectUser } from '../socket'
@@ -55,7 +55,10 @@ class StaffService {
         return venue?.name || config.client.name || 'Chi Comanda'
     }
 
-    /** Venue roles to assign; `superuser` only when the platform's superuser asks. */
+    /**
+     * Venue roles to assign. `superuser` is the platform's: only the superuser grants or revokes it; in a venue
+     * admin's request it is ignored (their screen lists it for the users that have it).
+     */
     private validateRoles(ctx: VenueContext, roles: unknown): { venueRoles: string[], superuser: boolean } {
         if (!Array.isArray(roles) || !roles.every(r => typeof r === 'string')) {
             throw new BadRequestError('Ruoli non validi')
@@ -64,10 +67,7 @@ class StaffService {
         if (unknown.length) {
             throw new BadRequestError(`Ruolo sconosciuto: ${unknown.join(', ')}`)
         }
-        const superuser = roles.includes(Roles.superuser)
-        if (superuser && !ctx.roles.includes(Roles.superuser)) {
-            throw new ForbiddenError()
-        }
+        const superuser = roles.includes(Roles.superuser) && ctx.roles.includes(Roles.superuser)
         return { venueRoles: [...new Set(roles.filter(r => r !== Roles.superuser))], superuser }
     }
 
@@ -164,9 +164,22 @@ class StaffService {
         disconnectUser(user.id!)
     }
 
-    /** Account status (ACTIVE / BLOCKED) of a member: it applies to every venue of the account. */
+    /**
+     * Account status (ACTIVE / BLOCKED) of a member. It applies to every venue of the account, so a venue admin may
+     * block only an account working in their venue alone; the others are blocked by the platform.
+     */
     async updateStatus(ctx: VenueContext, input: User): Promise<number> {
         const user = await this.findUser(ctx, input.id)
+        if (!ctx.roles.includes(Roles.superuser)) {
+            const elsewhere = await ctx.db.query(`
+                SELECT 1 FROM users
+                WHERE users.id = ? AND (EXISTS (
+                    SELECT 1 FROM user_role WHERE user_role.venue_id != :venue AND user_role.user_id = users.id
+                ) OR ${IS_SUPERUSER})`, [user.id])
+            if (elsewhere.length) {
+                throw new ConflictError("L'account lavora anche in altri locali: può bloccarlo solo la piattaforma")
+            }
+        }
         const result = await userService.updateStatus({ id: user.id, status: input.status })
         disconnectUser(user.id!)
         return result

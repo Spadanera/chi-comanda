@@ -203,6 +203,11 @@ const ATTACKS: Case[] = [
     { route: 'POST /payment/checkout/sumup-pos', path: () => '/payment/checkout/sumup-pos', body: () => ({ table_id: B.table, event_id: B.event, amount: 1 }) },
     { route: 'POST /payment/checkout/sumup-solo', path: () => '/payment/checkout/sumup-solo', body: () => ({ table_id: B.table, event_id: B.event, amount: 1 }) },
 
+    // Staff
+    { route: 'PUT /users/', path: () => '/users/', body: () => ({ id: B.user, status: 'BLOCKED' }) },
+    { route: 'PUT /users/roles', path: () => '/users/roles', body: () => ({ id: B.user, roles: ['admin'] }) },
+    { route: 'DELETE /users/:id', path: () => `/users/${B.user}` },
+
     // Branding
     { route: 'GET /public/logo/:size.png', path: () => '/public/logo/512.png?venue=2&v=1' },
 ]
@@ -227,6 +232,9 @@ const LISTS: Case[] = [
     { route: 'POST /payment/settings', path: () => '/payment/settings', body: () => ({ provider: 'sumup_pos', enabled: false, config: {} }) },
     { route: 'GET /payment/available', path: () => '/payment/available' },
     { route: 'GET /settings/', path: () => '/settings/' },
+    { route: 'GET /users/', path: () => '/users/' },
+    // Inviting B's staff into A adds the account to A, it doesn't touch B
+    { route: 'POST /users/invite', path: () => '/users/invite', body: () => ({ email: 'staff-b@test.local', roles: ['waiter'] }) },
     { route: 'PUT /settings/', path: () => '/settings/', body: () => ({ venue_name: 'Venue A' }) },
     { route: 'DELETE /settings/logo', path: () => '/settings/logo' },
 ]
@@ -257,7 +265,7 @@ const EXEMPT: Record<string, string> = {
 const SUPERUSER_ONLY = [
     'GET /platform/venues', 'POST /platform/venues', 'PUT /platform/venues/:id', 'GET /platform/users',
     'PUT /platform/users/:id/status', 'PUT /platform/users/:id/superuser', 'DELETE /platform/users/:id',
-    'GET /audit/', 'GET /users/', 'PUT /users/', 'DELETE /users/:id', 'PUT /users/roles', 'POST /users/invite',
+    'GET /audit/',
 ]
 
 function call(c: Case) {

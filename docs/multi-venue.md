@@ -144,9 +144,10 @@ All points are on the branch `multi-venue` (not merged, not deployed).
   venue): `GET/POST/PUT venues` (a new venue gets the baseline catalogue: 2 types, 8 sub types, "Menu Principale";
   `admin_email` invites its first admin; `features` is validated against `FEATURES`), `GET users` (with their venues),
   `PUT users/:id/status`, `PUT users/:id/superuser`, `DELETE users/:id`. Tests: `staff-platform.test.ts`.
-  **Open question for the user:** user management stays superuser-only, as today (Libra unchanged). With several
-  venues the venue admin could manage their own staff: it is `requireRole(Roles.superuser)` → `requireRole(Roles.admin)`
-  on `/api/users` in `routes/index.ts`, plus the client menu entry.
+  **Decided by the user (3 Oct): venue admins manage the staff of their venue** (`/api/users` needs `admin`; menu
+  *Amministrazione → Utenti* for admins). An admin never touches the `superuser` role (ignored in their requests, not
+  among their options) and can block only accounts working in their venue alone (409 otherwise: the platform blocks
+  the others). The platform's superuser is not staff of a venue, so it is out of an admin's reach (404).
 - **Point 5 done**. Rooms `venue:<id>:<room>`: the client still asks `join('bartender')`, the server joins the venue
   room of the session (no venue → refused) and the private `user:<id>` room. `sendMessage(venueId, …)` and every
   `notify.*` take the venue first. `disconnectUser` after role/status changes (staff and platform), `disconnectVenue`
@@ -191,7 +192,6 @@ All points are on the branch `multi-venue` (not merged, not deployed).
 - **Open**:
   - Stage rehearsal (restore the production dump into the staging DB, deploy the branch): not done, it needs the
     user's go-ahead (the branch is not on `main`).
-  - Whether venue admins manage their own staff (point 4).
   - Contract release, later: drop `DEFAULT 1` from the `venue_id` columns and the `settings` table.
 - **Checked on real data (3 Oct)**: the production dump of 3 October restored locally into database `prodcopy` of the
   `libra-restore-check` container (plus the additive part of the old `release.sql`, as production has it). Orphans: none

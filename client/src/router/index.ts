@@ -77,7 +77,7 @@ const router = createRouter({
           component: () => import('@/views/admin/Users.vue'),
           props: true,
           meta: {
-            allowedRole: Roles.superuser
+            allowedRole: Roles.admin
           },
         },
         {

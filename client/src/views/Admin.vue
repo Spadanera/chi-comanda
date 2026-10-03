@@ -60,13 +60,14 @@ const navigationItems = ref<NavigationItem[]>([
 
 onMounted(() => {
   try {
+    // Staff of this venue: its admins (and the platform's superuser)
+    navigationItems.value.push({
+      title: "Utenti",
+      prependIcon: "mdi-account-group",
+      to: "users",
+      value: 5
+    })
     if (user.value?.roles?.includes('superuser')) {
-      navigationItems.value.push({
-        title: "Utenti",
-        prependIcon: "mdi-account-group",
-        to: "users",
-        value: 5
-      })
       navigationItems.value.push({
         title: "Audit",
         prependIcon: "mdi-police-badge",
