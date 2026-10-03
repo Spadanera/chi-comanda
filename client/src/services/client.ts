@@ -152,10 +152,13 @@ class ApiClient {
         await loadConfig()
     }
 
-    loginWithGoogle(invitationToken?: string) {
-        window.location.href = invitationToken
-            ? `/api/auth/google?state=${encodeURIComponent(invitationToken)}`
-            : '/api/auth/google'
+    /** `redirect`: page of the app to open after the login. */
+    loginWithGoogle(invitationToken?: string, redirect?: string) {
+        const query = new URLSearchParams()
+        if (invitationToken) query.set('state', invitationToken)
+        if (redirect) query.set('redirect', redirect)
+        const search = query.toString()
+        window.location.href = `/api/auth/google${search ? `?${search}` : ''}`
     }
 
     async Logout() {

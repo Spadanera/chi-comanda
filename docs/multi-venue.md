@@ -200,8 +200,9 @@ All points are on the branch `multi-venue` (not merged, not deployed).
   Italian name (`ROLE_LABELS` in the client's `services/utils.ts` and in `staff.ts`). People to invite are picked
   among existing accounts (`GET /api/users/candidates`: every active account for the superuser, for a venue admin
   only the people of the other venues they are admin of), or typed as a new e-mail; the same when creating a venue.
-  Not done: Google login after an e-mail link lands on `/`, not on the venue (the OAuth callback doesn't keep the
-  page).
+  Google login keeps the page too: `/api/auth/google?redirect=` stores it in the session (`returnTo`, only paths of
+  the app, `safeRedirect`), kept across the login's session regeneration (`keepSessionInfo`) and used by the callback
+  (`test/google-redirect.test.ts`).
 - **Checked on real data (3 Oct)**: the production dump of 3 October restored locally into database `prodcopy` of the
   `libra-restore-check` container (plus the additive part of the old `release.sql`, as production has it). Orphans: none
   for the existing FKs, none for the new ones in `005`, 4 for `items.master_item_id` (items of deleted products: no FK

@@ -51,15 +51,27 @@ authRouter.get('/checkauthentication', (req: Request, res: Response) => {
     res.json(req.isAuthenticated() ? req.user : 0)
 })
 
+/** A page of this app to go back to after login (`/…`), never another site; undefined otherwise. */
+export function safeRedirect(value: unknown): string | undefined {
+    return typeof value === 'string' && /^\/(?![/\\])/.test(value) && value.length <= 500 ? value : undefined
+}
+
 authRouter.get('/auth/google', (req: Request, res: Response, next: NextFunction) => {
     if (!isGoogleEnabled()) return next(new NotFoundError())
+    // The page asked before the login (e.g. the link of an e-mail opening a venue), back to it after Google
+    req.session.returnTo = safeRedirect(req.query.redirect)
     const state = req.query.state as string | undefined
     passport.authenticate('google', { scope: ['profile', 'email'], ...(state ? { state } : {}) })(req, res, next)
 })
 
 authRouter.get('/auth/google/callback', (req: Request, res: Response, next: NextFunction) => {
     if (!isGoogleEnabled()) return next(new NotFoundError())
-    passport.authenticate('google', { failureRedirect: '/login?error=google' })(req, res, () => res.redirect('/'))
+    // keepSessionInfo: the login regenerates the session, returnTo must survive it
+    passport.authenticate('google', { failureRedirect: '/login?error=google', keepSessionInfo: true })(req, res, () => {
+        const returnTo = req.session.returnTo || '/'
+        delete req.session.returnTo
+        res.redirect(returnTo)
+    })
 })
 
 export default authRouter

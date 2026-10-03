@@ -74,5 +74,7 @@ declare module 'express-session' {
     interface SessionData {
         /** Venue the user is working in. */
         venueId?: number
+        /** Page to open after a Google login. */
+        returnTo?: string
     }
 }
