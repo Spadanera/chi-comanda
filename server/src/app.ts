@@ -19,6 +19,8 @@ const sessionStore = new MySQLStore({ ...config.db, createDatabaseTable: false }
 configurePassport()
 
 const app = express()
+// Behind Railway's (and possibly Cloudflare's) proxy: the protocol comes from X-Forwarded-Proto
+app.set('trust proxy', config.deployed)
 
 // Before the session middleware: healthchecks must not create a session each
 app.get('/api/health', asyncHandler(async (_req, res) => {
@@ -31,7 +33,17 @@ app.use(express.urlencoded({ extended: true }))
 const sessionMiddleware = session({
     name: config.sessionCookieName,
     store: sessionStore,
-    cookie: { maxAge: config.sessionMaxAgeMs },
+    // No `domain`: the cookie belongs to this host only, never shared between the clients' subdomains.
+    // Lax: sent on top-level navigations (the Google login callback), not on cross-site requests.
+    cookie: {
+        maxAge: config.sessionMaxAgeMs,
+        httpOnly: true,
+        sameSite: 'lax',
+        // Deployed: only over https (never set on plain http); locally whatever the request uses
+        secure: config.deployed ? true : 'auto',
+    },
+    // Also for the socket.io handshake, which is not an express request
+    proxy: config.deployed,
     secret: config.sessionSecret,
     resave: false,
     saveUninitialized: true,

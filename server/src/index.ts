@@ -1,9 +1,11 @@
-import config from './config'
+import config, { configErrors } from './config'
 import { DEMO_SEED_FILE, migrate } from './db/migrate'
 import { captureError, flushMonitoring, initMonitoring } from './monitoring'
 
 async function main() {
     initMonitoring()
+    const errors = configErrors(config)
+    if (errors.length) throw new Error(`Invalid configuration:\n- ${errors.join('\n- ')}`)
     // Before loading the app: the session store and every query need the migrated schema
     await migrate({ db: config.db, demoSeedFile: config.demoSeed ? DEMO_SEED_FILE : undefined })
 

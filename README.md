@@ -67,6 +67,14 @@ Name, logo and theme colours are changed by the admin from *Amministrazione → 
 client reads everything at startup from `GET /api/public/config`; the web app manifest
 (`/api/public/manifest.webmanifest`) carries the venue name and logo, so the installed app looks like the venue's.
 
+## Session and required configuration
+
+A deployed installation (`NODE_ENV=production`, or any Railway deploy, recognised by `RAILWAY_ENVIRONMENT`) refuses to
+start without `SECRET` or with a missing or invalid `BASE_URL`. The session cookie (`lp-session`) is `HttpOnly`,
+`SameSite=Lax`, bound to the host that set it (no `Domain`, so clients on different subdomains never share sessions)
+and, when deployed, `Secure`: the app trusts the proxy's `X-Forwarded-Proto` and never sets the cookie over plain
+http. Locally the cookie is not `Secure`, so the app works on `http://localhost`.
+
 ## Health check
 
 `GET /api/health` answers 200 with the version, the commit, the client and the last migration applied, or 503 when the
