@@ -47,18 +47,29 @@ real-time rooms per venue, new e-mails.
 
 ## Release C — unstable networks (branch `resilience`)
 
-What it brings: idempotency keys (migration `006_idempotency_keys.sql`), README *Unstable networks*.
+What it brings: idempotency keys (migration `006_idempotency_keys.sql`), offline queue of orders, full reload of every
+screen when the connection comes back, Sentry filters, automatic daily backups (README *Unstable networks*, DEPLOY.md
+*Automatic daily backups*).
 
 - [ ] Migration `006` only adds the `idempotency_keys` table. A rollback needs nothing more: the previous release
-      ignores the table and the `Idempotency-Key` header.
+      ignores the table and the `Idempotency-Key` header. Orders still waiting in a phone's offline queue during a
+      rollback are sent by the old server without the key check: a retry could then duplicate one (only while the
+      rollback lasts).
+- [ ] Before releasing, the user checks on stage the offline queue on a phone (airplane mode → order → "in attesa di
+      invio" → back online → sent once).
 - [ ] After: `/api/health` → `006_idempotency_keys.sql`.
+- [ ] **Automatic backups** (independent of the release, DEPLOY.md *Automatic daily backups*): the user creates the
+      backup key pair (private key offline), an R2 bucket per installation with a 30-day lifecycle rule and a token
+      limited to it; then the `backup` cron service on stage first (`BACKUP_PREFIX=libra-staging`), then on production
+      (`libra`). First run, then a restore test with `scripts/restore-backup.mjs`. Not done yet: it needs the
+      Cloudflare account and the key, which only the user has.
 
 ## Later (never in the same release as the one they depend on)
 
 - [ ] Contract migration after release B is confirmed: drop `DEFAULT 1` from the `venue_id` columns, drop the
       `settings` table.
 - [ ] Before **1 December 2026**: `railway.json` → `.railway/railway.ts` (`railway config migrate`), keeping the
-      healthcheck path.
+      healthcheck path; the same for `backup/railway.json` (cron schedule, Dockerfile) once the backup service exists.
 - [ ] Production project: 4 detached volumes (`zebra-volume`, `instrument-volume`, `porter-volume`, `size-volume`),
       the user decides whether to delete them.
 - [ ] Move Libra to `libra.chicomanda.com` (DEPLOY.md, *Moving a client to another domain*).
