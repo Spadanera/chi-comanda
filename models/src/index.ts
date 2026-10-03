@@ -49,6 +49,7 @@ export interface Audit extends Repository {
   id?: number,
   /** NULL for platform actions. */
   venue_id?: number | null,
+  venue_name?: string | null,
   user_id?: number,
   username?: string,
   method?: string,

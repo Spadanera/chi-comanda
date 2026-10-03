@@ -82,7 +82,7 @@ describe('settings', () => {
         expect(res.body.has_logo).toBe(true)
 
         const config = (await request(app).get('/api/public/config').expect(200)).body
-        expect(config.logo).toMatch(/^\/api\/public\/logo\/512\.png\?v=\d+$/)
+        expect(config.logo).toMatch(/^\/api\/public\/logo\/512\.png\?venue=1&v=\d+$/)
 
         for (const [size, pixels] of [['512', 512], ['192', 192], ['maskable', 512]] as const) {
             const png = await request(app).get(`/api/public/logo/${size}.png?v=1`)
@@ -96,9 +96,9 @@ describe('settings', () => {
 
         const manifest = JSON.parse((await request(app).get('/api/public/manifest.webmanifest')).text)
         expect(manifest.icons.map((i: any) => i.src)).toEqual([
-            expect.stringMatching(/^\/api\/public\/logo\/192\.png\?v=/),
-            expect.stringMatching(/^\/api\/public\/logo\/512\.png\?v=/),
-            expect.stringMatching(/^\/api\/public\/logo\/maskable\.png\?v=/),
+            expect.stringMatching(/^\/api\/public\/logo\/192\.png\?venue=1&v=/),
+            expect.stringMatching(/^\/api\/public\/logo\/512\.png\?venue=1&v=/),
+            expect.stringMatching(/^\/api\/public\/logo\/maskable\.png\?venue=1&v=/),
         ])
     })
 

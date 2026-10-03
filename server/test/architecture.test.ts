@@ -6,20 +6,17 @@ import { assertScoped } from '../src/venue/db'
 const SERVICES_DIR = path.resolve(__dirname, '../src/services')
 
 /**
- * Services working on global tables only (users, sessions, push subscriptions...) or on no table: the only ones
- * allowed to use the raw database. Every other service reaches it through the venue context.
+ * Services of the platform, outside any venue (users, health, venue lookups, the audit read by the superuser): the only
+ * ones allowed to use the raw database. Every other service reaches it through the venue context.
  */
-const PLATFORM_SERVICES = ['health.ts', 'profile.ts', 'user.ts', 'venue.ts']
-
-/** Not moved to the venue context yet (multi-venue point 3): this list only shrinks. */
-const NOT_CONVERTED_YET = ['audit.ts', 'settings.ts']
+const PLATFORM_SERVICES = ['audit.ts', 'health.ts', 'profile.ts', 'user.ts', 'venue.ts']
 
 const RAW_DB_IMPORT = /import\s+db\b[^;]*from\s+'\.\.\/db'/
 
 describe('architecture', () => {
     it('lets only platform services use the raw database', () => {
         const offenders = fs.readdirSync(SERVICES_DIR)
-            .filter(f => !PLATFORM_SERVICES.includes(f) && !NOT_CONVERTED_YET.includes(f))
+            .filter(f => !PLATFORM_SERVICES.includes(f))
             .filter(f => RAW_DB_IMPORT.test(fs.readFileSync(path.join(SERVICES_DIR, f), 'utf8')))
         expect(offenders).toEqual([])
     })

@@ -112,6 +112,27 @@ No production deploy and no production DB writes without an explicit request.
   routes), `path` always relative to `/api`. The superuser keeps passing every role check inside a venue (as today).
   Tests: `session-venue.test.ts`, plus a socket test on a revoked role. `resetDatabase()` now removes venues > 1 and
   their rows.
+- **Point 3 done** (commits `71a56e5`, `71810da` and the next one). **Changes to the plan:**
+  - No ESLint on the server: the rule is `test/architecture.test.ts`, which fails when a service outside
+    `PLATFORM_SERVICES` (`audit`, `health`, `profile`, `user`, `venue`) imports the raw `db`.
+  - Queries use the token `:venue`, replaced by `VenueDb` with the session's venue id (never a request value).
+    `assertScoped` counts FROM/JOIN/UPDATE/INTO references to venue tables and requires as many `:venue`, e.g.
+    `JOIN destinations ON destinations.venue_id = :venue AND ...`. `VENUE_TABLES` is checked against the schema.
+  - `VenueDb`: `find` (404), `ensure` (ids from bodies, 404), `executeOne` (404 on no matched row; mysql2 counts matched
+    rows, tested), `transaction`. Shared SQL fragments in `db/sql.ts` carry `:venue`.
+  - Branding moved from `settings` to `venues` here (part of point 6): the admin edits the active venue; public
+    config/manifest/logo show the session's venue, else the only active venue, else the platform (name `null`). Logo
+    URLs are `/api/public/logo/<size>.png?venue=<id>&v=<version>`; a `venue` other than the one the request sees is a
+    404. A previous release reads `settings`: branding changed after the release is not seen by a rollback.
+  - The audit stays a platform service (written by the middleware with the venue, read by the superuser with the
+    venue name).
+  Fixes found along the way: the event start/close no longer clears every venue's layout; discounts went to
+  destination 1 (venue 1's), now to the venue's first destination; `item.update` took the table id from the body, now
+  from the stored item; an order on an existing table checks that the table is the event's; event staff must hold a
+  role in the venue (or be the superuser). The POS callback works in the venue of the signed transaction
+  (`venueService.venueOfPaymentTransaction`). Push payloads carry `venueId` (used by the client in point 7).
+  `GET /api/master-tables/:id` keeps answering `0` for a missing table, and so for another venue's (same answer as a
+  missing id).
 - **Checked on real data (3 Oct)**: the production dump of 3 October restored locally into database `prodcopy` of the
   `libra-restore-check` container (plus the additive part of the old `release.sql`, as production has it). Orphans: none
   for the existing FKs, none for the new ones in `005`, 4 for `items.master_item_id` (items of deleted products: no FK

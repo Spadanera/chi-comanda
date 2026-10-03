@@ -139,6 +139,24 @@ describe('session and active venue', () => {
         expect(await sessionUser(admin)).toMatchObject({ id: ids.admin, venueId: 1, roles: ['admin'], superuser: false })
     })
 
+    it('shows the branding of the venue in the session, the platform one to anonymous users of several venues', async () => {
+        await sql(`UPDATE venues SET name = 'Uno', logo = ? WHERE id = 1`, [Buffer.from('not used')])
+        await sql(`UPDATE venues SET primary_color = '#112233' WHERE id = 2`)
+        // Two venues: before login nobody knows which one
+        expect((await request(app).get('/api/public/config')).body).toMatchObject({ name: null, logo: null })
+        await request(app).get('/api/public/logo/512.png?venue=1&v=1').expect(404)
+
+        await grant(ids.admin, 'admin', 2)
+        const admin = await loginAs(app, 'admin')
+        await admin.put('/api/session/venue').send({ venueId: 2 })
+        expect((await admin.get('/api/public/config')).body).toMatchObject({ name: 'Secondo', colors: { primary: '#112233' } })
+        // The admin edits the venue they work in, not the others
+        await admin.put('/api/settings').send({ venue_name: 'Secondo bis' }).expect(200)
+        expect((await sql('SELECT id, name FROM venues ORDER BY id'))).toEqual([{ id: 1, name: 'Uno' }, { id: 2, name: 'Secondo bis' }])
+        // Another venue's logo is not served even when its id is in the URL
+        await admin.get('/api/public/logo/512.png?venue=1&v=1').expect(404)
+    })
+
     it('records the venue of an action in the audit, NULL for platform actions', async () => {
         const superuser = await loginAs(app, 'superuser')
         await superuser.put('/api/users/roles').send({ id: ids.client, roles: ['client'] })

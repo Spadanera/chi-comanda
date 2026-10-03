@@ -1,4 +1,5 @@
-import { Router } from 'express'
+import { Request, Router } from 'express'
+import { User } from '../../../models/src'
 import multer from 'multer'
 import userService from '../services/user'
 import paymentService from '../services/payment'
@@ -13,16 +14,20 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 /** Endpoints reachable without a session. */
 const router = Router()
 
-/** Read by the client at startup: venue name, active functions, branding. */
-router.get('/config', jsonHandler(() => settingsService.publicConfig()))
+/** Venue chosen in the session, if any: public pages show its branding. */
+const sessionVenue = (req: Request) => (req.user as User | undefined)?.venueId
 
-router.get('/manifest.webmanifest', asyncHandler(async (_req, res) => {
-    res.type('application/manifest+json').send(JSON.stringify(await settingsService.manifest()))
+/** Read by the client at startup: venue name, active functions, branding. */
+router.get('/config', jsonHandler(req => settingsService.publicConfig(sessionVenue(req))))
+
+router.get('/manifest.webmanifest', asyncHandler(async (req, res) => {
+    res.type('application/manifest+json').send(JSON.stringify(await settingsService.manifest(sessionVenue(req))))
 }))
 
 router.get('/logo/:size.png', asyncHandler(async (req, res) => {
     if (!(req.params.size in LOGO_SIZES)) throw new NotFoundError()
-    const png = await settingsService.logo(req.params.size as LogoSize)
+    const requested = req.query.venue === undefined ? undefined : Number(req.query.venue)
+    const png = await settingsService.logo(sessionVenue(req), req.params.size as LogoSize, requested)
     if (!png) throw new NotFoundError()
     // The URL carries the version (?v=), so a new logo gets a new URL
     res.set('Cache-Control', req.query.v ? 'public, max-age=31536000, immutable' : 'no-cache')
