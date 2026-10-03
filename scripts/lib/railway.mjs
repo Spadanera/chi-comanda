@@ -40,7 +40,7 @@ export function railwayCli({ cwd, exec = execCommand }) {
             return Array.isArray(result) ? result : result.projects || []
         },
         createProject: (name, workspace) => run(['init', '--name', name, ...(workspace ? ['--workspace', workspace] : []), '--json']),
-        link: projectId => run(['link', '--project', projectId, '--environment', 'production', '--json']),
+        link: (projectId, environment = 'production') => run(['link', '--project', projectId, '--environment', environment, '--json']),
         /** Services of the linked environment: [{ id, name, source }]. */
         services: async () => {
             const result = await json(['service', 'list'])
