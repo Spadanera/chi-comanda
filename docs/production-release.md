@@ -24,6 +24,8 @@ optional Sentry, secure session cookie and required config, Node 22.
 - [ ] Backup of the production DB right before (`scripts/backup-client`).
 - [ ] Rehearsal on stage with a fresh copy of production (done for `002`–`004` on 3 Oct; repeat if `main` changed).
 - [ ] Release on a closing day: `npm run deploy-stage-patch`, check stage, `npm run deploy-production`.
+- [ ] Before the release, check that the production MySQL is not `SLEEPING` (`railway deployment list --service MySQL`
+      from a folder linked to production): App Sleeping off applies only from the next deployment of the service.
 - [ ] After: `curl -s https://chicomanda.com/api/health` → `"migration":"004_settings.sql"`; log in, open an event.
 - [ ] Optional: `SENTRY_DSN`, `SENTRY_CLIENT_DSN` on the production service.
 
@@ -33,8 +35,10 @@ What it brings: venues (migration `005_venues.sql`), session with the user id on
 real-time rooms per venue, new e-mails.
 
 - [x] User's local test done; `multi-venue` merged into `main` (3 Oct).
-- [ ] Rehearsal on stage: v1.20.0 deployed on 3 Oct on the staging DB (a production copy of 3 Oct morning, already
-      migrated to `004`), so `005` runs on real data there. Check the app on stage. (`005` took ~15 s on a local copy.)
+- [x] On stage: v1.20.0 (`d041591`) deployed on 3 Oct on the staging DB (a production copy of 3 Oct morning, already
+      at `004`): `005` applied, `/api/health` OK. The first try failed with `connect ETIMEDOUT`: the staging MySQL was
+      sleeping again (its deployment dated from before App Sleeping was turned off); redeploying MySQL fixed it.
+- [ ] The user checks the app on stage.
 - [ ] Release on a closing day (it can go with release A, but separately is easier to check and roll back).
 - [ ] **Rollback needs one more step**: after redeploying the previous version, `DELETE FROM sessions;` (old sessions
       held the whole user, new ones only the id). See DEPLOY.md, *The multi-venue release*.

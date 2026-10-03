@@ -51,7 +51,9 @@ without asking. On Cloudflare it only ever creates or changes `<slug>.chicomanda
 Railway asks for (verification, certificate); it never touches the apex, MX records or existing TXT records.
 
 **Keep App Sleeping off** on every installation (the script does it): a sleeping MySQL did not wake up on staging
-and the app answered `connect ETIMEDOUT`.
+and the app answered `connect ETIMEDOUT`. Turning it off applies from the **next deployment** of the service: if
+`railway deployment list --service MySQL` still says `SLEEPING`, run `railway redeploy --service MySQL` (data stays on
+the volume).
 
 ### Another venue in an existing installation
 
