@@ -42,10 +42,3 @@ export function tableItemsJson(tableIdExpr: string): string {
 export function userJson(userIdExpr: string): string {
     return `(SELECT JSON_OBJECT('id', users.id, 'username', users.username) FROM users WHERE users.id = ${userIdExpr})`
 }
-
-export const USER_ROLES_JSON = `(
-    SELECT JSON_ARRAYAGG(roles.name)
-    FROM roles
-    INNER JOIN user_role ON roles.id = user_role.role_id
-    WHERE user_role.user_id = users.id
-)`

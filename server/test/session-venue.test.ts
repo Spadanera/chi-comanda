@@ -103,8 +103,9 @@ describe('session and active venue', () => {
         const user = await sessionUser(superuser)
         expect(user).toMatchObject({ superuser: true, venueId: null, roles: ['superuser'] })
         expect(user.venues.map((v: any) => v.id)).toEqual([1, 2])
-        // Platform screens need no venue
-        expect((await superuser.get('/api/users')).status).toBe(200)
+        // Platform screens need no venue; a venue's staff does
+        expect((await superuser.get('/api/platform/users')).status).toBe(200)
+        expect((await superuser.get('/api/users')).status).toBe(409)
 
         expect((await superuser.put('/api/session/venue').send({ venueId: 2 })).body)
             .toMatchObject({ venueId: 2, roles: ['superuser'] })
@@ -159,12 +160,12 @@ describe('session and active venue', () => {
 
     it('records the venue of an action in the audit, NULL for platform actions', async () => {
         const superuser = await loginAs(app, 'superuser')
-        await superuser.put('/api/users/roles').send({ id: ids.client, roles: ['client'] })
+        await superuser.put(`/api/platform/users/${ids.client}/status`).send({ status: 'ACTIVE' })
         await superuser.put('/api/session/venue').send({ venueId: 2 })
         await superuser.post('/api/menu').send({ name: 'Nuovo' })
 
         expect(await sql('SELECT venue_id, path FROM audit ORDER BY id')).toEqual([
-            { venue_id: null, path: '/users/roles' },
+            { venue_id: null, path: `/platform/users/${ids.client}/status` },
             { venue_id: 2, path: '/menu' },
         ])
     })

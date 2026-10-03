@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import eventService, { EventStatus } from '../services/event'
 import tableService from '../services/table'
-import userService from '../services/user'
+import staffService from '../services/staff'
 import { jsonHandler, requireRole, Roles, STAFF_ROLES } from '../http/middleware'
 import { ctx } from '../venue/context'
 import { BadRequestError } from '../http/errors'
@@ -21,7 +21,7 @@ const floorStaff = requireRole(Roles.waiter, Roles.bartender, Roles.checkout)
 
 router.get('/ongoing', jsonHandler(req => eventService.getOnGoing(ctx(req))))
 
-router.get('/users', requireRole(...STAFF_ROLES), jsonHandler(() => userService.getAvailable()))
+router.get('/users', requireRole(...STAFF_ROLES), jsonHandler(req => staffService.getAvailable(ctx(req))))
 
 // ── Admin ────────────────────────────────────────────────────────────────────
 

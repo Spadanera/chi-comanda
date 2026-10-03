@@ -133,6 +133,18 @@ No production deploy and no production DB writes without an explicit request.
   (`venueService.venueOfPaymentTransaction`). Push payloads carry `venueId` (used by the client in point 7).
   `GET /api/master-tables/:id` keeps answering `0` for a missing table, and so for another venue's (same answer as a
   missing id).
+- **Point 4 done**. Staff per venue: `/api/users` is now behind `requireVenue` and works on the active venue
+  (`staffService`): list of members (pending invitations included), roles in the venue (`superuser` only granted by
+  the superuser, globally), invite (an existing account is just added to the venue, with an "Ora lavori anche a …"
+  e-mail; a new e-mail gets the invitation link naming the venue), remove from the venue (the account is deleted only
+  when no role is left anywhere, as before), account status (`ACTIVE`/`BLOCKED`, as the client sends).
+  `/api/events/users` lists the venue's active members and the superusers. Platform (`/api/platform`, superuser, no
+  venue): `GET/POST/PUT venues` (a new venue gets the baseline catalogue: 2 types, 8 sub types, "Menu Principale";
+  `admin_email` invites its first admin; `features` is validated against `FEATURES`), `GET users` (with their venues),
+  `PUT users/:id/status`, `PUT users/:id/superuser`, `DELETE users/:id`. Tests: `staff-platform.test.ts`.
+  **Open question for the user:** user management stays superuser-only, as today (Libra unchanged). With several
+  venues the venue admin could manage their own staff: it is `requireRole(Roles.superuser)` → `requireRole(Roles.admin)`
+  on `/api/users` in `routes/index.ts`, plus the client menu entry.
 - **Checked on real data (3 Oct)**: the production dump of 3 October restored locally into database `prodcopy` of the
   `libra-restore-check` container (plus the additive part of the old `release.sql`, as production has it). Orphans: none
   for the existing FKs, none for the new ones in `005`, 4 for `items.master_item_id` (items of deleted products: no FK
