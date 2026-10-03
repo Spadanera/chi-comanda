@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import request from 'supertest'
 import { closeApp, loadApp, loginAs, openEvent, openTable, rawConnection, resetDatabase, RoleName } from './helpers'
 
@@ -46,6 +46,62 @@ describe('invitations and password reset', () => {
         const superuser = await loginAs(app, 'superuser')
         const res = await superuser.post('/api/users/invite').send({ email: 'noroles@test.local', roles: [] })
         expect(res.status).toBe(200)
+    })
+
+    it('re-sends a pending invitation on the same user with a fresh token', async () => {
+        const { default: sendEmail } = await import('../src/utils/mail')
+        const superuser = await loginAs(app, 'superuser')
+        await superuser.post('/api/users/invite').send({ email: 'twice@test.local', roles: ['waiter'] }).expect(200)
+        const first = await queryOne('SELECT id, token FROM users WHERE email = ?', ['twice@test.local'])
+
+        vi.mocked(sendEmail).mockClear()
+        await superuser.post('/api/users/invite').send({ email: 'twice@test.local', roles: ['bartender'] }).expect(200)
+
+        const { count } = await queryOne('SELECT COUNT(*) AS count FROM users WHERE email = ?', ['twice@test.local'])
+        expect(count).toBe(1)
+        const second = await queryOne('SELECT id, token FROM users WHERE email = ?', ['twice@test.local'])
+        expect(second.id).toBe(first.id)
+        expect(second.token).not.toBe(first.token)
+        expect(vi.mocked(sendEmail)).toHaveBeenCalledOnce()
+        expect(vi.mocked(sendEmail).mock.calls[0][0].html).toContain(`/invitation/${second.token}`)
+        const { roles } = await queryOne(`
+            SELECT GROUP_CONCAT(roles.name) AS roles FROM user_role
+            INNER JOIN roles ON roles.id = user_role.role_id WHERE user_id = ?`, [second.id])
+        expect(roles).toBe('bartender')
+
+        // The superseded link no longer works
+        const stale = await request(app).post('/public/invitation/accept')
+            .field('token', first.token).field('username', 'old').field('password', 'Secret123!')
+        expect(stale.status).toBe(400)
+    })
+
+    it('refuses to invite an e-mail that already has an account', async () => {
+        const superuser = await loginAs(app, 'superuser')
+        const res = await superuser.post('/api/users/invite').send({ email: 'waiter@test.local', roles: ['waiter'] })
+        expect(res.status).toBe(400)
+        expect(res.body.message).toBe('Utente già esistente')
+    })
+
+    it('links a Google sign-in to the pending invitation with the same e-mail', async () => {
+        const superuser = await loginAs(app, 'superuser')
+        await superuser.post('/api/users/invite').send({ email: 'google@test.local', roles: ['waiter'] }).expect(200)
+        const invited = await queryOne('SELECT id FROM users WHERE email = ?', ['google@test.local'])
+
+        const { default: userService } = await import('../src/services/user')
+        const user = await userService.findOrCreateGoogleUser('google-123', 'google@test.local', 'Gigi', 'avatar.png')
+
+        expect(user).toMatchObject({ id: invited.id, email: 'google@test.local', username: 'Gigi', roles: ['waiter'] })
+        const { count } = await queryOne('SELECT COUNT(*) AS count FROM users WHERE email = ?', ['google@test.local'])
+        expect(count).toBe(1)
+        expect(await queryOne('SELECT status, token, googleId FROM users WHERE id = ?', [invited.id]))
+            .toEqual({ status: 'ACTIVE', token: null, googleId: 'google-123' })
+    })
+
+    it('sends no reset link to a pending invitation', async () => {
+        const superuser = await loginAs(app, 'superuser')
+        await superuser.post('/api/users/invite').send({ email: 'pending@test.local', roles: ['waiter'] }).expect(200)
+        await request(app).post('/public/askreset').send({ email: 'pending@test.local' }).expect(200)
+        expect(await queryOne('SELECT id FROM reset WHERE email = ?', ['pending@test.local'])).toBeUndefined()
     })
 
     it('resets a password with a fresh token and rejects expired ones', async () => {
