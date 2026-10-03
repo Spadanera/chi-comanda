@@ -1,10 +1,12 @@
 import type {
     AvailableTable, Audit, Broadcast, CompleteOrderInput, Destination, Event, Invitation, Item, MasterItem, MasterTable,
-    Menu, Order, PaymentSetting, PaymentTransaction, PublicConfig, RestaurantLayout, Settings, SubType, Table, Type, User
+    Feature, Menu, Order, PaymentSetting, PaymentTransaction, PublicConfig, RestaurantLayout, Settings, SubType, Table, Type,
+    User, VenueSummary
 } from '../../../models/src'
 import router from '@/router'
 import { UserStore, SnackbarStore, ProgressStore } from '@/stores'
 import { recreateSocket } from '@/composables/useSocket'
+import { loadConfig } from '@/composables/useConfig'
 
 export interface PaymentPayload {
     table_id: number
@@ -27,6 +29,9 @@ export class ApiError extends Error {
 }
 
 const BASE_URL = '/api'
+
+/** Answer of the venue api when the session has no venue (see requireVenue on the server). */
+const NO_VENUE = 'Nessun locale selezionato'
 
 /** Requests that must not toggle the global progress bar. */
 const SILENT_PATHS = ['/checkauthentication']
@@ -109,6 +114,9 @@ class ApiClient {
             router.push('/login')
         } else if (error.status === 403) {
             snackbar.show('Non sei autorizzato a eseguire questa operazione', 3000, 'top', 'error')
+        } else if (error.status === 409 && error.message === NO_VENUE) {
+            // The venue was disabled or the role revoked meanwhile: choose again
+            UserStore().checkAuthentication().then(() => router.push({ name: 'Locale' }))
         } else if (error.status < 500) {
             snackbar.show(error.message, 3000, 'top', 'error')
         } else {
@@ -140,12 +148,17 @@ class ApiClient {
         // The session id changed: reconnect so the server sees the logged user
         recreateSocket()
         UserStore().login(user)
+        // Branding and functions of the venue the user entered
+        await loadConfig()
     }
 
-    loginWithGoogle(invitationToken?: string) {
-        window.location.href = invitationToken
-            ? `/api/auth/google?state=${encodeURIComponent(invitationToken)}`
-            : '/api/auth/google'
+    /** `redirect`: page of the app to open after the login. */
+    loginWithGoogle(invitationToken?: string, redirect?: string) {
+        const query = new URLSearchParams()
+        if (invitationToken) query.set('state', invitationToken)
+        if (redirect) query.set('redirect', redirect)
+        const search = query.toString()
+        window.location.href = `/api/auth/google${search ? `?${search}` : ''}`
     }
 
     async Logout() {
@@ -154,7 +167,20 @@ class ApiClient {
         // Leave the screens (and their rooms) before opening the anonymous socket
         await router.push('/login')
         recreateSocket()
+        await loadConfig()
         SnackbarStore().show('Logout effettuato con successo')
+    }
+
+    /**
+     * Works in another venue: the screens, the real-time rooms and the branding follow it. Each view loads its
+     * data again, as after a login.
+     */
+    async SwitchVenue(venueId: number): Promise<void> {
+        const user = await this.put<User>('/session/venue', { venueId })
+        UserStore().login(user)
+        await loadConfig()
+        // The server dropped the sockets of the old venue: open a fresh one, it joins the rooms of the new venue
+        recreateSocket()
     }
 
     /** The logged user, or `0` when there is no session. */
@@ -379,6 +405,11 @@ class ApiClient {
         return this.get('/users')
     }
 
+    /** Accounts that can be added to the venue by picking them instead of typing the e-mail. */
+    GetUserCandidates(): Promise<User[]> {
+        return this.get('/users/candidates')
+    }
+
     UpdateUser(user: User): Promise<number> {
         return this.put('/users', user)
     }
@@ -393,6 +424,32 @@ class ApiClient {
 
     InviteUser(user: User): Promise<number> {
         return this.post('/users/invite', user)
+    }
+
+    // ── Platform (superuser) ─────────────────────────────────────────────────
+
+    GetVenues(): Promise<VenueSummary[]> {
+        return this.get('/platform/venues')
+    }
+
+    CreateVenue(venue: { name: string, features: Feature[] | null, admin_email?: string }): Promise<number> {
+        return this.post('/platform/venues', venue)
+    }
+
+    UpdateVenue(id: number, venue: Partial<Pick<VenueSummary, 'name' | 'status' | 'features'>>): Promise<void> {
+        return this.put(`/platform/venues/${id}`, venue)
+    }
+
+    GetPlatformUsers(): Promise<User[]> {
+        return this.get('/platform/users')
+    }
+
+    SetUserStatus(id: number, status: 'ACTIVE' | 'BLOCKED'): Promise<void> {
+        return this.put(`/platform/users/${id}/status`, { status })
+    }
+
+    SetSuperuser(id: number, superuser: boolean): Promise<void> {
+        return this.put(`/platform/users/${id}/superuser`, { superuser })
     }
 
     GetUserAvatar(id: number): Promise<string> {

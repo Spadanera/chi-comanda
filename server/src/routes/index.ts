@@ -16,6 +16,8 @@ import broadcastRouter from './broadcast'
 import paymentsRouter from './payments'
 import pushRouter from './push'
 import settingsRouter from './settings'
+import platformRouter from './platform'
+import { requireVenue } from '../venue/context'
 
 /** Everything under /api. */
 const apiRouter = Router()
@@ -23,9 +25,17 @@ const apiRouter = Router()
 apiRouter.use(authRouter)
 apiRouter.use('/public', publicRouter)
 
-apiRouter.use(requireAuthentication, auditMiddleware)
-apiRouter.use('/users', requireRole(Roles.superuser), usersRouter)
+apiRouter.use(requireAuthentication)
+
+// ── Platform: no venue (audited with venue NULL) ────────────────────────────
+apiRouter.use('/platform', auditMiddleware, requireRole(Roles.superuser), platformRouter)
 apiRouter.use('/users-public', userAvatarRouter)
+apiRouter.use('/audit', requireRole(Roles.superuser), auditRouter)
+apiRouter.use('/profile', auditMiddleware, profileRouter)
+
+// ── Everything else works on the venue chosen in the session ────────────────
+apiRouter.use(requireVenue, auditMiddleware)
+apiRouter.use('/users', requireRole(Roles.admin), usersRouter)
 apiRouter.use('/events', eventsRouter)
 apiRouter.use('/tables', tablesRouter)
 apiRouter.use('/orders', ordersRouter)
@@ -36,8 +46,6 @@ apiRouter.use('/master-items', masterItemsRouter)
 apiRouter.use('/types', typesRouter)
 apiRouter.use('/subtypes', subTypesRouter)
 apiRouter.use('/master-tables', masterTablesRouter)
-apiRouter.use('/audit', requireRole(Roles.superuser), auditRouter)
-apiRouter.use('/profile', profileRouter)
 apiRouter.use('/broadcast', requireFeature('broadcast'), broadcastRouter)
 apiRouter.use('/payment', requireFeature('payments'), paymentsRouter)
 apiRouter.use('/push', requireFeature('push'), pushRouter)

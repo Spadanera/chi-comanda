@@ -9,3 +9,5 @@ tsconfig.tsbuildinfo
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
 .env
+# Claude Code personal settings
+.claude/settings.local.json

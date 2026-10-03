@@ -160,6 +160,26 @@ export enum Roles {
     client = 'client'
 }
 
+/** Names of the roles shown to people (keep in sync with `ROLE_LABELS` in server/src/services/staff.ts). */
+export const ROLE_LABELS: Record<string, string> = {
+    [Roles.admin]: 'Amministratore',
+    [Roles.checkout]: 'Cassiere',
+    [Roles.waiter]: 'Cameriere',
+    [Roles.bartender]: 'Barista',
+    [Roles.client]: 'Cliente fedele',
+    [Roles.superuser]: 'Amministratore della piattaforma',
+}
+
+/** The name of a role for people, never the system word. */
+export function roleLabel(role: string): string {
+    return ROLE_LABELS[role] || role
+}
+
+/** "Cameriere, Barista" */
+export function roleLabels(roles: string[] | undefined): string {
+    return (roles || []).map(roleLabel).join(', ')
+}
+
 /** True when the user has at least one of `allowed`. Superusers are always allowed. */
 export function hasAnyRole(userRoles: string[] | undefined, allowed: Roles | Roles[]): boolean {
     const roles = userRoles || []

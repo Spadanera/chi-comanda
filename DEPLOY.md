@@ -1,7 +1,8 @@
 # Deploying Chi Comanda
 
 Every client has its **own installation**: a Railway project with the app and a dedicated MySQL, reachable at
-`<slug>.chicomanda.com`. All installations run **the same code from the same branch, `production`**: differences
+`<slug>.chicomanda.com`. An installation can also serve **several venues** (README, *Venues*): its superuser creates
+them from *Piattaforma*, no new installation needed. All installations run **the same code from the same branch, `production`**: differences
 between clients are configuration only (environment variables and the admin's *Impostazioni*, see the README).
 `chicomanda.com` will be the showcase site, outside this repository.
 
@@ -52,6 +53,14 @@ Railway asks for (verification, certificate); it never touches the apex, MX reco
 **Keep App Sleeping off** on every installation (the script does it): a sleeping MySQL did not wake up on staging
 and the app answered `connect ETIMEDOUT`.
 
+### Another venue in an existing installation
+
+Log in as the superuser → avatar menu → *Piattaforma* → *Nuovo locale*: name, functions (all those of the
+installation, or a subset) and optionally the e-mail of its first admin, who gets the invitation. The venue starts
+with the default catalogue (types and sub types) and an empty main menu. Staff is invited from *Amministrazione →
+Utenti* while working in that venue (*Cambia locale*); an existing account is simply added to the venue. Disabling a
+venue hides it at once from its staff.
+
 ---
 
 ## Releasing
@@ -83,6 +92,18 @@ only needs the code of the previous release, so the previous release keeps worki
 4. **Rollback = redeploy the previous version**: Railway dashboard → service → Deployments → previous deployment →
    *Redeploy*; or revert the merge on `production` and push. The database is **not** rolled back: the previous code runs
    on the newer schema. Restore a backup only if data was damaged, and only after taking a new backup.
+
+### The multi-venue release (migration `005_venues.sql`)
+
+- `005` puts every existing row in venue 1, takes over the branding of `settings` and moves the superuser role to the
+  platform. On a copy of Libra's production data (3 October 2026) it took about 15 seconds.
+- **Rolling it back needs one more step**: the previous release stores the whole user in the session, the new one only
+  its id, so after a rollback the open sessions are unreadable (no roles) until a new login. Right after redeploying
+  the previous version, empty the sessions so everybody logs in again:
+  `DELETE FROM sessions;` (only that table; take the backup first, as always).
+- Until the release is confirmed, **create no second venue**: the previous release ignores `user_role.venue_id` and
+  would give a user the roles of every venue they work in. Branding saved after the release lives in `venues` and is
+  not seen by a rollback (it reads `settings`).
 
 ---
 

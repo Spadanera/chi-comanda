@@ -1,17 +1,28 @@
 import { defineStore } from 'pinia'
 import api from '@/services/client'
-import type { User } from '../../../models/src'
+import type { Feature, User, UserVenue } from '../../../models/src'
 
 export interface SessionUser {
     id: number
     username: string
     email: string
+    /** Roles in the active venue (plus `superuser`). */
     roles: string[]
     avatar: string
     isLoggedIn: boolean
+    /** The platform's superuser. */
+    superuser: boolean
+    /** Venue the user is working in; `null` = still to choose. */
+    venueId: number | null
+    venues: UserVenue[]
+    /** Functions active in the venue. */
+    features: Feature[]
 }
 
-const anonymous = (): SessionUser => ({ id: 0, username: '', email: '', roles: [], avatar: '', isLoggedIn: false })
+const anonymous = (): SessionUser => ({
+    id: 0, username: '', email: '', roles: [], avatar: '', isLoggedIn: false,
+    superuser: false, venueId: null, venues: [], features: [],
+})
 
 function readStorage(key: string): string | null {
     try {
@@ -32,7 +43,9 @@ function writeStorage(key: string, value: string) {
 export const UserStore = defineStore('user', {
     state: anonymous,
     getters: {
-        user: (state): SessionUser => ({ ...state, roles: [...state.roles] }),
+        user: (state): SessionUser => ({ ...state, roles: [...state.roles], venues: [...state.venues], features: [...state.features] }),
+        /** The venue the user is working in. */
+        venue: (state): UserVenue | undefined => state.venues.find(v => v.id === state.venueId),
     },
     actions: {
         setUsername(username: string) {
@@ -49,6 +62,10 @@ export const UserStore = defineStore('user', {
                 avatar: user.avatar || '',
                 roles: user.roles || [],
                 isLoggedIn: true,
+                superuser: !!user.superuser,
+                venueId: user.venueId ?? null,
+                venues: user.venues || [],
+                features: user.features || [],
             })
         },
         logout() {

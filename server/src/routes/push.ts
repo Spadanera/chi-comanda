@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import pushService, { PushSubscriptionInput } from '../services/push'
-import { currentUserId, jsonHandler, requireRole, Roles } from '../http/middleware'
+import { jsonHandler, requireRole, Roles } from '../http/middleware'
+import { ctx } from '../venue/context'
 import { BadRequestError } from '../http/errors'
 
 function toSubscription(body: any): PushSubscriptionInput {
@@ -16,21 +17,21 @@ const router = Router()
 const bartender = requireRole(Roles.bartender)
 
 /** Whether push is configured on the server, and the VAPID public key the browser needs. */
-router.get('/config', jsonHandler(async () => pushService.getConfig()))
+router.get('/config', jsonHandler(async req => pushService.getConfig(ctx(req))))
 
-router.get('/preference', bartender, jsonHandler(async req => ({ preference: await pushService.getPreference(currentUserId(req)) })))
+router.get('/preference', bartender, jsonHandler(async req => ({ preference: await pushService.getPreference(ctx(req)) })))
 
 router.put('/preference', bartender, jsonHandler(req => {
     if (typeof req.body?.enabled !== 'boolean') throw new BadRequestError('Valore non valido')
-    return pushService.setPreference(currentUserId(req), req.body.enabled)
+    return pushService.setPreference(ctx(req), req.body.enabled)
 }))
 
 router.post('/subscriptions', bartender, jsonHandler(req =>
-    pushService.subscribe(currentUserId(req), toSubscription(req.body), req.get('user-agent'))))
+    pushService.subscribe(ctx(req), toSubscription(req.body), req.get('user-agent'))))
 
 router.delete('/subscriptions', bartender, jsonHandler(req => {
     if (typeof req.body?.endpoint !== 'string') throw new BadRequestError('Endpoint mancante')
-    return pushService.unsubscribe(currentUserId(req), req.body.endpoint)
+    return pushService.unsubscribe(ctx(req), req.body.endpoint)
 }))
 
 export default router

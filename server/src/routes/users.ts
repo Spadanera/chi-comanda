@@ -1,16 +1,19 @@
 import { Router } from 'express'
 import userService from '../services/user'
+import staffService from '../services/staff'
 import { jsonHandler } from '../http/middleware'
 import { toId } from '../http/validate'
+import { ctx } from '../venue/context'
 
-/** User management, superuser only (enforced where mounted). */
+/** Staff of the active venue (role check where mounted). */
 const router = Router()
 
-router.get('/', jsonHandler(() => userService.getAll()))
-router.put('/', jsonHandler(req => userService.updateStatus(req.body)))
-router.delete('/:id', jsonHandler(req => userService.delete(toId(req.params.id))))
-router.put('/roles', jsonHandler(req => userService.updateRoles(req.body)))
-router.post('/invite', jsonHandler(req => userService.inviteUser(req.body)))
+router.get('/', jsonHandler(req => staffService.getAll(ctx(req))))
+router.get('/candidates', jsonHandler(req => staffService.getCandidates(ctx(req))))
+router.put('/', jsonHandler(req => staffService.updateStatus(ctx(req), req.body)))
+router.delete('/:id', jsonHandler(req => staffService.remove(ctx(req), toId(req.params.id))))
+router.put('/roles', jsonHandler(req => staffService.updateRoles(ctx(req), req.body)))
+router.post('/invite', jsonHandler(req => staffService.invite(ctx(req), req.body)))
 
 export default router
 

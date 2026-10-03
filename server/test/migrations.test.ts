@@ -5,6 +5,7 @@ import mysql, { RowDataPacket } from 'mysql2/promise'
 import { afterAll, describe, expect, it } from 'vitest'
 import { DEMO_SEED_FILE, MIGRATIONS_DIR, listMigrations, migrate } from '../src/db/migrate'
 import { TEST_DB } from './db-env'
+import { VENUE_TABLES } from '../src/venue/db'
 
 const silent = () => undefined
 const scratchDbs: string[] = []
@@ -68,6 +69,9 @@ async function migrationsDirWith(extra: Record<string, string>) {
     return dir
 }
 
+/** Tables shared by every venue of the installation; any other table belongs to a venue. */
+const GLOBAL_TABLES = ['users', 'roles', 'sessions', 'reset', 'push_subscriptions', 'schema_migrations', 'venues', 'settings']
+
 const allVersions = async () => (await listMigrations()).map(m => m.version)
 
 afterAll(async () => {
@@ -108,6 +112,13 @@ describe('migrations', () => {
         await conn.query(await fs.readFile(path.join(MIGRATIONS_DIR, '001_baseline.sql'), 'utf8'))
         await conn.query(`INSERT INTO users (email, creation_date) VALUES ('old@test.local', '2026-10-01')`)
         await conn.query(`INSERT INTO items_history (id, name, price) VALUES (1, 'Sconto', -0.9000000000000004)`)
+        // Branding saved by a release with 004 (idempotent, it runs again), a superuser, an admin with a duplicated
+        // role row, an event of the current menu
+        await conn.query(await fs.readFile(path.join(MIGRATIONS_DIR, '004_settings.sql'), 'utf8'))
+        await conn.query(`REPLACE INTO settings (id, venue_name, primary_color) VALUES (1, 'Libra', '#112233')`)
+        await conn.query(`INSERT INTO users (id, email) VALUES (50, 'super@test.local'), (51, 'admin@test.local')`)
+        await conn.query(`INSERT INTO user_role (user_id, role_id) VALUES (50, 5), (51, 1), (51, 1), (51, 3)`)
+        await conn.query(`INSERT INTO events (id, name, menu_id, status) VALUES (7, 'Sabato', 1, 'ONGOING')`)
         await conn.end()
 
         const result = await migrate({ db, demoSeedFile: DEMO_SEED_FILE, log: silent })
@@ -122,11 +133,66 @@ describe('migrations', () => {
         const [user] = await query(db.database, `SELECT DATE_FORMAT(creation_date, '%Y-%m-%d %H:%i') d FROM users`)
         expect(user.d).toBe('2026-10-01 00:00')
         expect(await query(db.database, 'SELECT price FROM items_history')).toEqual([{ price: -0.9 }])
+        // Everything went into venue 1, with its branding; the superuser is the platform's
+        expect(await query(db.database, 'SELECT id, name, primary_color FROM venues'))
+            .toEqual([{ id: 1, name: 'Libra', primary_color: '#112233' }])
+        expect(await query(db.database, 'SELECT venue_id FROM events')).toEqual([{ venue_id: 1 }])
+        expect(await query(db.database, 'SELECT venue_id FROM menu')).toEqual([{ venue_id: 1 }])
+        expect(await query(db.database, 'SELECT user_id, role_id, venue_id FROM user_role ORDER BY user_id, role_id'))
+            .toEqual([
+                { user_id: 50, role_id: 5, venue_id: null },
+                { user_id: 51, role_id: 1, venue_id: 1 },
+                { user_id: 51, role_id: 3, venue_id: 1 },
+            ])
 
         // Same schema as a database created from scratch
         const fresh = await scratchDb('fresh')
         await migrate({ db: fresh, log: silent })
         expect(await schemaOf(db.database)).toEqual(await schemaOf(fresh.database))
+    })
+
+    it('puts every domain table in a venue, with composite foreign keys', async () => {
+        const db = await scratchDb('venues')
+        await migrate({ db, log: silent })
+        const columns = await query(db.database, `
+            SELECT table_name t, is_nullable n FROM information_schema.columns
+            WHERE table_schema = ? AND column_name = 'venue_id'`, [db.database])
+        const fks = await query(db.database, `
+            SELECT table_name t, constraint_name c, referenced_table_name rt,
+                   GROUP_CONCAT(column_name ORDER BY ordinal_position) cols,
+                   GROUP_CONCAT(referenced_column_name ORDER BY ordinal_position) refs
+            FROM information_schema.key_column_usage
+            WHERE table_schema = ? AND referenced_table_name IS NOT NULL
+            GROUP BY table_name, constraint_name, referenced_table_name`, [db.database])
+        const tables = (await query(db.database,
+            `SELECT table_name t FROM information_schema.tables WHERE table_schema = ?`, [db.database])).map(r => r.t)
+        const venueTables = tables.filter(t => !GLOBAL_TABLES.includes(t))
+
+        expect(columns.map(c => c.t).sort()).toEqual(venueTables.sort())
+        // The list VenueDb guards is the schema's
+        expect([...VENUE_TABLES].sort()).toEqual(venueTables.sort())
+        // NULL is the platform, only where the plan allows it
+        expect(columns.filter(c => c.n === 'YES').map(c => c.t).sort()).toEqual(['audit', 'user_role'])
+        for (const t of venueTables) {
+            expect(fks, t).toContainEqual(expect.objectContaining({ t, rt: 'venues', cols: 'venue_id', refs: 'id' }))
+        }
+        // A reference between two venue tables always carries the venue
+        for (const fk of fks.filter(f => venueTables.includes(f.t) && venueTables.includes(f.rt))) {
+            expect([fk.c, fk.cols.split(',')[0], fk.refs], fk.c).toEqual([fk.c, 'venue_id', 'venue_id,id'])
+        }
+    })
+
+    it('refuses a row pointing to another venue', async () => {
+        const db = await scratchDb('crossvenue')
+        await migrate({ db, log: silent })
+        await query(db.database, `INSERT INTO venues (id, name) VALUES (2, 'Altro')`)
+        await query(db.database, `INSERT INTO events (id, venue_id, name, menu_id) VALUES (10, 1, 'A', 1)`)
+
+        await expect(query(db.database, `INSERT INTO events (venue_id, name, menu_id) VALUES (2, 'B', 1)`))
+            .rejects.toThrow(/foreign key constraint fails/)
+        await expect(query(db.database, `INSERT INTO tables (venue_id, event_id, name) VALUES (2, 10, 'T')`))
+            .rejects.toThrow(/foreign key constraint fails/)
+        await query(db.database, `INSERT INTO tables (venue_id, event_id, name) VALUES (1, 10, 'T')`)
     })
 
     it('does nothing on the second run', async () => {

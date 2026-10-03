@@ -40,8 +40,9 @@ export function mysqlClient({ url, exec = execCommand, image = 'mysql:9' }) {
                        SET @uid = ${Number(row[0])};`
                     : `INSERT INTO users (email, token, creation_date) VALUES (${quote(email)}, ${quote(token)}, NOW());
                        SET @uid = LAST_INSERT_ID();`}
-                INSERT INTO user_role (user_id, role_id)
-                    SELECT @uid, r.id FROM roles r
+                -- Roles of the installation's first venue (1, created by migration 005); superuser is the platform's
+                INSERT INTO user_role (user_id, role_id, venue_id)
+                    SELECT @uid, r.id, IF(r.name = 'superuser', NULL, 1) FROM roles r
                     WHERE r.name IN (${roles})
                       AND NOT EXISTS (SELECT 1 FROM user_role ur WHERE ur.user_id = @uid AND ur.role_id = r.id);
                 COMMIT;`)

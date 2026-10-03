@@ -1,10 +1,11 @@
 import sharp from 'sharp'
-import db from '../db'
 import config, { isFeatureEnabled } from '../config'
 import { FEATURES } from '../features'
 import { isGoogleEnabled } from '../auth/passport'
 import { BadRequestError } from '../http/errors'
 import type { PublicConfig, Settings } from '../../../models/src'
+import venueService, { VenueBrandingRow } from './venue'
+import { VenueContext } from '../venue/context'
 
 
 export const LOGO_SIZES = { '192': 192, '512': 512, 'maskable': 512 } as const
@@ -14,13 +15,7 @@ export type LogoSize = keyof typeof LOGO_SIZES
 const MASKABLE_BACKGROUND = '#EFE5D2'
 const COLOR = /^#[0-9a-fA-F]{6}$/
 
-interface Row {
-    venue_name: string | null
-    primary_color: string | null
-    secondary_color: string | null
-    has_logo: number
-    version: number
-}
+const NO_BRANDING: VenueBrandingRow = { id: 0, name: null, primary_color: null, secondary_color: null, has_logo: 0, version: 0 }
 
 function toColor(value: unknown, field: string): string | null {
     if (value === null || value === undefined || value === '') return null
@@ -30,43 +25,54 @@ function toColor(value: unknown, field: string): string | null {
     return value.toUpperCase()
 }
 
+/**
+ * Branding of the venues: the admin edits the one they work in. Public endpoints (config, manifest, logo) show the
+ * venue of the session, else the installation's only venue, else the platform's defaults.
+ */
 class SettingsService {
-    private async row(): Promise<Row> {
-        const row = await db.queryOne<Row>(`
-            SELECT venue_name, primary_color, secondary_color, logo IS NOT NULL has_logo,
-                UNIX_TIMESTAMP(updated_at) version
-            FROM settings WHERE id = 1`)
-        // The row is created by the migration; an empty one means "all defaults"
-        return row || { venue_name: null, primary_color: null, secondary_color: null, has_logo: 0, version: 0 }
+    private async ownRow(ctx: VenueContext): Promise<VenueBrandingRow> {
+        return (await ctx.db.queryOne<VenueBrandingRow>(`
+            SELECT id, name, primary_color, secondary_color, logo IS NOT NULL has_logo, UNIX_TIMESTAMP(updated_at) version
+            FROM venues WHERE id = :venue`))!
     }
 
-    private venueName(row: Row): string | null {
-        return row.venue_name || config.client.name || null
+    /** The venue whose branding a (possibly anonymous) request sees; undefined = the platform's. */
+    async brandingVenue(sessionVenueId: number | null | undefined): Promise<number | undefined> {
+        return sessionVenueId || venueService.singleActiveVenue()
     }
 
-    /** Versioned, so browsers can cache it forever and still see a new logo. */
-    private logoUrl(row: Row, size: LogoSize): string {
-        return `/api/public/logo/${size}.png?v=${row.version}`
+    private async publicRow(sessionVenueId: number | null | undefined): Promise<VenueBrandingRow> {
+        const venueId = await this.brandingVenue(sessionVenueId)
+        return (venueId && await venueService.branding(venueId)) || NO_BRANDING
     }
 
-    async get(): Promise<Settings> {
-        const { venue_name, primary_color, secondary_color, has_logo } = await this.row()
-        return { venue_name, primary_color, secondary_color, has_logo: !!has_logo }
+    private venueName(row: VenueBrandingRow): string | null {
+        return row.id ? row.name || config.client.name || null : null
     }
 
-    async update(input: Partial<Settings>): Promise<Settings> {
+    /** Versioned and per venue, so browsers can cache it forever and still see a new logo or another venue's. */
+    private logoUrl(row: VenueBrandingRow, size: LogoSize): string {
+        return `/api/public/logo/${size}.png?venue=${row.id}&v=${row.version}`
+    }
+
+    async get(ctx: VenueContext): Promise<Settings> {
+        const { name, primary_color, secondary_color, has_logo } = await this.ownRow(ctx)
+        return { venue_name: name, primary_color, secondary_color, has_logo: !!has_logo }
+    }
+
+    async update(ctx: VenueContext, input: Partial<Settings>): Promise<Settings> {
         const name = typeof input.venue_name === 'string' ? input.venue_name.trim() : ''
         if (name.length > 100) {
             throw new BadRequestError('Nome del locale troppo lungo (massimo 100 caratteri)')
         }
-        await db.execute(
-            'UPDATE settings SET venue_name = ?, primary_color = ?, secondary_color = ? WHERE id = 1',
+        await ctx.db.execute(
+            'UPDATE venues SET name = ?, primary_color = ?, secondary_color = ? WHERE id = :venue',
             [name || null, toColor(input.primary_color, 'primario'), toColor(input.secondary_color, 'secondario')])
-        return this.get()
+        return this.get(ctx)
     }
 
     /** Stores the uploaded image as a 512x512 PNG (transparent margins). */
-    async setLogo(file: Buffer): Promise<void> {
+    async setLogo(ctx: VenueContext, file: Buffer): Promise<void> {
         let png: Buffer
         try {
             png = await sharp(file)
@@ -76,33 +82,40 @@ class SettingsService {
         } catch {
             throw new BadRequestError('Immagine non valida')
         }
-        await db.execute('UPDATE settings SET logo = ? WHERE id = 1', [png])
+        await ctx.db.execute('UPDATE venues SET logo = ? WHERE id = :venue', [png])
     }
 
-    async deleteLogo(): Promise<void> {
-        await db.execute('UPDATE settings SET logo = NULL WHERE id = 1')
+    async deleteLogo(ctx: VenueContext): Promise<void> {
+        await ctx.db.execute('UPDATE venues SET logo = NULL WHERE id = :venue')
     }
 
-    /** The logo as a PNG of the given size, undefined when there is none. */
-    async logo(size: LogoSize): Promise<Buffer | undefined> {
-        const row = await db.queryOne<{ logo: Buffer | null }>('SELECT logo FROM settings WHERE id = 1')
-        if (!row?.logo) return undefined
+    /**
+     * The logo of the venue the request sees, as a PNG of the given size; undefined when there is none, or when the
+     * URL names another venue (`requestedVenue`, the cache key of the URL).
+     */
+    async logo(sessionVenueId: number | null | undefined, size: LogoSize, requestedVenue?: number): Promise<Buffer | undefined> {
+        const venueId = await this.brandingVenue(sessionVenueId)
+        if (!venueId || (requestedVenue !== undefined && requestedVenue !== venueId)) return undefined
+        const logo = await venueService.logo(venueId)
+        if (!logo) return undefined
         if (size === 'maskable') {
             // Android crops maskable icons to a circle: keep the logo inside the central 80%
-            const inner = await sharp(row.logo).resize(410, 410).toBuffer()
+            const inner = await sharp(logo).resize(410, 410).toBuffer()
             return sharp({ create: { width: 512, height: 512, channels: 4, background: MASKABLE_BACKGROUND } })
                 .composite([{ input: inner, gravity: 'center' }])
                 .png()
                 .toBuffer()
         }
-        return LOGO_SIZES[size] === 512 ? row.logo : sharp(row.logo).resize(LOGO_SIZES[size]).png().toBuffer()
+        return LOGO_SIZES[size] === 512 ? logo : sharp(logo).resize(LOGO_SIZES[size]).png().toBuffer()
     }
 
     /** What the client reads at startup: identity, active functions and branding. Public, no session needed. */
-    async publicConfig(): Promise<PublicConfig> {
-        const row = await this.row()
+    async publicConfig(sessionVenueId?: number | null): Promise<PublicConfig> {
+        const row = await this.publicRow(sessionVenueId)
+        // The venue's functions once it is known; Google login is the installation's (it comes before the venue)
+        const venue = row.id ? await venueService.features(row.id) : undefined
         const features = FEATURES.filter(feature =>
-            feature === 'google-login' ? isGoogleEnabled() : isFeatureEnabled(feature))
+            feature === 'google-login' ? isGoogleEnabled() : (venue ? venue.has(feature) : isFeatureEnabled(feature)))
         return {
             name: this.venueName(row),
             slug: config.client.slug || null,
@@ -116,8 +129,8 @@ class SettingsService {
     }
 
     /** Web app manifest with the venue name and logo, so the installed app looks like the venue's. */
-    async manifest() {
-        const row = await this.row()
+    async manifest(sessionVenueId?: number | null) {
+        const row = await this.publicRow(sessionVenueId)
         const name = this.venueName(row)
         const icon = (size: LogoSize, sizes: string, purpose: string) => ({
             src: row.has_logo ? this.logoUrl(row, size) : `/icon-${size === 'maskable' ? 'maskable-512' : size}.png`,

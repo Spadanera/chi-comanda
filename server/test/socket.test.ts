@@ -2,7 +2,7 @@ import { AddressInfo } from 'net'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import request from 'supertest'
 import { io as connect, Socket } from 'socket.io-client'
-import { closeApp, loadApp, loginAs, PASSWORD, resetDatabase, ROLE_USERS, RoleName } from './helpers'
+import { closeApp, loadApp, loginAs, PASSWORD, rawConnection, resetDatabase, ROLE_USERS, RoleName } from './helpers'
 
 let app: any
 let server: any
@@ -103,6 +103,22 @@ describe('socket rooms', () => {
         expect(await join(socket, 'checkout')).toBe(false)
     })
 
+    it('checks the roles held now, not those of the login', async () => {
+        const cookie = await sessionCookie('bartender')
+        const socket = await openSocket(cookie)
+        expect(await join(socket, 'bartender')).toBe(true)
+
+        const conn = await rawConnection()
+        await conn.query('DELETE FROM user_role WHERE user_id = ?', [users.bartender])
+        try {
+            expect(await join(socket, 'waiter')).toBe(false)
+        } finally {
+            await conn.query(`INSERT INTO user_role (user_id, role_id, venue_id) SELECT ?, id, 1 FROM roles WHERE name = 'bartender'`,
+                [users.bartender])
+            await conn.end()
+        }
+    })
+
     it('disconnects the sockets of a session on logout', async () => {
         const cookie = await sessionCookie('checkout')
         const socket = await openSocket(cookie)
@@ -111,6 +127,49 @@ describe('socket rooms', () => {
         const disconnected = nextEvent(socket, 'disconnect')
         await request(app).post('/api/logout').set('Cookie', cookie).expect(200)
         await disconnected
+    })
+})
+
+describe('venues', () => {
+    it('keeps the messages of a venue inside it', async () => {
+        const conn = await rawConnection()
+        await conn.query(`INSERT IGNORE INTO venues (id, name) VALUES (2, 'Secondo')`)
+        await conn.end()
+        const superuserCookie = await sessionCookie('superuser')
+        // Two venues now: the superuser picks the second one
+        await request(app).put('/api/session/venue').set('Cookie', superuserCookie).send({ venueId: 2 }).expect(200)
+
+        const inVenue2 = await openSocket(superuserCookie)
+        expect(await join(inVenue2, 'main')).toBe(true)
+        const inVenue1 = await openSocket(await sessionCookie('checkout'))
+        expect(await join(inVenue1, 'main')).toBe(true)
+        const venue2Received = record(inVenue2, 'broadcast')
+        const venue1Received = nextEvent(inVenue1, 'broadcast')
+
+        const waiter = await loginAs(app, 'waiter')
+        await waiter.post('/api/broadcast').send({ sender: { id: users.waiter }, message: 'ciao' }).expect(200)
+
+        expect(await venue1Received).toMatchObject({ message: 'ciao' })
+        await new Promise(resolve => setTimeout(resolve, 300))
+        expect(venue2Received).toHaveLength(0)
+    })
+
+    it('drops the sockets of a session that switches venue, and of a user whose roles change', async () => {
+        const superuserCookie = await sessionCookie('superuser')
+        await request(app).put('/api/session/venue').set('Cookie', superuserCookie).send({ venueId: 1 }).expect(200)
+        const own = await openSocket(superuserCookie)
+        expect(await join(own, 'main')).toBe(true)
+        const switched = nextEvent(own, 'disconnect')
+        await request(app).put('/api/session/venue').set('Cookie', superuserCookie).send({ venueId: 2 }).expect(200)
+        await switched
+
+        await request(app).put('/api/session/venue').set('Cookie', superuserCookie).send({ venueId: 1 }).expect(200)
+        const bartender = await openSocket(await sessionCookie('bartender'))
+        expect(await join(bartender, 'bartender')).toBe(true)
+        const dropped = nextEvent(bartender, 'disconnect')
+        await request(app).put('/api/users/roles').set('Cookie', superuserCookie)
+            .send({ id: users.bartender, roles: ['bartender', 'waiter'] }).expect(200)
+        await dropped
     })
 })
 

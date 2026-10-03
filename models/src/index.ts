@@ -47,6 +47,9 @@ export interface Invitation extends User {
 
 export interface Audit extends Repository {
   id?: number,
+  /** NULL for platform actions. */
+  venue_id?: number | null,
+  venue_name?: string | null,
   user_id?: number,
   username?: string,
   method?: string,
@@ -186,6 +189,32 @@ export interface User extends Repository {
   avatar?: any
   /** Destination (bar, kitchen...) a bartender serves during an event. */
   destination_id?: number | null
+  /** Session user only: the platform's superuser, allowed in every venue. */
+  superuser?: boolean
+  /** Session user only: venue the user is working in; `roles` are the roles held there. */
+  venueId?: number | null
+  /** Session user only: venues the user can enter. */
+  venues?: UserVenue[]
+  /** Session user only: functions active in the active venue. */
+  features?: Feature[]
+}
+
+/** A venue as the platform's superuser manages it. */
+export interface VenueSummary {
+  id: number
+  name: string
+  status: 'ACTIVE' | 'DISABLED'
+  /** `null` = every function of the installation. */
+  features: Feature[] | null
+  /** People holding a role there. */
+  members: number
+}
+
+/** A venue as seen by a user who can enter it. */
+export interface UserVenue {
+  id: number
+  name: string
+  roles: string[]
 }
 
 export interface Role extends Repository {

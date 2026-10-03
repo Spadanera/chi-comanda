@@ -79,14 +79,15 @@ describe('order prices are decided by the server', () => {
         expect((await order([{ name: 'Sconto furbo', price: -10, destination_id: 1 }])).status).toBe(400)
         expect((await order([{ name: 'Senza prezzo', destination_id: 1 }])).status).toBe(400)
         expect((await order([{ name: '   ', price: 2, destination_id: 1 }])).status).toBe(400)
-        expect((await order([{ name: 'Destinazione inventata', price: 2, destination_id: 999 }])).status).toBe(400)
+        // An id that is not the venue's is missing, as another venue's would be
+        expect((await order([{ name: 'Destinazione inventata', price: 2, destination_id: 999 }])).status).toBe(404)
     })
 
     it('rejects unknown, unavailable or other-menu products without creating anything', async () => {
         const [{ tables: before }] = await query('SELECT COUNT(*) tables FROM tables')
 
         const unknown = await order([fromMenu(beer), fromMenu({ ...beer, id: 999999 })])
-        expect(unknown.status).toBe(400)
+        expect(unknown.status).toBe(404)
 
         await query('UPDATE master_items SET available = FALSE WHERE id = ?', [cocktail.id])
         const unavailable = await order([fromMenu(cocktail)])

@@ -55,9 +55,10 @@ export const requireRole = (...roles: Roles[]) => (req: Request, _res: Response,
     next(hasAnyRole(req.user as User, roles) ? undefined : new ForbiddenError())
 }
 
-/** Routes of a function switched off on this installation don't exist: 404. */
-export const requireFeature = (feature: Feature) => (_req: Request, _res: Response, next: NextFunction) => {
-    next(isFeatureEnabled(feature) ? undefined : new NotFoundError())
+/** Routes of a function switched off in the venue (or on the whole installation) don't exist: 404. */
+export const requireFeature = (feature: Feature) => (req: Request, _res: Response, next: NextFunction) => {
+    const on = req.venueContext ? req.venueContext.features.has(feature) : isFeatureEnabled(feature)
+    next(on ? undefined : new NotFoundError())
 }
 
 export const requireAuthentication = (req: Request, _res: Response, next: NextFunction) => {
@@ -68,9 +69,12 @@ export const requireAuthentication = (req: Request, _res: Response, next: NextFu
 export const auditMiddleware = (req: Request, _res: Response, next: NextFunction) => {
     if (req.isAuthenticated() && ['POST', 'PUT', 'DELETE'].includes(req.method)) {
         auditService.insert({
+            // NULL: a platform action, outside any venue
+            venue_id: req.venueContext?.venueId ?? null,
             user_id: (req.user as User).id,
             method: req.method,
-            path: req.path,
+            // Relative to /api wherever the middleware is mounted
+            path: `${req.baseUrl}${req.path}`.replace(/^\/api/, ''),
             data: req.body,
         })
     }
