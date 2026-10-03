@@ -18,6 +18,8 @@ const config = {
         password: dbEnv('MYSQL_PASSWORD'),
         database: dbEnv('MYSQL_DATABASE'),
     },
+    /** Fills a freshly created database with demo rooms, tables and products. Local development and tests only. */
+    demoSeed: env.DEMO_SEED === 'true',
     google: {
         clientId: env.GOOGLE_CLIENT_ID || '',
         clientSecret: env.GOOGLE_CLIENT_SECRET || '',

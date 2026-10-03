@@ -9,7 +9,7 @@
     "start": "node dist/index.js",
     "version": "tsc -v",
     "test": "vitest run",
-    "test:db": "docker run -d --rm --name chicomanda-test-db -e MYSQL_DATABASE=railway -e MYSQL_USER=user -e MYSQL_PASSWORD=password -e MYSQL_ROOT_PASSWORD=password -p 3317:3306 -v \"$PWD/../init.sql:/docker-entrypoint-initdb.d/init.sql:ro\" mysql:8",
+    "test:db": "docker run -d --rm --name chicomanda-test-db -e MYSQL_DATABASE=railway -e MYSQL_USER=user -e MYSQL_PASSWORD=password -e MYSQL_ROOT_PASSWORD=password -p 3317:3306 mysql:9",
     "typecheck": "tsc -b ../models && tsc --noEmit -p ."
   },
   "keywords": [],

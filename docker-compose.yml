@@ -23,8 +23,10 @@ services:
       - ./server:/app
       - /app/node_modules
       - ./models:/models
-    depends_on: 
-      - server-database
+    depends_on:
+      server-database:
+        # Migrations run at startup: the server exits if MySQL is not accepting connections yet
+        condition: service_healthy
     environment:
       MYSQL_HOST: 'server-database'
       MYSQL_DATABASE: 'railway'
@@ -41,24 +43,27 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
       SECRET: 'pippopluto'
+      DEMO_SEED: 'true'
       PORT: 3000
     networks:
       - proxy_net
     command: npm run dev
     
   server-database:
-    image: mysql
+    image: mysql:9
     ports:
       - 3306:3306
     volumes:
       - ./db:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
       MYSQL_DATABASE: 'railway'
       MYSQL_USER: 'user'
       MYSQL_PASSWORD: 'password'
       MYSQL_ROOT_PASSWORD: 'password'
-      SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-uuser', '-ppassword']
+      interval: 5s
+      retries: 30
     networks:
       - proxy_net
       

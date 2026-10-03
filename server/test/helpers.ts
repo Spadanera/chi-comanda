@@ -39,7 +39,7 @@ const VOLATILE_TABLES = [
     'tables', 'tables_history', 'master_tables_event', 'user_event', 'events',
 ]
 
-/** Wipes runtime data and (re)creates one active user per role. Seed data from init.sql is kept. */
+/** Wipes runtime data and (re)creates one active user per role. Baseline and demo seed data are kept. */
 export async function resetDatabase(): Promise<Record<RoleName, number>> {
     const conn = await rawConnection()
     try {
