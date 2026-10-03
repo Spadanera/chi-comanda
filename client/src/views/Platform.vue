@@ -124,7 +124,8 @@ onMounted(load)
         <v-dialog v-model="dialog" max-width="500">
             <v-card :title="editing ? 'Modifica locale' : 'Nuovo locale'">
                 <v-card-text>
-                    <v-form ref="form">
+                    <!-- Enter saves, like SALVA (without .prevent the browser would reload the page) -->
+                    <v-form ref="form" @submit.prevent="save()">
                         <v-text-field v-model="name" label="Nome" :rules="[requiredRule]" counter="100"></v-text-field>
                         <!-- Pick an existing account, or type the e-mail of a new person -->
                         <v-combobox v-if="!editing" v-model="adminEmail" :items="adminItems" :return-object="false"
