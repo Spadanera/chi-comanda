@@ -4,6 +4,7 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20'
 import config from '../config'
 import { User } from '../../../models/src'
 import userService from '../services/user'
+import { UnauthorizedError } from '../http/errors'
 
 export const isGoogleEnabled = () => !!(config.google.clientId && config.google.clientSecret)
 
@@ -12,7 +13,12 @@ export function configurePassport() {
         try {
             done(null, await userService.getByEmailAndPassword(email, password))
         } catch (e: any) {
-            done(null, false, { message: e.message })
+            // Wrong credentials are a failed login; anything else (e.g. database down) is an error
+            if (e instanceof UnauthorizedError) {
+                done(null, false, { message: e.message })
+            } else {
+                done(e)
+            }
         }
     }))
 

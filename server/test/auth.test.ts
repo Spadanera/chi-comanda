@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import request from 'supertest'
 import { closeApp, loadApp, loginAs, PASSWORD, resetDatabase, ROLE_USERS } from './helpers'
 
@@ -22,6 +22,15 @@ describe('authentication', () => {
     it('rejects invalid credentials', async () => {
         const res = await request(app).post('/api/login').send({ email: ROLE_USERS.admin, password: 'wrong' })
         expect(res.status).toBeGreaterThanOrEqual(400)
+    })
+
+    it('does not report a database failure as wrong credentials', async () => {
+        const { default: db } = await import('../src/db')
+        const spy = vi.spyOn(db, 'queryOne').mockRejectedValueOnce(Object.assign(new Error('connect ETIMEDOUT'), { code: 'ETIMEDOUT' }))
+        const res = await request(app).post('/api/login').send({ email: ROLE_USERS.admin, password: PASSWORD })
+        spy.mockRestore()
+        expect(res.status).toBe(500)
+        expect(res.body).toEqual({ message: 'Internal server error' })
     })
 
     it('reports authentication state', async () => {
