@@ -16,7 +16,15 @@ function readVersion(): string {
     }
 }
 
+/**
+ * A deployed installation (not local development): strict session cookie and required configuration.
+ * Railway sets RAILWAY_ENVIRONMENT on every deploy, so NODE_ENV doesn't need to be set there (as a build-time
+ * variable it would also make `npm install` skip the devDependencies the build needs).
+ */
+const deployed = env.NODE_ENV === 'production' || !!env.RAILWAY_ENVIRONMENT
+
 const config = {
+    deployed,
     app: {
         version: readVersion(),
         /** Set by Railway on every deploy. */
@@ -68,7 +76,20 @@ const config = {
     },
 }
 
-if (!config.sessionSecret) {
+/** Configuration problems that must stop a deployed installation from starting. */
+export function configErrors(c: { deployed: boolean, sessionSecret: string, baseUrl: string }): string[] {
+    if (!c.deployed) return []
+    const errors: string[] = []
+    if (!c.sessionSecret) errors.push('SECRET is not set: sessions and payment callbacks would not be secure')
+    if (!c.baseUrl) {
+        errors.push('BASE_URL is not set: links in e-mails and the Google login callback would be wrong')
+    } else if (!/^https?:\/\/[^/]+/.test(c.baseUrl)) {
+        errors.push(`BASE_URL is not a URL: ${c.baseUrl}`)
+    }
+    return errors
+}
+
+if (!config.deployed && !config.sessionSecret) {
     console.warn('SECRET is not set: sessions and payment callbacks are not secure')
 }
 
