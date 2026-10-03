@@ -14,7 +14,7 @@ declare module 'vue-router' {
   }
 }
 
-const publicRoutes = ['Login', 'Reset', 'Invitation', 'AskReset', 'Landing']
+const publicRoutes = ['Login', 'Reset', 'Invitation', 'AskReset']
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -24,11 +24,6 @@ const router = createRouter({
       name: 'Home',
       component: Home,
       props: true
-    },
-    {
-      path: '/landing',
-      name: 'Landing',
-      component: () => import('@/views/Landing.vue'),
     },
     {
       path: '/login',
