@@ -263,6 +263,8 @@ export interface PublicConfig {
   /** URL of the venue logo; null = the Chi Comanda logo. */
   logo: string | null
   colors: { primary: string | null, secondary: string | null }
+  /** Browser error reporting; null when SENTRY_CLIENT_DSN is not set. */
+  sentry: { dsn: string, environment: string, release: string } | null
 }
 
 /** Branding the admin changes from the interface. null = default. */

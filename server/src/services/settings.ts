@@ -109,6 +109,9 @@ class SettingsService {
             features,
             logo: row.has_logo ? this.logoUrl(row, '512') : null,
             colors: { primary: row.primary_color, secondary: row.secondary_color },
+            sentry: config.sentry.clientDsn
+                ? { dsn: config.sentry.clientDsn, environment: config.app.environment, release: config.app.version }
+                : null,
         }
     }
 

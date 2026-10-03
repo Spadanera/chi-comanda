@@ -8,7 +8,8 @@ import { createServer } from 'http'
 import config from './config'
 import { configurePassport } from './auth/passport'
 import apiRouter, { publicRouter } from './routes'
-import { errorMiddleware } from './http/middleware'
+import { asyncHandler, errorMiddleware } from './http/middleware'
+import { checkHealth } from './services/health'
 import { initializeSocket } from './socket'
 
 const MySQLStore = MySQLStoreFactory(session as any)
@@ -18,6 +19,12 @@ const sessionStore = new MySQLStore({ ...config.db, createDatabaseTable: false }
 configurePassport()
 
 const app = express()
+
+// Before the session middleware: healthchecks must not create a session each
+app.get('/api/health', asyncHandler(async (_req, res) => {
+    const health = await checkHealth()
+    res.set('Cache-Control', 'no-store').status(health.status === 'ok' ? 200 : 503).json(health)
+}))
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))

@@ -17,6 +17,7 @@ export const appConfig = ref<PublicConfig>({
     features: ALL_FEATURES,
     logo: null,
     colors: { primary: null, secondary: null },
+    sentry: null,
 })
 
 /** Name shown in the app bar, the title and the login page. */

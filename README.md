@@ -55,6 +55,10 @@ branch: differences between clients are configuration only, never code that chec
 | `CLIENT_SLUG` | Short id of the installation (e.g. `libra`, as in `libra.chicomanda.com`) |
 | `FEATURES` | Comma separated list of the active functions: `payments`, `push`, `google-login`, `broadcast`, `minimum-consumption`, `premium`. **Unset = all on**; empty = all off; an unknown name stops the startup |
 
+| `SENTRY_DSN` | Optional: server errors (5xx, failed startup) go to Sentry, tagged with the client |
+| `SENTRY_CLIENT_DSN` | Optional: browser errors, sent to the client through `/api/public/config` (one build for every client) |
+| `SENTRY_ENVIRONMENT` | Optional, defaults to Railway's environment name |
+
 A switched-off function disappears from the interface and its API routes answer 404. A customisation wanted by one
 client is added as a new function in `server/src/features.ts` (and `Feature` in `models/src`), switched on by
 `FEATURES`.
@@ -62,6 +66,12 @@ client is added as a new function in `server/src/features.ts` (and `Feature` in 
 Name, logo and theme colours are changed by the admin from *Amministrazione → Impostazioni* (`settings` table). The
 client reads everything at startup from `GET /api/public/config`; the web app manifest
 (`/api/public/manifest.webmanifest`) carries the venue name and logo, so the installed app looks like the venue's.
+
+## Health check
+
+`GET /api/health` answers 200 with the version, the commit, the client and the last migration applied, or 503 when the
+database is unreachable. It is the healthcheck path in `railway.json`: Railway moves traffic to a new deploy only once
+it answers 200, so a release whose migrations fail never replaces the running one.
 
 ## Database migrations
 

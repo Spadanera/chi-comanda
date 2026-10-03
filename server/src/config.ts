@@ -1,3 +1,5 @@
+import fs from 'fs'
+import path from 'path'
 import { Feature, parseFeatures } from './features'
 
 const env = process.env
@@ -5,7 +7,27 @@ const env = process.env
 const useStaging = env.MYSQL_ENV === 'STG'
 const dbEnv = (name: string) => env[useStaging ? `${name}_STG` : name]
 
+/** Version of the release, from the root package.json (`npm version` bumps it). */
+function readVersion(): string {
+    try {
+        return JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../package.json'), 'utf8')).version
+    } catch {
+        return 'unknown'
+    }
+}
+
 const config = {
+    app: {
+        version: readVersion(),
+        /** Set by Railway on every deploy. */
+        commit: (env.RAILWAY_GIT_COMMIT_SHA || '').slice(0, 7),
+        environment: env.SENTRY_ENVIRONMENT || env.RAILWAY_ENVIRONMENT_NAME || env.NODE_ENV || 'development',
+    },
+    /** Error reporting, off unless the DSNs are set. The client one is sent to the browser via /api/public/config. */
+    sentry: {
+        dsn: env.SENTRY_DSN || '',
+        clientDsn: env.SENTRY_CLIENT_DSN || '',
+    },
     /** Identity of the installation: one deploy per client, all from the same code. */
     client: {
         name: env.CLIENT_NAME || '',

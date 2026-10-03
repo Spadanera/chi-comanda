@@ -1,14 +1,7 @@
 {
-    "build": {
-      "commands": [
-        "npm run build",
-        "ln -s server/dist/static public"
-      ]
-    },
-    "start": {
-      "commands": [
-        "cd server",
-        "node dist/index.js"
-      ]
-    }
+  "$schema": "https://railway.com/railway.schema.json",
+  "deploy": {
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 120
   }
+}
