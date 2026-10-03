@@ -29,10 +29,14 @@ function fakeRailway(state) {
         environmentConfig: async () => structuredClone(state.config),
         variables: async service => ({ ...(state.variables[service] || {}) }),
         setVariable: async (service, key, value) => { write('setVariable', service, key); state.variables[service][key] = value },
-        setServiceConfig: async (service, dotPath, value) => {
-            write('setServiceConfig', service, dotPath, value)
-            const id = state.services.find(s => s.name === service).id
-            state.config.services[id].deploy.sleepApplication = value
+        environmentId: async name => { assert.equal(name, 'production'); return 'env-prod' },
+        sleepEnabled: async (serviceId, environmentId) => {
+            assert.equal(environmentId, 'env-prod')
+            return state.config.services[serviceId].deploy.sleepApplication !== false
+        },
+        disableSleep: async (serviceId, environmentId) => {
+            write('disableSleep', serviceId, environmentId)
+            state.config.services[serviceId].deploy.sleepApplication = false
         },
         redeploy: async service => write('redeploy', service),
         domains: async () => state.domains,

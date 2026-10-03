@@ -58,8 +58,21 @@ export function railwayCli({ cwd, exec = execCommand }) {
         },
         setVariable: (service, key, value) =>
             run(['variable', 'set', key, '--stdin', '--service', service, '--skip-deploys'], { input: value }),
-        setServiceConfig: (service, dotPath, value) =>
-            run(['environment', 'edit', '--service-config', service, dotPath, String(value), '--message', `new-client: ${dotPath}`, '--json']),
+        /** Id of an environment of the linked project, by name. */
+        environmentId: async name => {
+            const status = await json(['status'])
+            const found = (status.environments?.edges || []).map(e => e.node).find(e => e.name === name)
+            if (!found) throw new Error(`Environment ${name} not found in project ${status.name}`)
+            return found.id
+        },
+        // Through the GraphQL API: `environment edit --service-config <svc> deploy.sleepApplication false` answers
+        // "No changes to apply" (CLI 5.62) and leaves App Sleeping on
+        sleepEnabled: async (serviceId, environmentId) => parseJson(await run(['api',
+            'query($s: String!, $e: String!) { serviceInstance(serviceId: $s, environmentId: $e) { sleepApplication } }',
+            '--raw-var', `s=${serviceId}`, '--raw-var', `e=${environmentId}`, '--compact']), 'api').data.serviceInstance.sleepApplication !== false,
+        disableSleep: (serviceId, environmentId) => run(['api',
+            'mutation($s: String!, $e: String!) { serviceInstanceUpdate(serviceId: $s, environmentId: $e, input: { sleepApplication: false }) }',
+            '--raw-var', `s=${serviceId}`, '--raw-var', `e=${environmentId}`]),
         redeploy: service => run(['service', 'redeploy', '--service', service, '--yes']),
         domains: async service => (await json(['domain', 'list', '--service', service], 'domain list')).domains || [],
         addDomain: (service, domain, port) => json(['domain', domain, '--service', service, '--port', String(port)], 'domain'),

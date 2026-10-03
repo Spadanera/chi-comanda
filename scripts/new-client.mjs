@@ -116,7 +116,7 @@ export async function newClient(options, deps) {
     } else log(`✓ service ${o.appService} exists`)
     if (!o.dryRun) services = await railway.services()
 
-    let config = await railway.environmentConfig()
+    const config = await railway.environmentConfig()
     const serviceConfig = name => config.services?.[find(name)?.id] || {}
     const source = serviceConfig(o.appService).source
     if (find(o.appService) && source && (source.repo !== o.repo || source.branch !== o.branch)) {
@@ -162,10 +162,11 @@ export async function newClient(options, deps) {
     }
 
     // ── MySQL serverless (App Sleeping) off: a sleeping database didn't wake up on staging ──
-    if (!o.dryRun) config = await railway.environmentConfig()
+    const environmentId = await railway.environmentId('production')
     for (const name of [o.mysqlService, o.appService]) {
-        if (serviceConfig(name).deploy?.sleepApplication !== false) {
-            await change(`turn off App Sleeping on ${name}`, () => railway.setServiceConfig(name, 'deploy.sleepApplication', false))
+        const service = find(name)
+        if (!service || await railway.sleepEnabled(service.id, environmentId)) {
+            await change(`turn off App Sleeping on ${name}`, () => railway.disableSleep(service.id, environmentId))
         }
     }
 
