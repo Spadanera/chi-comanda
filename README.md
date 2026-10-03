@@ -46,6 +46,8 @@ npm test
 
 ## Per-installation configuration
 
+Creating a client, releasing, backups and moving a client to another domain: see [DEPLOY.md](DEPLOY.md).
+
 Every client has its own installation (Railway project, app and MySQL), all deployed from the same code and the same
 branch: differences between clients are configuration only, never code that checks the client's name.
 

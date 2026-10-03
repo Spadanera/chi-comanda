@@ -85,21 +85,35 @@ class UserService {
         return db.transaction(tx => assignRoles(tx, user.id!, user.roles || []))
     }
 
-    private async emailExists(email: string): Promise<boolean> {
-        // Pending invitations (status NULL) don't count, so an expired invitation can be sent again
-        return !!(await db.queryOne(`SELECT id FROM users WHERE email = ? AND status != 'DELETED'`, [email]))
+    /**
+     * Non-deleted user with this e-mail, including pending invitations (status NULL).
+     * Activated accounts win over pending invitations, should both exist.
+     */
+    private findByEmail(email: string): Promise<User | undefined> {
+        return db.queryOne<User>(`
+            SELECT id, status FROM users
+            WHERE email = ? AND IFNULL(status, '') != 'DELETED'
+            ORDER BY status IS NULL, id
+            LIMIT 1`, [email])
     }
 
+    /** Invites a new e-mail, or re-sends a pending invitation with a fresh token and the given roles. */
     async inviteUser(user: User): Promise<void> {
         if (!user?.email) {
             throw new BadRequestError('Email mancante')
         }
-        if (await this.emailExists(user.email)) {
+        const existing = await this.findByEmail(user.email)
+        if (existing && existing.status != null) {
             throw new BadRequestError('Utente già esistente')
         }
         const token = uuidv4()
         await db.transaction(async tx => {
-            const userId = await tx.insert('INSERT INTO users (email, token, creation_date) VALUES (?,?,?)', [user.email, token, nowInItaly()])
+            let userId = existing?.id
+            if (userId) {
+                await tx.execute('UPDATE users SET token = ?, creation_date = ? WHERE id = ?', [token, nowInItaly(), userId])
+            } else {
+                userId = await tx.insert('INSERT INTO users (email, token, creation_date) VALUES (?,?,?)', [user.email, token, nowInItaly()])
+            }
             await assignRoles(tx, userId, user.roles || [])
         })
         await sendEmail({
@@ -148,11 +162,11 @@ class UserService {
             return this.getSessionUser(linked.id!)
         }
 
-        // Existing account with the same e-mail: link it to Google and refresh the avatar
-        const existing = await db.queryOne<User>(`SELECT id FROM users WHERE email = ? AND status != 'DELETED'`, [email])
+        // Existing account or pending invitation with the same e-mail: link it to Google and refresh the avatar
+        const existing = await this.findByEmail(email)
         if (existing) {
             await db.execute(`
-                UPDATE users SET googleId = ?, username = COALESCE(username, ?), avatar = ?, status = 'ACTIVE', last_login_date = ?
+                UPDATE users SET googleId = ?, username = COALESCE(username, ?), avatar = ?, status = 'ACTIVE', token = NULL, last_login_date = ?
                 WHERE id = ?`, [googleId, displayName, avatar, nowInItaly(), existing.id])
             return this.getSessionUser(existing.id!)
         }
@@ -166,7 +180,9 @@ class UserService {
 
     /** Always succeeds, so the endpoint can't be used to discover registered e-mails. */
     async askResetPassword(email: string | undefined): Promise<void> {
-        if (!email || !(await this.emailExists(email))) {
+        // Pending invitations get no reset link: they have to accept the invitation first
+        const user = email && await this.findByEmail(email)
+        if (!user || user.status == null) {
             return
         }
         const token = uuidv4()
