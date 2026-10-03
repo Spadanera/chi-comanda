@@ -58,7 +58,7 @@ branch: differences between clients are configuration only, never code that chec
 | `FEATURES` | Comma separated list of the functions the installation offers: `payments`, `push`, `google-login`, `broadcast`, `minimum-consumption`, `premium`. **Unset = all on**; empty = all off; an unknown name stops the startup. Each venue can switch some off (below) |
 
 | `SENTRY_DSN` | Optional: server errors (5xx, failed startup) go to Sentry, tagged with the client |
-| `SENTRY_CLIENT_DSN` | Optional: browser errors, sent to the client through `/api/public/config` (one build for every client) |
+| `SENTRY_CLIENT_DSN` | Optional: browser errors, sent to the client through `/api/public/config` (one build for every client). Network errors and 4xx answers are not sent (`client/src/services/monitoring.ts`) |
 | `SENTRY_ENVIRONMENT` | Optional, defaults to Railway's environment name |
 
 A switched-off function disappears from the interface and its API routes answer 404. A customisation wanted by one
@@ -100,7 +100,7 @@ http. Locally the cookie is not `Secure`, so the app works on `http://localhost`
 ## Health check
 
 `GET /api/health` answers 200 with the version, the commit, the client and the last migration applied, or 503 when the
-database is unreachable. It is the healthcheck path in `railway.json`: Railway moves traffic to a new deploy only once
+database is unreachable or doesn't answer within 3 seconds (a sleeping MySQL hangs rather than refusing). It is the healthcheck path in `railway.json`: Railway moves traffic to a new deploy only once
 it answers 200, so a release whose migrations fail never replaces the running one.
 
 ## Unstable networks

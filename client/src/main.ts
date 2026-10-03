@@ -12,6 +12,7 @@ import '@mdi/font/css/materialdesignicons.css'
 import '@fontsource/federo/400.css'
 import { light, dark, applyBrandColors } from './plugins/theme'
 import { appConfig, loadConfig } from './composables/useConfig'
+import { dropExpectedErrors } from './services/monitoring'
 import { aliases, decoIconSet } from './plugins/icons'
 import Confirm from './components/Confirm.vue'
 import NoEvent from './components/NoEvent.vue'
@@ -63,6 +64,7 @@ async function bootstrap() {
             app, dsn: sentry.dsn, environment: sentry.environment, release: sentry.release,
             // Sentry 11 collects user data by default: opt out explicitly
             dataCollection: { userInfo: false, cookies: false, httpHeaders: false, httpBodies: [], urlQueryParams: false },
+            beforeSend: dropExpectedErrors,
         })
         Sentry.setTag('client', slug || name || 'unknown')
     }
