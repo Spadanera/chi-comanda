@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { auditMiddleware, requireAuthentication, requireRole, Roles } from '../http/middleware'
+import { auditMiddleware, requireAuthentication, requireFeature, requireRole, Roles } from '../http/middleware'
 import authRouter from './auth-router'
 import publicRouter from './public'
 import usersRouter, { userAvatarRouter } from './users'
@@ -15,6 +15,7 @@ import profileRouter from './profile'
 import broadcastRouter from './broadcast'
 import paymentsRouter from './payments'
 import pushRouter from './push'
+import settingsRouter from './settings'
 
 /** Everything under /api. */
 const apiRouter = Router()
@@ -37,9 +38,10 @@ apiRouter.use('/subtypes', subTypesRouter)
 apiRouter.use('/master-tables', masterTablesRouter)
 apiRouter.use('/audit', requireRole(Roles.superuser), auditRouter)
 apiRouter.use('/profile', profileRouter)
-apiRouter.use('/broadcast', broadcastRouter)
-apiRouter.use('/payment', paymentsRouter)
-apiRouter.use('/push', pushRouter)
+apiRouter.use('/broadcast', requireFeature('broadcast'), broadcastRouter)
+apiRouter.use('/payment', requireFeature('payments'), paymentsRouter)
+apiRouter.use('/push', requireFeature('push'), pushRouter)
+apiRouter.use('/settings', requireRole(Roles.admin), settingsRouter)
 
 export { publicRouter }
 export default apiRouter

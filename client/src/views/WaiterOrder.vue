@@ -8,6 +8,7 @@ import { groupItems, copy, sortItem } from "@/services/utils"
 import { useRoute } from 'vue-router'
 import { requiredRule } from "@/services/utils"
 import ItemList from "@/components/ItemList.vue"
+import { useFeature } from "@/composables/useConfig"
 
 const route = useRoute()
 const origin = route.query.origin ? `${route.query.origin}` : '/waiter'
@@ -24,6 +25,8 @@ const inputs = ref([])
 const emit = defineEmits(['login', 'reload'])
 
 const props = defineProps(['event_id', 'table_id', 'master_table_id', 'menu_id', 'event'])
+const premiumEnabled = useFeature('premium')
+const minimumEnabled = useFeature('minimum-consumption')
 
 const open = ref(null)
 const loading = ref<boolean>(true)
@@ -210,10 +213,10 @@ onMounted(async () => {
                 {{ item.name }}
               </v-list-item-title>
               <template v-slot:append>
-                <v-btn icon="mdi-star-circle" v-if="item.sub_type === 'Cocktail'" variant="text"
+                <v-btn icon="mdi-star-circle" v-if="premiumEnabled && item.sub_type === 'Cocktail'" variant="text"
                   @click="openNoteDialog(item, true)"></v-btn>
                 <v-btn icon="mdi-pencil" variant="text" @click="openNoteDialog(item, false)"></v-btn>
-                <v-btn v-if="item.price < event.minimumConsumptionPrice" icon="mdi-cash" variant="text"
+                <v-btn v-if="minimumEnabled && item.price < event.minimumConsumptionPrice" icon="mdi-cash" variant="text"
                   @click="addItemToOrder(item, true)"></v-btn>
                 <v-btn icon="mdi-plus" variant="text" @click="addItemToOrder(item)"></v-btn>
               </template>
@@ -238,10 +241,10 @@ onMounted(async () => {
               {{ item.sub_type }}
             </v-list-item-subtitle>
             <template v-slot:append>
-              <v-btn icon="mdi-star-circle" v-if="item.sub_type === 'Cocktail'" variant="text"
+              <v-btn icon="mdi-star-circle" v-if="premiumEnabled && item.sub_type === 'Cocktail'" variant="text"
                 @click="openNoteDialog(item, true)"></v-btn>
               <v-btn icon="mdi-pencil" variant="text" @click="openNoteDialog(item, false)"></v-btn>
-              <v-btn v-if="item.price < event.minimumConsumptionPrice" icon="mdi-cash" variant="text"
+              <v-btn v-if="minimumEnabled && item.price < event.minimumConsumptionPrice" icon="mdi-cash" variant="text"
                   @click="addItemToOrder(item, true)"></v-btn>
               <v-btn icon="mdi-plus" variant="text" @click="addItemToOrder(item)"></v-btn>
             </template>
@@ -336,7 +339,7 @@ onMounted(async () => {
           </v-col>
         </v-row>
         <v-row dense>
-          <v-switch label="Consumazione Minima" color="success" v-if="dialogItem.price < event.minimumConsumptionPrice"
+          <v-switch label="Consumazione Minima" color="success" v-if="minimumEnabled && dialogItem.price < event.minimumConsumptionPrice"
             v-model="dialogItem.setMinimum"></v-switch>
         </v-row>
       </v-card-text>

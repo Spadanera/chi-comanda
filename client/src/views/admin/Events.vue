@@ -6,8 +6,10 @@ import { SnackbarStore } from '@/stores'
 import { requiredRule, copy, Roles } from "@/services/utils"
 import EventList from "@/components/EventList.vue"
 import Avatar from "@/components/Avatar.vue"
+import { useFeature } from "@/composables/useConfig"
 
 const props = defineProps(['event'])
+const minimumEnabled = useFeature('minimum-consumption')
 
 const menuStart = ref(false)
 const menuEnd = ref(false)
@@ -67,7 +69,7 @@ async function openDialog(event?: Event) {
     dialogEvent.value = {
       name: 'Serata Standard',
       date: new Date(),
-      minimumConsumptionPrice: 5
+      minimumConsumptionPrice: minimumEnabled.value ? 5 : undefined
     } as EventType
   }
 
@@ -224,7 +226,7 @@ onMounted(async () => {
             :label="`Destinazione di ${bartender.username}`" :items="destinations" v-model="bartender.destination_id"
             item-value="id" item-title="name" :rules="[requiredRule]" prepend-inner-icon="mdi-glass-cocktail"
             hint="Riceverà le notifiche degli ordini per questa destinazione" persistent-hint class="mb-2"></v-select>
-          <v-text-field v-model="dialogEvent.minimumConsumptionPrice" :disabled="!!dialogEvent.id && dialogEvent.status === 'ONGOING'"
+          <v-text-field v-if="minimumEnabled" v-model="dialogEvent.minimumConsumptionPrice" :disabled="!!dialogEvent.id && dialogEvent.status === 'ONGOING'"
             :readonly="!!dialogEvent.id && dialogEvent.status === 'ONGOING'" label="Prezzo Consumazione Minima"
             :clearable="dialogEvent.status !== 'ONGOING'" type="number" append-inner-icon="mdi-currency-eur"></v-text-field>
           <v-date-picker hide-header locale="it" :disabled="!!dialogEvent.id && dialogEvent.status === 'ONGOING'"

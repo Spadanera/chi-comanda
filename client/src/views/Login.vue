@@ -4,6 +4,9 @@ import api from '@/services/client'
 import { RouterLink } from 'vue-router'
 import { requiredRule, emailRule } from '@/services/utils';
 import Logo from '@/components/Logo.vue';
+import { useFeature } from '@/composables/useConfig'
+
+const googleLogin = useFeature('google-login')
 
 const form = ref(null)
 
@@ -47,8 +50,9 @@ async function login() {
             </v-card-text>
             <v-card-actions class="flex-column gap-2 pa-4">
               <v-btn class="mt-2" type="submit" @click="login" block>ACCEDI</v-btn>
-              <v-divider class="my-2 w-100"></v-divider>
+              <v-divider v-if="googleLogin" class="my-2 w-100"></v-divider>
               <v-btn
+                v-if="googleLogin"
                 block
                 variant="outlined"
                 prepend-icon="mdi-google"

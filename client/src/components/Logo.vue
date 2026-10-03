@@ -2,15 +2,20 @@
 import { ThemeStore } from '@/stores'
 import logoLight from '@/assets/logo/maitre-light.svg'
 import logoDark from '@/assets/logo/maitre-dark.svg'
+import { computed } from 'vue'
+import { appConfig, DEFAULT_NAME, venueName } from '@/composables/useConfig'
 
-withDefaults(defineProps<{ size?: number }>(), { size: 200 })
+/** `product`: always Chi Comanda (the landing page), otherwise the venue's name and logo. */
+const props = withDefaults(defineProps<{ size?: number, product?: boolean }>(), { size: 200, product: false })
 const themeStore = ThemeStore()
+const name = computed(() => props.product ? DEFAULT_NAME : venueName.value)
+const logo = computed(() => (!props.product && appConfig.value.logo) || (themeStore.theme === 'dark' ? logoDark : logoLight))
 </script>
 
 <template>
     <div class="brand-lockup">
-        <img alt="" :src="themeStore.theme === 'dark' ? logoDark : logoLight" :width="size" :height="size" />
-        <span class="brand-wordmark">Chi Comanda</span>
+        <img alt="" :src="logo" :width="size" :height="size" />
+        <span class="brand-wordmark">{{ name }}</span>
         <span class="brand-rule" aria-hidden="true"><span></span></span>
     </div>
 </template>

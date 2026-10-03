@@ -2,9 +2,11 @@
 import { ref } from 'vue'
 import api from '@/services/client'
 import Logo from '@/components/Logo.vue'
+import { useFeature } from '@/composables/useConfig'
 import { requiredRule, passwordMatchRule } from '@/services/utils';
 
 const props = defineProps(['token'])
+const googleLogin = useFeature('google-login')
 const form = ref(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const files = ref()
@@ -48,12 +50,13 @@ async function accept() {
             <v-card-text style="text-align: center;">
               <Logo></Logo>
 
-              <p class="text-body-2 text-medium-emphasis mb-4">
+              <p v-if="googleLogin" class="text-body-2 text-medium-emphasis mb-4">
                 Scegli come configurare il tuo account
               </p>
 
               <!-- Google fast track -->
               <v-btn
+                v-if="googleLogin"
                 block
                 variant="tonal"
                 color="primary"
@@ -64,7 +67,7 @@ async function accept() {
                 Accetta con Google
               </v-btn>
 
-              <v-divider class="mb-4">
+              <v-divider v-if="googleLogin" class="mb-4">
                 <span class="text-caption text-medium-emphasis px-2">oppure imposta manualmente</span>
               </v-divider>
 

@@ -1,9 +1,17 @@
+import { Feature, parseFeatures } from './features'
+
 const env = process.env
 
 const useStaging = env.MYSQL_ENV === 'STG'
 const dbEnv = (name: string) => env[useStaging ? `${name}_STG` : name]
 
 const config = {
+    /** Identity of the installation: one deploy per client, all from the same code. */
+    client: {
+        name: env.CLIENT_NAME || '',
+        slug: env.CLIENT_SLUG || '',
+    },
+    features: parseFeatures(env.FEATURES),
     port: +(env.PORT || 3000),
     baseUrl: env.BASE_URL || '',
     sessionSecret: env.SECRET || '',
@@ -40,6 +48,10 @@ const config = {
 
 if (!config.sessionSecret) {
     console.warn('SECRET is not set: sessions and payment callbacks are not secure')
+}
+
+export function isFeatureEnabled(feature: Feature): boolean {
+    return config.features.has(feature)
 }
 
 export default config

@@ -2,11 +2,15 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
 import { UserStore, SnackbarStore } from '@/stores'
 import { hasAnyRole, Roles } from '@/services/utils'
+import { isFeatureEnabled } from '@/composables/useConfig'
+import type { Feature } from '../../../models/src'
 
 declare module 'vue-router' {
   interface RouteMeta {
     /** Roles allowed to open the route (superuser always is). */
     allowedRole?: Roles | Roles[]
+    /** Function the route belongs to: switched off on this installation, the route doesn't exist. */
+    feature?: Feature
   }
 }
 
@@ -128,6 +132,16 @@ const router = createRouter({
           component: () => import('@/views/admin/Payments.vue'),
           props: true,
           meta: {
+            allowedRole: Roles.admin,
+            feature: 'payments'
+          },
+        },
+        {
+          path: "settings",
+          name: "Impostazioni",
+          component: () => import('@/views/admin/Settings.vue'),
+          props: true,
+          meta: {
             allowedRole: Roles.admin
           },
         }
@@ -194,6 +208,9 @@ router.beforeEach(async (to) => {
   const user = userStore.user.id ? userStore.user : await userStore.checkAuthentication()
   const isPublic = publicRoutes.includes(to.name?.toString() || '')
 
+  if (to.meta.feature && !isFeatureEnabled(to.meta.feature)) {
+    return { name: 'Home' }
+  }
   if (user.id && to.name === 'Login') {
     return { name: 'Home' }
   }

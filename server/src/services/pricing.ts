@@ -1,6 +1,7 @@
 import { Queryable, placeholders } from '../db'
 import { Item } from '../../../models/src'
 import { BadRequestError } from '../http/errors'
+import { isFeatureEnabled } from '../config'
 
 /** Price of the PREMIUM version of a cocktail. The client shows the same value (WaiterOrder.vue). */
 export const PREMIUM_PRICE = 9
@@ -66,6 +67,12 @@ export async function priceOrderItems(tx: Queryable, eventId: number, items: Ite
             }
             if (!entry.available) {
                 throw new BadRequestError(`«${entry.name}» non è più disponibile`)
+            }
+            if (item.setMinimum && !isFeatureEnabled('minimum-consumption')) {
+                throw new BadRequestError('Consumazione minima non attiva')
+            }
+            if (item.premium && !isFeatureEnabled('premium')) {
+                throw new BadRequestError('Versione PREMIUM non attiva')
             }
             let price = Number(entry.price)
             if (item.setMinimum) {

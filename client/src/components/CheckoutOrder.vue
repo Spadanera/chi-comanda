@@ -8,6 +8,7 @@ import { copy, sortItem } from "@/services/utils"
 import Confirm from "@/components/Confirm.vue"
 import ItemList from "@/components/ItemList.vue"
 import { useSocket } from "@/composables/useSocket"
+import { isFeatureEnabled } from "@/composables/useConfig"
 
 const props = defineProps(['event', 'navigation', 'roomid'])
 const emit = defineEmits(['getTables', 'changeTableSheet', 'closeDrawer'])
@@ -290,6 +291,8 @@ function handlePaymentCompleted(data: { transaction_id: number; table_id: number
 
 onMounted(async () => {
     socket.on('payment-completed', handlePaymentCompleted)
+    // Without electronic payments only cash is offered
+    if (!isFeatureEnabled('payments')) return
     try {
         availableProviders.value = await api.GetAvailablePaymentProviders()
     } catch {

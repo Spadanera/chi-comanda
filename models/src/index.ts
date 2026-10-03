@@ -251,3 +251,24 @@ export interface PaymentTransaction extends Repository {
   payment_url?: string
   created_at?: string
 }
+/** Optional functions of an installation (FEATURES); the list lives in server/src/features.ts. */
+export type Feature = 'payments' | 'push' | 'google-login' | 'broadcast' | 'minimum-consumption' | 'premium'
+
+/** GET /api/public/config: read by the client at startup. */
+export interface PublicConfig {
+  /** Venue name (settings, else CLIENT_NAME); null = "Chi Comanda". */
+  name: string | null
+  slug: string | null
+  features: Feature[]
+  /** URL of the venue logo; null = the Chi Comanda logo. */
+  logo: string | null
+  colors: { primary: string | null, secondary: string | null }
+}
+
+/** Branding the admin changes from the interface. null = default. */
+export interface Settings {
+  venue_name: string | null
+  primary_color: string | null
+  secondary_color: string | null
+  has_logo: boolean
+}

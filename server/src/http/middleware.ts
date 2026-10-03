@@ -1,7 +1,9 @@
 import { NextFunction, Request, Response } from 'express'
 import { User } from '../../../models/src'
 import auditService from '../services/audit'
-import { ForbiddenError, HttpError, UnauthorizedError } from './errors'
+import { isFeatureEnabled } from '../config'
+import { Feature } from '../features'
+import { ForbiddenError, HttpError, NotFoundError, UnauthorizedError } from './errors'
 
 export enum Roles {
     admin = 'admin',
@@ -50,6 +52,11 @@ export const requireRole = (...roles: Roles[]) => (req: Request, _res: Response,
         return next(new UnauthorizedError())
     }
     next(hasAnyRole(req.user as User, roles) ? undefined : new ForbiddenError())
+}
+
+/** Routes of a function switched off on this installation don't exist: 404. */
+export const requireFeature = (feature: Feature) => (_req: Request, _res: Response, next: NextFunction) => {
+    next(isFeatureEnabled(feature) ? undefined : new NotFoundError())
 }
 
 export const requireAuthentication = (req: Request, _res: Response, next: NextFunction) => {

@@ -55,6 +55,7 @@ export async function resetDatabase(): Promise<Record<RoleName, number>> {
         await conn.query(`UPDATE rooms SET status = 'ACTIVE'`)
         await conn.query(`DELETE FROM master_tables WHERE id > 21`)
         await conn.query(`UPDATE master_tables SET status = 'ACTIVE', room_id = IF(name IN ('Bagni Dx','Bagni Sx','Noire','Bara','Cor 1','Cor 2','Cor 3'), 1, 2)`)
+        await conn.query('UPDATE settings SET venue_name = NULL, logo = NULL, primary_color = NULL, secondary_color = NULL')
         await conn.query('SET FOREIGN_KEY_CHECKS = 1')
 
         const hash = await bcrypt.hash(PASSWORD, 4)

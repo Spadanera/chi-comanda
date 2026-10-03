@@ -2,14 +2,32 @@ import { Router } from 'express'
 import multer from 'multer'
 import userService from '../services/user'
 import paymentService from '../services/payment'
-import { asyncHandler, jsonHandler } from '../http/middleware'
+import settingsService, { LOGO_SIZES, LogoSize } from '../services/settings'
+import { asyncHandler, jsonHandler, requireFeature } from '../http/middleware'
 import { toId } from '../http/validate'
+import { NotFoundError } from '../http/errors'
 import { avatarToDataUri } from '../utils/image'
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } })
 
 /** Endpoints reachable without a session. */
 const router = Router()
+
+/** Read by the client at startup: venue name, active functions, branding. */
+router.get('/config', jsonHandler(() => settingsService.publicConfig()))
+
+router.get('/manifest.webmanifest', asyncHandler(async (_req, res) => {
+    res.type('application/manifest+json').send(JSON.stringify(await settingsService.manifest()))
+}))
+
+router.get('/logo/:size.png', asyncHandler(async (req, res) => {
+    if (!(req.params.size in LOGO_SIZES)) throw new NotFoundError()
+    const png = await settingsService.logo(req.params.size as LogoSize)
+    if (!png) throw new NotFoundError()
+    // The URL carries the version (?v=), so a new logo gets a new URL
+    res.set('Cache-Control', req.query.v ? 'public, max-age=31536000, immutable' : 'no-cache')
+    res.type('png').send(png)
+}))
 
 router.post('/invitation/accept', upload.single('avatar'), jsonHandler(async req => {
     if (req.file) {
@@ -23,7 +41,7 @@ router.post('/askreset', jsonHandler(req => userService.askResetPassword(req.bod
 router.post('/reset', jsonHandler(req => userService.resetPassword(req.body)))
 
 /** Called by the SumUp app once a POS payment ends; authenticated by the `sig` query parameter. */
-router.get('/payment/sumup/pos-callback', asyncHandler(async (req, res) => {
+router.get('/payment/sumup/pos-callback', requireFeature('payments'), asyncHandler(async (req, res) => {
     await paymentService.handlePosCallback(
         toId(req.query.tx_id, 'tx_id'),
         String(req.query.sig || ''),

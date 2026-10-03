@@ -2,6 +2,7 @@
 import { ref, onMounted } from "vue"
 import { RouterLink, RouterView } from 'vue-router'
 import { type User } from '../../../models/src'
+import { isFeatureEnabled } from '@/composables/useConfig'
 
 defineOptions({ inheritAttrs: false })
 const props = defineProps(['event'])
@@ -48,9 +49,14 @@ const navigationItems = ref<NavigationItem[]>([
     prependIcon: "mdi-credit-card-outline",
     to: "payments",
     value: 4
+  },
+  {
+    title: "Impostazioni",
+    prependIcon: "mdi-palette",
+    to: "settings",
+    value: 7
   }
-
-])
+].filter(item => item.to !== 'payments' || isFeatureEnabled('payments')))
 
 onMounted(() => {
   try {
