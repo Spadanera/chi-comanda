@@ -183,7 +183,7 @@ defineExpose({
 </script>
 
 <template>
-    <v-container fluid class="bg-grey-lighten-4 pa-0" style="height: calc(100vh - 64px) !important">
+    <v-container fluid class="bg-grey-lighten-4 pa-0 full-height-view" style="height: calc(100vh - 64px) !important">
         <v-row no-gutters class="fill-height">
             <v-col cols="12" class="d-flex flex-column relative overflow-hidden fill-height">
                 <v-toolbar density="compact" color="surface" class="border-b pr-4" style="z-index: 10">

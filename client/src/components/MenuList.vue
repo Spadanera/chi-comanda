@@ -61,6 +61,9 @@ function openDialog(menu?: Menu) {
 onMounted(async () => {
     await getMenu()
 })
+
+// The page (admin/Menu.vue) owns the "new menu" button: inside the tab window it stayed visible on the other tab
+defineExpose({ openDialog })
 </script>
 <template>
     <v-container>
@@ -82,8 +85,6 @@ onMounted(async () => {
             </v-col>
         </v-row>
     </v-container>
-    <v-fab @click="openDialog()" icon="mdi-plus" app style="position: fixed; right: 15px; bottom: 15px;"
-        location="bottom right"></v-fab>
     <v-dialog v-model="dialog" width="380px">
         <v-card>
             <v-card-title v-if="selectedMenu.id">

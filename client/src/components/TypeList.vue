@@ -83,7 +83,12 @@ onMounted(async () => {
 </script>
 <template>
     <div>
-        <h4 style="margin: 10px; text-align: center;">Categorie</h4>
+        <!-- Add buttons in the headers: two floating buttons overlapped and were cut by the tab window -->
+        <div class="section-header">
+            <h4>Categorie</h4>
+            <v-btn icon="mdi-plus" size="small" variant="tonal" aria-label="Nuova categoria" title="Nuova categoria"
+                @click="openDialog({ name: '' })"></v-btn>
+        </div>
         <v-table density="compact">
             <thead>
                 <tr>
@@ -108,11 +113,13 @@ onMounted(async () => {
                 </tr>
             </tbody>
         </v-table>
-        <v-fab @click="openDialog({ name: '' })" icon="mdi-plus" absolute offset
-            location="bottom right" style="margin-right: 10px;"></v-fab>
     </div>
     <div style="margin-bottom: 30px;" v-if="types.length">
-        <h4 style="margin: 30px 10px 10px 10px; text-align: center;">Sotto-Categorie</h4>
+        <div class="section-header" style="margin-top: 30px;">
+            <h4>Sotto-Categorie</h4>
+            <v-btn icon="mdi-plus" size="small" variant="tonal" aria-label="Nuova sotto-categoria" title="Nuova sotto-categoria"
+                @click="openDialog({ name: '', isSub: true })"></v-btn>
+        </div>
         <v-table density="compact">
             <thead>
                 <tr>
@@ -141,8 +148,6 @@ onMounted(async () => {
                 </tr>
             </tbody>
         </v-table>
-        <v-fab @click="openDialog({ name: '', isSub: true })" icon="mdi-plus" absolute offset
-            location="bottom right" style="margin-right: 10px;"></v-fab>
     </div>
     <v-dialog v-model="dialogType" width="380px">
         <v-card>
@@ -182,3 +187,13 @@ onMounted(async () => {
         </template>
     </Confirm>
 </template>
+
+<style scoped>
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 10px;
+}
+</style>

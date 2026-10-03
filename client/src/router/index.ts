@@ -193,6 +193,11 @@ const router = createRouter({
       component: () => import('@/views/Profile.vue'),
       props: true
     },
+    // Unknown addresses (old bookmarks, the removed /landing): home, or login when not signed in
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: { name: 'Home' }
+    },
   ]
 })
 

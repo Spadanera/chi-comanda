@@ -5,7 +5,8 @@ import { onMounted, ref } from 'vue';
 
 const props = defineProps(['event'])
 
-const tab = ref<string>(null)
+const tab = ref<string>('MENU')
+const menuList = ref<InstanceType<typeof MenuList>>()
 
 onMounted(() => {
 })
@@ -17,10 +18,13 @@ onMounted(() => {
     </v-tabs>
     <v-tabs-window v-model="tab">
         <v-tabs-window-item value="MENU">
-            <MenuList></MenuList>
+            <MenuList ref="menuList"></MenuList>
         </v-tabs-window-item>
         <v-tabs-window-item value="TYPES">
             <TypeList></TypeList>
         </v-tabs-window-item>
     </v-tabs-window>
+    <!-- Outside the tab window, whose transitions clip fixed children; categories have their own buttons -->
+    <v-fab class="fab-clear" v-if="tab === 'MENU'" @click="menuList?.openDialog()" icon="mdi-plus" app
+        style="position: fixed; right: 15px; bottom: 15px;" location="bottom right"></v-fab>
 </template>
