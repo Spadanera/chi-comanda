@@ -11,6 +11,8 @@ it here (on `main`), and ticks it when done. Details live in the linked document
 - **`main`**: 11 commits ahead of `production` (the multi-client work, [multi-client.md](multi-client.md)).
 - **`multi-venue`**: merged into `main` on 3 Oct and released on stage as v1.20.0 ([multi-venue.md](multi-venue.md)).
   So `main` now carries release A and release B together.
+- **`resilience`** (unstable networks, release C below): merged into `main` on 3 Oct evening and released on stage as
+  **v1.20.2** (`/api/health` → `006_idempotency_keys.sql`). So `main` now carries releases A, B and C.
 - Other branches (`claude/*` worktrees, `refactor/structure`): nothing that is not on `main`.
 
 ## Release A — `main` (multi-client) → production
@@ -45,7 +47,7 @@ real-time rooms per venue, new e-mails.
 - [ ] **No second venue until the release is confirmed** (a rollback would mix the roles of different venues).
 - [ ] After: `/api/health` → `005_venues.sql`; Libra looks as before (single venue); invite e-mails look right.
 
-## Release C — unstable networks (branch `resilience`)
+## Release C — unstable networks (branch `resilience`, on stage as v1.20.2)
 
 What it brings: idempotency keys (migration `006_idempotency_keys.sql`), offline queue of orders, full reload of every
 screen when the connection comes back, Sentry filters, automatic daily backups (README *Unstable networks*, DEPLOY.md
