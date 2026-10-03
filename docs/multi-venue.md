@@ -168,6 +168,16 @@ No production deploy and no production DB writes without an explicit request.
   choice after login, branding per venue, switch from the menu, `?venue=` link, platform page, creation of a venue.
   The docker-compose dev server was already down this morning (`@sentry/node` missing from its `node_modules`
   volume): rebuild it with `docker compose build server`.
+- **Point 8 done**: `test/isolation.test.ts`. Venue B with a row in every table (names marked `B-SECRET`); the
+  attacker holds every role of venue A and is not the superuser. 57 attacks with B's ids in the path or the body
+  (also mixed with A's ids: an order on A's event with B's table, product, layout position or destination…) answer
+  404 and never contain B's data; 20 lists and A's own writes answer 200 without B's data; the platform and the staff
+  routes answer 403 (superuser only); a snapshot of every B row is unchanged at the end. `test/routes.ts` lists the
+  Express routes: the coverage test fails on a route that is neither attacked, listed nor exempted (`EXEMPT`, with the
+  reason). Mutation check: a query passing the `:venue` guard but ignoring the venue (`venue_id = :venue OR TRUE`) is
+  caught. Behaviour changes found while writing it: a product or destination of another venue (or a missing one) in
+  an order is now 404 instead of 400; paying items of another venue on one's own table is 404 instead of a silent 0.
+  The one documented exception: `GET /api/master-tables/:id` answers `0` for a missing table, so for another venue's.
 - **Checked on real data (3 Oct)**: the production dump of 3 October restored locally into database `prodcopy` of the
   `libra-restore-check` container (plus the additive part of the old `release.sql`, as production has it). Orphans: none
   for the existing FKs, none for the new ones in `005`, 4 for `items.master_item_id` (items of deleted products: no FK

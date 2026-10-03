@@ -171,6 +171,7 @@ class TableService {
     async paySelectedItems(q: VenueDb, tableId: number, itemIds: number[]): Promise<number> {
         await q.find('tables', tableId, 'id')
         if (!itemIds.length) return 0
+        await q.ensure('items', itemIds)
         return q.execute(`UPDATE items SET paid = TRUE WHERE venue_id = :venue AND table_id = ? AND id IN (${placeholders(itemIds)})`,
             [tableId, ...itemIds])
     }

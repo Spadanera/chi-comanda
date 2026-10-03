@@ -1,6 +1,6 @@
 import { placeholders } from '../db'
 import { Item } from '../../../models/src'
-import { BadRequestError } from '../http/errors'
+import { BadRequestError, NotFoundError } from '../http/errors'
 import { Feature } from '../features'
 import { VenueDb } from '../venue/db'
 
@@ -45,6 +45,8 @@ export async function priceOrderItems(tx: VenueDb, features: ReadonlySet<Feature
             INNER JOIN types ON types.venue_id = :venue AND types.id = sub_types.type_id
             WHERE master_items.venue_id = :venue AND master_items.id IN (${placeholders(ids)})`, ids)
         rows.forEach(r => menu.set(r.id, r))
+        // A product of another venue doesn't exist here: 404, like any other venue's id
+        if (rows.length !== ids.length) throw new NotFoundError()
     }
 
     const destinations = new Set((await tx.query<{ id: number }>('SELECT id FROM destinations WHERE venue_id = :venue')).map(d => d.id))
@@ -103,8 +105,11 @@ export async function priceOrderItems(tx: VenueDb, features: ReadonlySet<Feature
         if (item.price === null || item.price === undefined || !Number.isFinite(price) || price < 0) {
             throw new BadRequestError(`Prezzo non valido per «${name}»`)
         }
-        if (!destinations.has(Number(item.destination_id))) {
+        if (!item.destination_id) {
             throw new BadRequestError(`Destinazione non valida per «${name}»`)
+        }
+        if (!destinations.has(Number(item.destination_id))) {
+            throw new NotFoundError()
         }
         return {
             ...common,
