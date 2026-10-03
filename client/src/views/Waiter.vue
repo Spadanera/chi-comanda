@@ -10,6 +10,7 @@ import { useDisplay } from 'vuetify'
 import { SnackbarStore, ZoomStore } from '@/stores'
 import { storeToRefs } from 'pinia'
 import { useSocket, joinRoom, leaveRoom } from '@/composables/useSocket'
+import { outboxDialog, venueQueue } from '@/services/outbox'
 
 const { smAndUp } = useDisplay()
 
@@ -104,6 +105,12 @@ onUnmounted(() => {
       <NoEvent></NoEvent>
     </v-container>
     <v-container v-else style="margin: 0; padding: 0; min-width: 100%; max-height: calc(100vh - 64px);">
+      <v-alert v-if="venueQueue.length" :type="venueQueue.some(e => e.status === 'failed') ? 'error' : 'warning'"
+        variant="tonal" density="compact" class="ma-2" icon="mdi-cloud-upload-outline" @click="outboxDialog = true"
+        style="cursor: pointer;">
+        {{ venueQueue.length === 1 ? 'Un ordine in attesa di invio' : `${venueQueue.length} ordini in attesa di invio` }}
+        (i tavoli nuovi compariranno quando arrivano) · tocca per vedere
+      </v-alert>
       <div v-if="roomSelected" class="d-flex align-center" style="width: 200px; padding-left: 10px;">
         <v-icon icon="mdi-magnify-minus-outline" size="small" class="mr-2" @click="zoomOut"></v-icon>
         <v-slider v-model="zoomLevel" :min="0.3" :max="2.0" :step="0.05" hide-details density="compact"

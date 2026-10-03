@@ -8,6 +8,9 @@ import { type User, type Event } from '../../models/src'
 import Avatar from './components/Avatar.vue'
 import ThemeSwitch from './components/ThemeSwitch.vue'
 import PushPrompt from './components/PushPrompt.vue'
+import OutboxDialog from './components/OutboxDialog.vue'
+import Confirm from './components/Confirm.vue'
+import { flush, myQueue, outboxDialog, startOutbox, venueQueue } from './services/outbox'
 import logoLight from '@/assets/logo/maitre-light.svg'
 import logoDark from '@/assets/logo/maitre-dark.svg'
 import { requireRuleArray, requiredRule } from './services/utils'
@@ -64,7 +67,17 @@ function login() {
   router.push(typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/')
 }
 
-async function logout() {
+// Orders still waiting stay on the device and leave at the next login of the same user
+const confirmLogout = ref(false)
+async function logout(confirmed = false) {
+  if (!confirmed) {
+    await flush()
+    if (myQueue.value.length) {
+      confirmLogout.value = true
+      return
+    }
+  }
+  confirmLogout.value = false
   await api.Logout()
   user.value = userStore.user
 }
@@ -90,6 +103,7 @@ watch(() => userStore.venueId, venueId => {
 })
 
 let unregisterSocketSetup: (() => void) | undefined
+let stopOutbox: (() => void) | undefined
 
 // Brief drops (screen off, phone in the pocket) are restored silently: tell the user only when
 // the real-time connection stays down, and offer a reload only after a long outage.
@@ -133,6 +147,7 @@ onBeforeMount(() => {
   joinRoom('main')
 
   registerSocketHandler()
+  stopOutbox = startOutbox()
 })
 
 onMounted(async () => {
@@ -148,6 +163,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('visibilitychange', onVisibilityChange)
   document.removeEventListener('resume', onVisibilityChange)
   unregisterSocketSetup?.()
+  stopOutbox?.()
   unregisterSocketHandler()
   destroySocket()
 })
@@ -173,6 +189,11 @@ onBeforeUnmount(() => {
             </span>
           </RouterLink>
         </v-app-bar-title>
+        <v-btn v-if="userStore.isLoggedIn && venueQueue.length" icon @click="outboxDialog = true" title="Ordini in attesa di invio">
+          <v-badge :content="venueQueue.length" :color="venueQueue.some(e => e.status === 'failed') ? 'error' : 'warning'">
+            <v-icon>mdi-cloud-upload-outline</v-icon>
+          </v-badge>
+        </v-btn>
         <v-btn @click="openMessageDialog()" v-if="broadcastEnabled && event?.id && user?.id" size="x-large" icon="mdi-account-voice"></v-btn>
         <v-menu v-if="userStore.isLoggedIn">
           <template v-slot:activator="{ props }">
@@ -250,6 +271,13 @@ onBeforeUnmount(() => {
 
       </v-main>
       <PushPrompt></PushPrompt>
+      <OutboxDialog></OutboxDialog>
+      <Confirm v-model="confirmLogout"
+        :text="`${myQueue.length === 1 ? 'Un ordine non è ancora partito' : `${myQueue.length} ordini non sono ancora partiti`}: restano su questo dispositivo e partiranno al tuo prossimo accesso. Vuoi uscire lo stesso?`">
+        <template v-slot:action>
+          <v-btn text="Esci" variant="plain" @click="logout(true)"></v-btn>
+        </template>
+      </Confirm>
       <!-- v-if, not just model-value: opened and closed within a few ms (wake-up) the snackbar stayed on screen -->
       <v-snackbar v-if="offline && userStore.isLoggedIn" :model-value="true" location="top" color="warning" :timeout="-1">
         <v-progress-circular v-if="!longOffline" indeterminate size="16" width="2" class="mr-2"></v-progress-circular>

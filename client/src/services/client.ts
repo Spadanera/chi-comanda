@@ -72,7 +72,7 @@ interface RequestOptions {
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 /** Answer of the venue api when the session has no venue (see requireVenue on the server). */
-const NO_VENUE = 'Nessun locale selezionato'
+export const NO_VENUE = 'Nessun locale selezionato'
 
 /** Requests that must not toggle the global progress bar. */
 const SILENT_PATHS = ['/checkauthentication']
@@ -149,6 +149,10 @@ class ApiClient {
     }
 
     /** Shows the error to the user (or redirects to login) and returns it, to be thrown. */
+    report(error: ApiError): ApiError {
+        return this.handleError(error)
+    }
+
     private handleError(error: ApiError): ApiError {
         const snackbar = SnackbarStore()
         if (error.status === 0) {

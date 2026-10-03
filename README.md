@@ -119,7 +119,20 @@ client cannot tell. The operations that must never happen twice are idempotent.
 - The client (`api.idempotent` in `client/src/services/client.ts`) retries these requests by itself, with the same key,
   after a network error or a 502/503/504 (3 times, up to ~5 s), and shows an error only after the last attempt.
 
-Client tests (`client/test`, vitest with jsdom): `cd client && npm test`.
+- **Offline queue of orders** (`client/src/services/outbox.ts`): an order is written to IndexedDB with its key
+  *before* it is sent, and deleted only once the server confirms it. On a network error the waiter reads "in attesa di
+  invio" and goes on working; the app bar and the waiter's screen show the orders waiting (`OutboxDialog.vue`). They
+  are sent again, oldest first and with the same key, on the socket's reconnection, when the browser goes online or
+  the page becomes visible, and every 15 s while something waits (one tab at a time, Web Locks). An order the server
+  refuses meanwhile (closed event, product removed) stays as *non accettato* until the waiter retries or discards it;
+  nothing is dropped silently. An expired session keeps the queue until the next login.
+  - An entry belongs to its user and venue: it is sent only while that user works in that venue. Switching venue or
+    logging out with orders waiting asks for confirmation and keeps them on the device; another user of the device
+    neither sees nor sends them.
+  - Without IndexedDB (some private modes) the queue lives in memory and the waiter is told not to close the page.
+  - A new table opened by a queued order appears on the layout only once the order arrives.
+
+Client tests (`client/test`, vitest with jsdom and fake-indexeddb): `cd client && npm test`.
 
 ## Database migrations
 
