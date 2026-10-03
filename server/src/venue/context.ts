@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express'
 import { User } from '../../../models/src'
 import { ConflictError, UnauthorizedError } from '../http/errors'
+import { VenueDb } from './db'
 
 /**
  * The venue a request works on. Every domain service takes it as first argument, so a query can't be written without
@@ -8,9 +9,16 @@ import { ConflictError, UnauthorizedError } from '../http/errors'
  */
 export interface VenueContext {
     readonly venueId: number
-    readonly userId: number
+    /** `null` for work done on behalf of nobody, e.g. a payment provider's callback. */
+    readonly userId: number | null
     /** Roles held in the venue (plus `superuser` for the platform). */
     readonly roles: readonly string[]
+    /** The only way domain services reach the database. */
+    readonly db: VenueDb
+}
+
+export function venueContext(venueId: number, userId: number | null = null, roles: readonly string[] = []): VenueContext {
+    return Object.freeze({ venueId, userId, roles: Object.freeze([...roles]), db: new VenueDb(venueId) })
 }
 
 declare global {
@@ -30,7 +38,7 @@ export const requireVenue = (req: Request, _res: Response, next: NextFunction) =
     if (!user.venueId) {
         return next(new ConflictError('Nessun locale selezionato'))
     }
-    req.venueContext = Object.freeze({ venueId: user.venueId, userId: Number(user.id), roles: Object.freeze([...user.roles || []]) })
+    req.venueContext = venueContext(user.venueId, Number(user.id), user.roles || [])
     next()
 }
 

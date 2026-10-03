@@ -5,6 +5,7 @@ import mysql, { RowDataPacket } from 'mysql2/promise'
 import { afterAll, describe, expect, it } from 'vitest'
 import { DEMO_SEED_FILE, MIGRATIONS_DIR, listMigrations, migrate } from '../src/db/migrate'
 import { TEST_DB } from './db-env'
+import { VENUE_TABLES } from '../src/venue/db'
 
 const silent = () => undefined
 const scratchDbs: string[] = []
@@ -168,6 +169,8 @@ describe('migrations', () => {
         const venueTables = tables.filter(t => !GLOBAL_TABLES.includes(t))
 
         expect(columns.map(c => c.t).sort()).toEqual(venueTables.sort())
+        // The list VenueDb guards is the schema's
+        expect([...VENUE_TABLES].sort()).toEqual(venueTables.sort())
         // NULL is the platform, only where the plan allows it
         expect(columns.filter(c => c.n === 'YES').map(c => c.t).sort()).toEqual(['audit', 'user_role'])
         for (const t of venueTables) {
