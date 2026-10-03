@@ -17,7 +17,7 @@ const router = Router()
 const bartender = requireRole(Roles.bartender)
 
 /** Whether push is configured on the server, and the VAPID public key the browser needs. */
-router.get('/config', jsonHandler(async () => pushService.getConfig()))
+router.get('/config', jsonHandler(async req => pushService.getConfig(ctx(req))))
 
 router.get('/preference', bartender, jsonHandler(async req => ({ preference: await pushService.getPreference(ctx(req)) })))
 

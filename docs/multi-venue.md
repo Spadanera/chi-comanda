@@ -150,6 +150,12 @@ No production deploy and no production DB writes without an explicit request.
   `notify.*` take the venue first. `disconnectUser` after role/status changes (staff and platform), `disconnectVenue`
   after a venue update, `disconnectSession` after a venue switch (point 2). Tests in `socket.test.ts`: a broadcast of
   venue 1 doesn't reach venue 2; venue switch and role change drop the sockets.
+- **Point 6 done** (branding was done in point 3). Functions of a venue = `venueFeatures(config.features,
+  venues.features)` (`NULL` = all of the installation; never more than `FEATURES`). Loaded with the session user
+  (`user.features`) into `VenueContext.features`; `requireFeature` checks the venue's when the request has a venue
+  context, the installation's otherwise. Minimum consumption, PREMIUM and push read `ctx.features`; the POS callback
+  answers 404 when the transaction's venue is disabled or has no payments. `/api/public/config` lists the venue's
+  functions once the venue is known; `google-login` stays the installation's (login comes before the venue).
 - **Checked on real data (3 Oct)**: the production dump of 3 October restored locally into database `prodcopy` of the
   `libra-restore-check` container (plus the additive part of the old `release.sql`, as production has it). Orphans: none
   for the existing FKs, none for the new ones in `005`, 4 for `items.master_item_id` (items of deleted products: no FK

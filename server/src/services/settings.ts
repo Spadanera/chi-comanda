@@ -112,8 +112,10 @@ class SettingsService {
     /** What the client reads at startup: identity, active functions and branding. Public, no session needed. */
     async publicConfig(sessionVenueId?: number | null): Promise<PublicConfig> {
         const row = await this.publicRow(sessionVenueId)
+        // The venue's functions once it is known; Google login is the installation's (it comes before the venue)
+        const venue = row.id ? await venueService.features(row.id) : undefined
         const features = FEATURES.filter(feature =>
-            feature === 'google-login' ? isGoogleEnabled() : isFeatureEnabled(feature))
+            feature === 'google-login' ? isGoogleEnabled() : (venue ? venue.has(feature) : isFeatureEnabled(feature)))
         return {
             name: this.venueName(row),
             slug: config.client.slug || null,

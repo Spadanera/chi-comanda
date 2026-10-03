@@ -1,6 +1,6 @@
 import db from '../db'
 import config from '../config'
-import { Feature, parseFeatures } from '../features'
+import { Feature, parseFeatures, venueFeatures } from '../features'
 import { BadRequestError, NotFoundError } from '../http/errors'
 
 /** Branding columns of a venue; NULL = the default. */
@@ -120,6 +120,12 @@ class VenueService {
     async logo(venueId: number): Promise<Buffer | undefined> {
         return (await db.queryOne<{ logo: Buffer | null }>(`SELECT logo FROM venues WHERE id = ? AND status = 'ACTIVE'`, [venueId]))?.logo
             ?? undefined
+    }
+
+    /** Functions active in an active venue; undefined when the venue doesn't exist or is disabled. */
+    async features(venueId: number): Promise<Set<Feature> | undefined> {
+        const row = await db.queryOne<{ features: unknown }>(`SELECT features FROM venues WHERE id = ? AND status = 'ACTIVE'`, [venueId])
+        return row && venueFeatures(config.features, row.features)
     }
 
     /**

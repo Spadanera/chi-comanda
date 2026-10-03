@@ -17,7 +17,7 @@ router.get('/venues', jsonHandler(() => venueService.getAll()))
 router.post('/venues', jsonHandler(async req => {
     const venueId = await venueService.create(req.body || {})
     if (req.body?.admin_email) {
-        await staffService.invite(venueContext(venueId, currentUserId(req), [Roles.superuser]),
+        await staffService.invite(venueContext(venueId, currentUserId(req), [Roles.superuser], []),
             { email: req.body.admin_email, roles: [Roles.admin] })
     }
     return venueId

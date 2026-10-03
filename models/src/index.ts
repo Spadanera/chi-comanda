@@ -195,6 +195,8 @@ export interface User extends Repository {
   venueId?: number | null
   /** Session user only: venues the user can enter. */
   venues?: UserVenue[]
+  /** Session user only: functions active in the active venue. */
+  features?: Feature[]
 }
 
 /** A venue as seen by a user who can enter it. */

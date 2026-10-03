@@ -44,8 +44,10 @@ function summarize(items: Item[]): string {
 }
 
 class PushService {
-    getConfig() {
-        return { enabled, publicKey: enabled ? config.push.publicKey : null }
+    /** Push works when the installation has the VAPID keys and the venue has the function. */
+    getConfig(ctx: VenueContext) {
+        const on = enabled && ctx.features.has('push')
+        return { enabled: on, publicKey: on ? config.push.publicKey : null }
     }
 
     // Preference and devices belong to the user (global tables): the same in every venue
@@ -86,7 +88,7 @@ class PushService {
      * Never throws: a failed notification must not affect the order.
      */
     async notifyNewOrder(ctx: VenueContext, order: Order, tableName: string): Promise<void> {
-        if (!enabled) return
+        if (!enabled || !ctx.features.has('push')) return
         try {
             const items = (order.items || []).filter(i => !i.done)
             if (!items.length) return

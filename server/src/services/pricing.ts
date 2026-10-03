@@ -1,7 +1,7 @@
 import { placeholders } from '../db'
 import { Item } from '../../../models/src'
 import { BadRequestError } from '../http/errors'
-import { isFeatureEnabled } from '../config'
+import { Feature } from '../features'
 import { VenueDb } from '../venue/db'
 
 /** Price of the PREMIUM version of a cocktail. The client shows the same value (WaiterOrder.vue). */
@@ -29,7 +29,7 @@ interface MenuEntry {
  * - off-menu item (no `master_item_id`): free price set by the waiter, validated
  * Only the note and the done/paid flags come from the client.
  */
-export async function priceOrderItems(tx: VenueDb, eventId: number, items: Item[]): Promise<Item[]> {
+export async function priceOrderItems(tx: VenueDb, features: ReadonlySet<Feature>, eventId: number, items: Item[]): Promise<Item[]> {
     const event = await tx.find<{ menu_id: number, minimumConsumptionPrice: number | null }>(
         'events', eventId, 'menu_id, minimumConsumptionPrice')
 
@@ -66,10 +66,10 @@ export async function priceOrderItems(tx: VenueDb, eventId: number, items: Item[
             if (!entry.available) {
                 throw new BadRequestError(`«${entry.name}» non è più disponibile`)
             }
-            if (item.setMinimum && !isFeatureEnabled('minimum-consumption')) {
+            if (item.setMinimum && !features.has('minimum-consumption')) {
                 throw new BadRequestError('Consumazione minima non attiva')
             }
-            if (item.premium && !isFeatureEnabled('premium')) {
+            if (item.premium && !features.has('premium')) {
                 throw new BadRequestError('Versione PREMIUM non attiva')
             }
             let price = Number(entry.price)

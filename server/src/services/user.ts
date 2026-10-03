@@ -7,6 +7,7 @@ import { nowInItaly } from '../utils/date'
 import { hashPassword, checkPassword } from '../utils/crypt'
 import { Roles } from '../http/middleware'
 import { BadRequestError, UnauthorizedError } from '../http/errors'
+import { venueFeatures } from '../features'
 
 /** SQL condition: `column` is a datetime within the invitation/reset token lifetime. */
 const TOKEN_NOT_EXPIRED = (column: string) => `${column} >= NOW() - INTERVAL ${config.tokenTtlHours} HOUR`
@@ -81,8 +82,8 @@ class UserService {
         const superuser = rows.some(r => r.role === Roles.superuser)
         const venueRoles = (venue: number) => rows
             .filter(r => r.venue_id === venue && r.role !== Roles.superuser).map(r => r.role)
-        const venues = await db.query<{ id: number, name: string | null }>(`
-            SELECT id, name FROM venues
+        const venues = await db.query<{ id: number, name: string | null, features: unknown }>(`
+            SELECT id, name, features FROM venues
             WHERE status = 'ACTIVE' AND (? OR id IN (SELECT venue_id FROM user_role WHERE user_id = ? AND venue_id IS NOT NULL))
             ORDER BY name, id`, [superuser, id])
         user.superuser = superuser
@@ -92,6 +93,7 @@ class UserService {
         const active = user.venues.find(v => v.id === venueId) ?? (user.venues.length === 1 ? user.venues[0] : undefined)
         user.venueId = active?.id ?? null
         user.roles = [...(superuser ? [Roles.superuser] : []), ...(active?.roles ?? [])]
+        user.features = active ? [...venueFeatures(config.features, venues.find(v => v.id === active.id)!.features)] : []
         return user
     }
 

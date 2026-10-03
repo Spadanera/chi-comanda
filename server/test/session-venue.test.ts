@@ -158,6 +158,32 @@ describe('session and active venue', () => {
         await admin.get('/api/public/logo/512.png?venue=1&v=1').expect(404)
     })
 
+    it('switches functions per venue, within the installation ones', async () => {
+        await sql(`UPDATE venues SET features = JSON_ARRAY('payments') WHERE id = 2`)
+        await grant(ids.admin, 'admin', 2)
+        await grant(ids.admin, 'waiter', 2)
+        const admin = await loginAs(app, 'admin')
+        const sender = { sender: { id: ids.admin }, message: 'ciao' }
+
+        await admin.put('/api/session/venue').send({ venueId: 2 })
+        expect((await sessionUser(admin)).features).toEqual(['payments'])
+        await admin.post('/api/broadcast').send(sender).expect(404)
+        await admin.get('/api/push/config').expect(404)
+        await admin.get('/api/payment/settings').expect(200)
+        const config = (await admin.get('/api/public/config')).body
+        // Google login belongs to the installation: it comes before choosing a venue
+        expect(config.features.sort()).toEqual(['google-login', 'payments'])
+        // Without minimum consumption the event has no minimum price
+        const menu = await sql(`INSERT INTO menu (venue_id, name, status) VALUES (2, 'Menu', 'ACTIVE')`) as any
+        const eventId = (await admin.post('/api/events')
+            .send({ name: 'Serata', date: '2026-10-02', menu_id: menu.insertId, minimumConsumptionPrice: 5, users: [] }).expect(200)).body
+        expect(await sql('SELECT minimumConsumptionPrice FROM events WHERE id = ?', [eventId])).toEqual([{ minimumConsumptionPrice: null }])
+
+        // Venue 1 has no list of its own: every function of the installation
+        await admin.put('/api/session/venue').send({ venueId: 1 })
+        await admin.post('/api/broadcast').send(sender).expect(200)
+    })
+
     it('records the venue of an action in the audit, NULL for platform actions', async () => {
         const superuser = await loginAs(app, 'superuser')
         await superuser.put(`/api/platform/users/${ids.client}/status`).send({ status: 'ACTIVE' })

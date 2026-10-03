@@ -232,8 +232,10 @@ class PaymentService {
             throw new ForbiddenError('Firma non valida')
         }
         const venueId = await venueService.venueOfPaymentTransaction(transactionId)
-        if (!venueId) throw new NotFoundError('Transazione non trovata')
-        const ctx = venueContext(venueId)
+        const features = venueId ? await venueService.features(venueId) : undefined
+        // Unknown transaction, disabled venue or payments switched off there: nothing to settle
+        if (!venueId || !features?.has('payments')) throw new NotFoundError('Transazione non trovata')
+        const ctx = venueContext(venueId, null, [], features)
         if (smpStatus === 'success') {
             await this.markPaid(ctx, transactionId, smpTxCode)
         } else {

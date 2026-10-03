@@ -77,7 +77,7 @@ class OrderService {
 
         const { orderId, tableId } = await ctx.db.transaction(async tx => {
             // Prices, names and destinations are decided here, never trusted from the client
-            items = await priceOrderItems(tx, Number(order.event_id), order.items || [])
+            items = await priceOrderItems(tx, ctx.features, Number(order.event_id), order.items || [])
             order.items = items
             let tableId = order.table_id
             if (!tableId) {

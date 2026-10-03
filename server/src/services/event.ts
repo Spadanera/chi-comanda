@@ -4,7 +4,6 @@ import { notify } from '../socket'
 import { BadRequestError, ConflictError, NotFoundError } from '../http/errors'
 import { ITEM_CATEGORY_JOINS, ITEM_SUB_TYPE, ITEM_TYPE } from '../db/sql'
 import { toSqlDate } from '../utils/date'
-import { isFeatureEnabled } from '../config'
 import { Roles } from '../http/middleware'
 import { VenueContext } from '../venue/context'
 import { VenueDb } from '../venue/db'
@@ -14,8 +13,8 @@ export type EventStatus = 'PLANNED' | 'ONGOING' | 'CLOSED'
 const PAGE_SIZE = 20
 
 /** Without the minimum-consumption function events have no minimum price. */
-function minimumPrice(event: Event) {
-    return isFeatureEnabled('minimum-consumption') ? event.minimumConsumptionPrice : null
+function minimumPrice(ctx: VenueContext, event: Event) {
+    return ctx.features.has('minimum-consumption') ? event.minimumConsumptionPrice : null
 }
 
 /** Closed events have their tables and items archived in the *_history tables. */
@@ -225,7 +224,7 @@ class EventService {
             const eventId = await tx.insert(`
                 INSERT INTO events (venue_id, name, date, status, menu_id, minimumConsumptionPrice)
                 VALUES (:venue,?,?,'PLANNED',?,?)`,
-                [event.name, toSqlDate(event.date), event.menu_id, minimumPrice(event)])
+                [event.name, toSqlDate(event.date), event.menu_id, minimumPrice(ctx, event)])
             await this.replaceStaff(tx, eventId, event.users || [])
             return eventId
         })
@@ -241,7 +240,7 @@ class EventService {
         const result = await ctx.db.transaction(async tx => {
             const affected = await tx.execute(
                 'UPDATE events SET name = ?, date = ?, menu_id = ?, minimumConsumptionPrice = ? WHERE venue_id = :venue AND id = ?',
-                [event.name, toSqlDate(event.date), event.menu_id, minimumPrice(event), event.id])
+                [event.name, toSqlDate(event.date), event.menu_id, minimumPrice(ctx, event), event.id])
             await this.replaceStaff(tx, event.id!, event.users!)
             return affected
         })

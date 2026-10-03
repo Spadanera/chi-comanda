@@ -1,7 +1,7 @@
 import sharp from 'sharp'
 import request from 'supertest'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { FEATURES, parseFeatures } from '../src/features'
+import { Feature, FEATURES, parseFeatures, venueFeatures } from '../src/features'
 import { closeApp, loadApp, loginAs, resetDatabase } from './helpers'
 
 let app: any
@@ -29,6 +29,13 @@ describe('FEATURES', () => {
 
     it('reads a comma separated list', () => {
         expect([...parseFeatures(' push, payments ,')]).toEqual(['push', 'payments'])
+    })
+
+    it('gives a venue its own functions, never more than the installation ones', () => {
+        const installation = new Set<Feature>(['payments', 'push'])
+        expect([...venueFeatures(installation, null)]).toEqual(['payments', 'push'])
+        expect([...venueFeatures(installation, ['push', 'broadcast'])]).toEqual(['push'])
+        expect([...venueFeatures(installation, '["payments","teleport"]')]).toEqual(['payments'])
     })
 
     it('refuses unknown names instead of silently switching a function off', () => {
